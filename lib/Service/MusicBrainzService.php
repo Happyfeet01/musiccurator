@@ -26,10 +26,6 @@ class MusicBrainzService {
 			return [];
 		}
 
-		// Album tags from downloads are often inconsistent (playlist names,
-		// deluxe labels, YouTube titles, etc.). Do not make the release name a
-		// hard MusicBrainz search constraint. Prefer title + artist and use the
-		// existing album only to choose the most plausible release afterwards.
 		$query = ['recording:"' . $this->escapeQuery($title) . '"'];
 		if ($artist !== '') {
 			$query[] = 'artist:"' . $this->escapeQuery($artist) . '"';
@@ -80,8 +76,9 @@ class MusicBrainzService {
 		$client = $this->clientService->newClient();
 		$lastStatus = 0;
 		$lastBody = '';
+		$delays = [1_500_000, 3_000_000];
 
-		for ($attempt = 0; $attempt < 2; ++$attempt) {
+		for ($attempt = 0; $attempt < 3; ++$attempt) {
 			$response = $client->get($url, [
 				'headers' => [
 					'Accept' => 'application/json',
@@ -99,10 +96,10 @@ class MusicBrainzService {
 				return is_array($data) ? $data : [];
 			}
 
-			if ($attempt === 0 && in_array($lastStatus, self::RETRYABLE_STATUS_CODES, true)) {
+			if ($attempt < 2 && in_array($lastStatus, self::RETRYABLE_STATUS_CODES, true)) {
 				$retryAfter = (int)$response->getHeader('Retry-After');
-				$waitMicroseconds = max(1_100_000, min(3_000_000, $retryAfter * 1_000_000));
-				usleep($waitMicroseconds);
+				$serverDelay = $retryAfter > 0 ? min(6_000_000, $retryAfter * 1_000_000) : 0;
+				usleep(max($delays[$attempt], $serverDelay));
 				continue;
 			}
 
