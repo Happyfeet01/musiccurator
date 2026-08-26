@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace OCA\MusicCurator\Service;
 
 use OCP\Http\Client\IClientService;
+use RuntimeException;
 
 class MusicBrainzService {
+	private const RETRYABLE_STATUS_CODES = [429, 502, 503, 504];
+
 	public function __construct(
 		private IClientService $clientService,
 	) {
@@ -33,16 +36,7 @@ class MusicBrainzService {
 		}
 
 		$url = 'https://musicbrainz.org/ws/2/recording/?fmt=json&limit=10&query=' . rawurlencode(implode(' AND ', $query));
-		$client = $this->clientService->newClient();
-		$response = $client->get($url, [
-			'headers' => [
-				'Accept' => 'application/json',
-				'User-Agent' => 'MusicCurator/0.1.0 (https://github.com/Happyfeet01/musiccurator)',
-			],
-			'timeout' => 15,
-		]);
-
-		$data = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+		$data = $this->requestJson($url);
 		$recordings = is_array($data['recordings'] ?? null) ? $data['recordings'] : [];
 		$results = [];
 		foreach ($recordings as $recording) {
@@ -79,6 +73,52 @@ class MusicBrainzService {
 		}
 
 		return $results;
+	}
+
+	/** @return array<string, mixed> */
+	private function requestJson(string $url): array {
+		$client = $this->clientService->newClient();
+		$lastStatus = 0;
+		$lastBody = '';
+
+		for ($attempt = 0; $attempt < 2; ++$attempt) {
+			$response = $client->get($url, [
+				'headers' => [
+					'Accept' => 'application/json',
+					'User-Agent' => 'MusicCurator/0.2.0 (https://github.com/Happyfeet01/musiccurator)',
+				],
+				'connect_timeout' => 8,
+				'timeout' => 15,
+				'http_errors' => false,
+			]);
+
+			$lastStatus = $response->getStatusCode();
+			$lastBody = (string)$response->getBody();
+			if ($lastStatus >= 200 && $lastStatus < 300) {
+				$data = json_decode($lastBody, true, 512, JSON_THROW_ON_ERROR);
+				return is_array($data) ? $data : [];
+			}
+
+			if ($attempt === 0 && in_array($lastStatus, self::RETRYABLE_STATUS_CODES, true)) {
+				$retryAfter = (int)$response->getHeader('Retry-After');
+				$waitMicroseconds = max(1_100_000, min(3_000_000, $retryAfter * 1_000_000));
+				usleep($waitMicroseconds);
+				continue;
+			}
+
+			break;
+		}
+
+		$details = trim(strip_tags($lastBody));
+		if (strlen($details) > 180) {
+			$details = substr($details, 0, 180) . '…';
+		}
+
+		throw new RuntimeException(sprintf(
+			'MusicBrainz returned HTTP %d%s',
+			$lastStatus,
+			$details !== '' ? ': ' . $details : '',
+		));
 	}
 
 	/**
