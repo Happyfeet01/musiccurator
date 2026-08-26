@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	  xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+	<id>app_template</id>
+	<name>App Template</name>
+	<summary>An example summary</summary>
+	<description>An example description</description>
+	<version>1.0.0</version>
+	<licence>AGPL-3.0-or-later</licence>
+	<author mail="example@example.com" homepage="https://example.com">Example</author>
+	<namespace>AppTemplate</namespace>
+	<category>customization</category>
+	<bugs>https://example.com/bugs</bugs>
+	<dependencies>
+		<nextcloud min-version="31" max-version="35"/>
+	</dependencies>
+	<navigations>
+		<navigation>
+			<id>app_template</id>
+			<name>App Template</name>
+			<route>app_template.page.index</route>
+			<icon>app.svg</icon>
+			<type>link</type>
+		</navigation>
+	</navigations>
+</info>
