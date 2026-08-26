@@ -1,24 +1,33 @@
 <?xml version="1.0"?>
 <info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	  xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
-	<id>app_template</id>
-	<name>App Template</name>
-	<summary>An example summary</summary>
-	<description>An example description</description>
-	<version>1.0.0</version>
+      xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+	<id>musiccurator</id>
+	<name>MusicCurator</name>
+	<summary>Curate, tag and organize your Nextcloud music library</summary>
+	<description><![CDATA[
+MusicCurator helps you review and improve the metadata of audio files stored in Nextcloud.
+Compare existing tags with metadata-provider suggestions, choose changes field by field,
+organize files into album or playlist folders, and keep every destructive action behind a preview.
+
+The project is designed as a companion for Nextcloud Music. MusicCurator manages the library;
+Nextcloud Music remains responsible for playback.
+	]]></description>
+	<version>0.1.0</version>
 	<licence>AGPL-3.0-or-later</licence>
-	<author mail="example@example.com" homepage="https://example.com">Example</author>
-	<namespace>AppTemplate</namespace>
-	<category>customization</category>
-	<bugs>https://example.com/bugs</bugs>
+	<author>Happyfeet01</author>
+	<namespace>MusicCurator</namespace>
+	<category>multimedia</category>
+	<bugs>https://github.com/Happyfeet01/musiccurator/issues</bugs>
+	<website>https://github.com/Happyfeet01/musiccurator</website>
+	<repository type="git">https://github.com/Happyfeet01/musiccurator.git</repository>
 	<dependencies>
-		<nextcloud min-version="31" max-version="35"/>
+		<nextcloud min-version="34" max-version="35"/>
 	</dependencies>
 	<navigations>
 		<navigation>
-			<id>app_template</id>
-			<name>App Template</name>
-			<route>app_template.page.index</route>
+			<id>musiccurator</id>
+			<name>MusicCurator</name>
+			<route>musiccurator.page.index</route>
 			<icon>app.svg</icon>
 			<type>link</type>
 		</navigation>
