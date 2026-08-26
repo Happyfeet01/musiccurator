@@ -5,7 +5,7 @@ declare(strict_types=1);
 return [
 	'routes' => [
 		['name' => 'read#settings', 'url' => '/api/settings', 'verb' => 'GET'],
-		['name' => 'library#saveSettings', 'url' => '/api/settings', 'verb' => 'POST'],
+		['name' => 'settings#saveSettings', 'url' => '/api/settings', 'verb' => 'POST'],
 		['name' => 'folder#folders', 'url' => '/api/folders', 'verb' => 'GET'],
 		['name' => 'scan#scan', 'url' => '/api/library/scan-selected', 'verb' => 'POST'],
 		['name' => 'library#scan', 'url' => '/api/library/scan', 'verb' => 'POST'],
