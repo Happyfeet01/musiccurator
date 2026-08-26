@@ -71,7 +71,25 @@ type Settings = {
 	lastFmConfigured: boolean
 }
 
+type ScanResponse = {
+	libraryPath: string
+	tracks: Track[]
+	playlists: Playlist[]
+	stats: {
+		tracks: number
+		needsReview: number
+		albums: number
+		playlists: number
+	}
+	truncated: boolean
+	durationMs?: number
+}
+
+const TRACK_PAGE_SIZE = 100
+const ALBUM_PAGE_SIZE = 96
+
 const section = ref<Section>('library')
+const mobileMenuOpen = ref(false)
 const onlyNeedsAttention = ref(false)
 const loading = ref(false)
 const message = ref('')
@@ -85,6 +103,10 @@ const selectedSuggestion = ref<MusicBrainzSuggestion | null>(null)
 const proposedPath = ref('')
 const hasScanned = ref(false)
 const truncated = ref(false)
+const lastScannedPath = ref('')
+const scanDurationMs = ref<number | null>(null)
+const trackLimit = ref(TRACK_PAGE_SIZE)
+const albumLimit = ref(ALBUM_PAGE_SIZE)
 const stats = ref({ tracks: 0, needsReview: 0, albums: 0, playlists: 0 })
 
 const settings = ref<Settings>({
@@ -119,9 +141,13 @@ const navigation: Array<{ id: Section, label: string }> = [
 	{ id: 'settings', label: 'Settings' },
 ]
 
+const activeSectionLabel = computed(() => navigation.find((item) => item.id === section.value)?.label ?? 'Library')
+
 const visibleTracks = computed(() => onlyNeedsAttention.value
 	? tracks.value.filter((track) => track.status === 'Needs tags')
 	: tracks.value)
+
+const renderedTracks = computed(() => visibleTracks.value.slice(0, trackLimit.value))
 
 const albumGroups = computed(() => {
 	const groups = new Map<string, { artist: string, album: string, tracks: Track[] }>()
@@ -138,6 +164,11 @@ const albumGroups = computed(() => {
 	}
 	return [...groups.values()].sort((a, b) => `${a.artist} ${a.album}`.localeCompare(`${b.artist} ${b.album}`))
 })
+
+const renderedAlbums = computed(() => albumGroups.value.slice(0, albumLimit.value))
+const scanPathMismatch = computed(() => hasScanned.value
+	&& lastScannedPath.value !== ''
+	&& lastScannedPath.value !== settings.value.libraryPath)
 
 function apiUrl(path: string, query?: Record<string, string>): string {
 	const url = new URL(window.OC.generateUrl(`/apps/musiccurator${path}`), window.location.origin)
@@ -165,6 +196,18 @@ function formBody(values: Record<string, string>): URLSearchParams {
 	return new URLSearchParams(values)
 }
 
+function switchSection(target: Section): void {
+	section.value = target
+	mobileMenuOpen.value = false
+	if (target === 'library') {
+		trackLimit.value = TRACK_PAGE_SIZE
+	}
+	if (target === 'albums') {
+		albumLimit.value = ALBUM_PAGE_SIZE
+	}
+	window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }))
+}
+
 async function loadSettings(): Promise<void> {
 	try {
 		settings.value = await apiRequest<Settings>('/api/settings')
@@ -173,7 +216,7 @@ async function loadSettings(): Promise<void> {
 	}
 }
 
-async function saveSettings(): Promise<void> {
+async function saveSettings(showSuccessMessage = true): Promise<boolean> {
 	loading.value = true
 	clearNotice()
 	try {
@@ -193,34 +236,45 @@ async function saveSettings(): Promise<void> {
 		acoustIdUserKey.value = ''
 		discogsToken.value = ''
 		lastFmKey.value = ''
-		message.value = 'Personal MusicCurator settings saved.'
+		if (showSuccessMessage) {
+			message.value = 'Personal MusicCurator settings saved.'
+		}
+		return true
 	} catch (e) {
 		setError(e)
+		return false
 	} finally {
 		loading.value = false
 	}
 }
 
 async function scanLibrary(): Promise<void> {
+	if (settings.value.libraryPath === '/' && !window.confirm('The selected folder is your Nextcloud root. This may scan thousands of files and take a while. Continue?')) {
+		return
+	}
+
 	loading.value = true
 	clearNotice()
 	try {
-		const data = await apiRequest<{
-			libraryPath: string
-			tracks: Track[]
-			playlists: Playlist[]
-			stats: typeof stats.value
-			truncated: boolean
-		}>('/api/library/scan', { method: 'POST' })
+		const data = await apiRequest<ScanResponse>('/api/library/scan-selected', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+			body: formBody({ libraryPath: settings.value.libraryPath }),
+		})
 		tracks.value = data.tracks
 		playlists.value = data.playlists
 		stats.value = data.stats
 		settings.value.libraryPath = data.libraryPath
+		lastScannedPath.value = data.libraryPath
+		scanDurationMs.value = data.durationMs ?? null
 		truncated.value = data.truncated
 		hasScanned.value = true
+		trackLimit.value = TRACK_PAGE_SIZE
+		albumLimit.value = ALBUM_PAGE_SIZE
 		selectedTrack.value = tracks.value[0] ?? null
 		resetMatch()
-		message.value = `${data.tracks.length} audio files scanned.`
+		const duration = scanDurationMs.value !== null ? ` in ${(scanDurationMs.value / 1000).toFixed(1)} s` : ''
+		message.value = `${data.tracks.length} audio files scanned from ${data.libraryPath}${duration}.`
 	} catch (e) {
 		setError(e)
 	} finally {
@@ -322,6 +376,7 @@ async function loadChanges(): Promise<void> {
 
 async function openFolderPicker(): Promise<void> {
 	folderPickerOpen.value = true
+	clearNotice()
 	try {
 		await browseFolder(settings.value.libraryPath)
 	} catch {
@@ -338,17 +393,28 @@ async function browseFolder(path: string): Promise<void> {
 		folderEntries.value = data.folders
 	} catch (e) {
 		setError(e)
+		throw e
 	}
 }
 
 async function selectCurrentFolder(): Promise<void> {
+	const previousPath = settings.value.libraryPath
 	settings.value.libraryPath = folderPath.value
-	await saveSettings()
+	const saved = await saveSettings(false)
+	if (!saved) {
+		settings.value.libraryPath = previousPath
+		return
+	}
+
 	folderPickerOpen.value = false
 	hasScanned.value = false
+	lastScannedPath.value = ''
+	scanDurationMs.value = null
 	tracks.value = []
 	playlists.value = []
 	selectedTrack.value = null
+	stats.value = { tracks: 0, needsReview: 0, albums: 0, playlists: 0 }
+	message.value = `Music folder set to ${settings.value.libraryPath}. Ready to scan.`
 }
 
 function resetMatch(clearSuggestions = true): void {
@@ -404,15 +470,39 @@ onMounted(async () => {
 						:key="item.id"
 						:name="item.label"
 						:active="section === item.id"
-						@click="section = item.id" />
+						@click="switchSection(item.id)" />
 				</NcAppNavigationList>
 			</template>
 		</NcAppNavigation>
 
 		<NcAppContent>
 			<main class="musiccurator-shell">
+				<nav class="mobile-section-navigation" aria-label="MusicCurator mobile navigation">
+					<button
+						class="mobile-menu-trigger"
+						type="button"
+						:aria-expanded="mobileMenuOpen"
+						@click="mobileMenuOpen = !mobileMenuOpen">
+						<span aria-hidden="true">☰</span>
+						<span>{{ activeSectionLabel }}</span>
+					</button>
+					<div v-if="mobileMenuOpen" class="mobile-menu glass-panel">
+						<button
+							v-for="item in navigation"
+							:key="item.id"
+							type="button"
+							:class="{ active: section === item.id }"
+							@click="switchSection(item.id)">
+							{{ item.label }}
+						</button>
+					</div>
+				</nav>
+
 				<div v-if="message" class="notice notice-success">{{ message }}</div>
 				<div v-if="error" class="notice notice-error">{{ error }}</div>
+				<div v-if="scanPathMismatch" class="notice notice-warning">
+					The displayed results were scanned from <strong>{{ lastScannedPath }}</strong>, while your configured library is now <strong>{{ settings.libraryPath }}</strong>. Scan again to refresh the view.
+				</div>
 
 				<section v-if="section === 'library'" class="page">
 					<header class="hero glass-panel">
@@ -423,6 +513,7 @@ onMounted(async () => {
 								Scan audio files, inspect the tags already stored in them, compare them with MusicBrainz,
 								and preview every file move before anything changes.
 							</p>
+							<p class="path-summary"><strong>Configured library:</strong> {{ settings.libraryPath }}</p>
 						</div>
 						<div class="hero-actions">
 							<NcButton type="primary" :disabled="loading" @click="scanLibrary">
@@ -439,9 +530,9 @@ onMounted(async () => {
 								<h2>{{ folderPath }}</h2>
 							</div>
 							<div class="hero-actions">
-								<NcButton v-if="folderPath !== '/'" @click="browseFolder(folderParent)">Up</NcButton>
-								<NcButton @click="folderPickerOpen = false">Cancel</NcButton>
-								<NcButton type="primary" @click="selectCurrentFolder">Use this folder</NcButton>
+								<NcButton v-if="folderPath !== '/'" :disabled="loading" @click="browseFolder(folderParent)">Up</NcButton>
+								<NcButton :disabled="loading" @click="folderPickerOpen = false">Cancel</NcButton>
+								<NcButton type="primary" :disabled="loading" @click="selectCurrentFolder">Use this folder</NcButton>
 							</div>
 						</div>
 						<div v-if="folderEntries.length" class="folder-grid">
@@ -457,7 +548,7 @@ onMounted(async () => {
 						<article class="stat-card glass-panel">
 							<span>Tracks</span>
 							<strong>{{ hasScanned ? stats.tracks : '—' }}</strong>
-							<small>{{ hasScanned ? `in ${settings.libraryPath}` : 'scan to count' }}</small>
+							<small>{{ hasScanned ? `last scan: ${lastScannedPath}` : `configured: ${settings.libraryPath}` }}</small>
 						</article>
 						<article class="stat-card glass-panel">
 							<span>Needs tags</span>
@@ -483,14 +574,15 @@ onMounted(async () => {
 							<div>
 								<p class="eyebrow">Library</p>
 								<h2>{{ hasScanned ? `${tracks.length} audio files` : 'Ready to scan' }}</h2>
+								<small v-if="hasScanned && visibleTracks.length > renderedTracks.length" class="muted">Showing {{ renderedTracks.length }} of {{ visibleTracks.length }} for a faster interface.</small>
 							</div>
-							<NcCheckboxRadioSwitch v-model="onlyNeedsAttention" type="switch" :disabled="!hasScanned">
+							<NcCheckboxRadioSwitch v-model="onlyNeedsAttention" type="switch" :disabled="!hasScanned" @update:model-value="trackLimit = TRACK_PAGE_SIZE">
 								Only items needing attention
 							</NcCheckboxRadioSwitch>
 						</div>
 
 						<div v-if="!hasScanned" class="empty-state">
-							<strong>No demo data anymore.</strong>
+							<strong>No demo data.</strong>
 							<span>Select your music folder and scan it to load the real files from your Nextcloud account.</span>
 						</div>
 						<div v-else-if="visibleTracks.length === 0" class="empty-state">
@@ -499,7 +591,7 @@ onMounted(async () => {
 						</div>
 						<div v-else class="track-list">
 							<button
-								v-for="track in visibleTracks"
+								v-for="track in renderedTracks"
 								:key="track.path"
 								class="track-row"
 								:class="{ selected: selectedTrack?.path === track.path }"
@@ -512,6 +604,9 @@ onMounted(async () => {
 								</span>
 								<span class="track-status" :data-status="statusKey(track.status)">{{ track.status }}</span>
 							</button>
+							<div v-if="renderedTracks.length < visibleTracks.length" class="load-more-row">
+								<NcButton @click="trackLimit += TRACK_PAGE_SIZE">Show {{ Math.min(TRACK_PAGE_SIZE, visibleTracks.length - renderedTracks.length) }} more</NcButton>
+							</div>
 						</div>
 					</section>
 
@@ -555,7 +650,7 @@ onMounted(async () => {
 						</div>
 
 						<div class="read-only-note">
-							<strong>Safe development mode:</strong> embedded tags are currently read-only. MusicCurator can already scan, match and move files through Nextcloud. Tag writing will be enabled only after the write path has its own review and rollback tests.
+							<strong>Safe development mode:</strong> embedded tags are currently read-only. MusicCurator can scan, match and move files through Nextcloud. Tag writing will be enabled only after the write path has dedicated review and rollback tests.
 						</div>
 
 						<div v-if="proposedPath" class="move-preview">
@@ -577,13 +672,19 @@ onMounted(async () => {
 						<p class="muted">This view is generated from the latest library scan. MusicBrainz completeness checks come next.</p>
 					</header>
 					<div v-if="!hasScanned" class="glass-panel empty-state spaced">Scan your library first.</div>
-					<div v-else class="album-grid">
-						<article v-for="album in albumGroups" :key="`${album.artist}-${album.album}`" class="album-card glass-panel">
-							<span class="album-art" aria-hidden="true">♫</span>
-							<div><strong>{{ album.album }}</strong><small>{{ album.artist }}</small></div>
-							<b>{{ album.tracks.length }}</b>
-						</article>
-					</div>
+					<template v-else>
+						<div class="result-summary">Showing {{ renderedAlbums.length }} of {{ albumGroups.length }} albums.</div>
+						<div class="album-grid">
+							<article v-for="album in renderedAlbums" :key="`${album.artist}-${album.album}`" class="album-card glass-panel">
+								<span class="album-art" aria-hidden="true">♫</span>
+								<div><strong>{{ album.album }}</strong><small>{{ album.artist }}</small></div>
+								<b>{{ album.tracks.length }}</b>
+							</article>
+						</div>
+						<div v-if="renderedAlbums.length < albumGroups.length" class="load-more-row spaced">
+							<NcButton @click="albumLimit += ALBUM_PAGE_SIZE">Show {{ Math.min(ALBUM_PAGE_SIZE, albumGroups.length - renderedAlbums.length) }} more albums</NcButton>
+						</div>
+					</template>
 				</section>
 
 				<section v-else-if="section === 'playlists'" class="page">
@@ -610,6 +711,8 @@ onMounted(async () => {
 					<header class="subhero glass-panel"><p class="eyebrow">Personal settings</p><h1>Your library and providers</h1><p class="muted">These settings belong to the currently signed-in Nextcloud user.</p></header>
 					<section class="glass-panel settings-card">
 						<h2>Music library</h2>
+						<p class="path-summary"><strong>Configured path:</strong> {{ settings.libraryPath }}</p>
+						<p v-if="lastScannedPath" class="path-summary"><strong>Last scanned path:</strong> {{ lastScannedPath }}</p>
 						<label class="field-label" for="library-path">Nextcloud music folder</label>
 						<div class="field-row">
 							<input id="library-path" v-model="settings.libraryPath" class="text-input" type="text" placeholder="/Music">
@@ -626,7 +729,7 @@ onMounted(async () => {
 							<label><span>Discogs personal token</span><input v-model="discogsToken" class="text-input" type="password" :placeholder="settings.discogsConfigured ? 'Configured — enter a new value to replace' : 'Optional'" /></label>
 							<label><span>Last.fm API key</span><input v-model="lastFmKey" class="text-input" type="password" :placeholder="settings.lastFmConfigured ? 'Configured — enter a new value to replace' : 'Optional'" /></label>
 						</div>
-						<div class="review-actions"><NcButton type="primary" :disabled="loading" @click="saveSettings">Save personal settings</NcButton></div>
+						<div class="review-actions"><NcButton type="primary" :disabled="loading" @click="saveSettings()">Save personal settings</NcButton></div>
 					</section>
 				</section>
 			</main>
@@ -642,15 +745,18 @@ onMounted(async () => {
 .hero h1, .subhero h1 { max-width: 820px; margin: 4px 0 12px; font-size: clamp(28px, 3vw, 44px); line-height: 1.08; }
 .subhero { padding: 28px 32px; margin-bottom: 12px; }
 .hero-copy { max-width: 760px; margin: 0; color: var(--color-text-maxcontrast); font-size: 16px; line-height: 1.55; }
+.path-summary { margin: 12px 0 0; color: var(--color-text-maxcontrast); overflow-wrap: anywhere; }
 .eyebrow { margin: 0; color: var(--color-primary-element); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .muted { color: var(--color-text-maxcontrast); }
 .hero-actions, .review-actions, .field-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .notice { max-width: 1380px; margin: 0 auto 12px; padding: 12px 16px; border-radius: var(--border-radius-large); background: var(--color-background-dark); }
 .notice-success { color: var(--color-success-text); }
 .notice-error { color: var(--color-error-text); }
+.notice-warning { color: var(--color-warning-text); }
+.mobile-section-navigation { display: none; }
 .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
-.stat-card { display: flex; flex-direction: column; gap: 4px; padding: 20px; }
-.stat-card span, .stat-card small { color: var(--color-text-maxcontrast); }
+.stat-card { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 20px; }
+.stat-card span, .stat-card small { color: var(--color-text-maxcontrast); overflow-wrap: anywhere; }
 .stat-card strong { font-size: 30px; font-variant-numeric: tabular-nums; }
 .library-panel, .compare-panel, .folder-picker, .settings-card { padding: 24px; }
 .compare-panel, .folder-picker, .settings-card { margin-top: 12px; }
@@ -668,6 +774,8 @@ onMounted(async () => {
 .track-main small { overflow: hidden; color: var(--color-text-maxcontrast); text-overflow: ellipsis; white-space: nowrap; }
 .track-status, .match-badge { padding: 5px 10px; border-radius: 999px; background: var(--color-background-dark); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .track-status[data-status="needs-tags"] { color: var(--color-warning-text); }
+.load-more-row { display: flex; justify-content: center; padding: 16px 0 4px; }
+.result-summary { max-width: 1380px; margin: 0 auto 12px; color: var(--color-text-maxcontrast); }
 .metadata-grid { display: grid; grid-template-columns: 130px minmax(160px, 1fr) minmax(160px, 1fr) 56px; align-items: center; gap: 0; border-top: 1px solid var(--color-border); }
 .metadata-grid > * { min-width: 0; padding: 12px; }
 .metadata-header { border-top: 0; color: var(--color-text-maxcontrast); font-size: 12px; font-weight: 700; text-transform: uppercase; }
@@ -688,8 +796,9 @@ onMounted(async () => {
 .empty-state strong { color: var(--color-main-text); font-size: 18px; }
 .spaced { margin-top: 12px; }
 .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-.album-card { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 16px; }
+.album-card { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-width: 0; padding: 16px; }
 .album-card div { display: grid; min-width: 0; }
+.album-card strong, .album-card small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .album-card small { color: var(--color-text-maxcontrast); }
 .album-art { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 16px; background: var(--color-primary-element-light); font-size: 24px; }
 .simple-list { padding: 8px; }
@@ -708,6 +817,11 @@ onMounted(async () => {
 
 @media (max-width: 900px) {
 	.musiccurator-shell { padding: 12px; }
+	.mobile-section-navigation { position: relative; z-index: 30; display: block; max-width: 1380px; margin: 0 auto 12px; }
+	.mobile-menu-trigger { display: flex; width: 100%; min-height: 44px; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid var(--color-border); border-radius: var(--border-radius-large); background: color-mix(in srgb, var(--color-main-background) 86%, transparent); color: var(--color-main-text); font-weight: 700; text-align: start; backdrop-filter: blur(18px); }
+	.mobile-menu { position: absolute; top: calc(100% + 6px); right: 0; left: 0; display: grid; gap: 4px; padding: 8px; }
+	.mobile-menu button { min-height: 44px; padding: 10px 14px; border: 0; border-radius: var(--border-radius-large); background: transparent; color: var(--color-main-text); text-align: start; }
+	.mobile-menu button:hover, .mobile-menu button:focus-visible, .mobile-menu button.active { background: var(--color-background-hover); color: var(--color-primary-element); }
 	.hero { align-items: stretch; flex-direction: column; padding: 22px; }
 	.stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	.metadata-grid { grid-template-columns: 92px 1fr 1fr 44px; font-size: 13px; }
@@ -718,7 +832,8 @@ onMounted(async () => {
 @media (max-width: 640px) {
 	.stats-grid { grid-template-columns: 1fr 1fr; }
 	.section-heading { align-items: flex-start; flex-direction: column; }
-	.track-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
+	.track-row { grid-template-columns: 40px minmax(0, 1fr); }
+	.track-status { grid-column: 2; justify-self: start; }
 	.metadata-header { display: none; }
 	.metadata-grid:not(.metadata-header) { display: grid; grid-template-columns: 96px 1fr 44px; }
 	.metadata-grid:not(.metadata-header) > :nth-child(4n + 3) { grid-column: 2; padding-top: 0; }
@@ -727,5 +842,6 @@ onMounted(async () => {
 	.arrow { transform: rotate(90deg); text-align: center; }
 	.review-actions { justify-content: stretch; }
 	.folder-grid { grid-template-columns: 1fr; }
+	.library-panel, .compare-panel, .folder-picker, .settings-card { padding: 18px; }
 }
 </style>
