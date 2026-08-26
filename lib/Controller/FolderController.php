@@ -6,6 +6,7 @@ namespace OCA\MusicCurator\Controller;
 
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\OpenAPI;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\Files\FileInfo;
@@ -27,6 +28,7 @@ class FolderController extends Controller {
 	}
 
 	#[NoAdminRequired]
+	#[NoCSRFRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
 	public function folders(string $path = '/'): DataResponse {
 		$userId = $this->userId();
