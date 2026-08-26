@@ -15,9 +15,11 @@ use OCP\AppFramework\OCSController;
  */
 class ApiController extends OCSController {
 	/**
-	 * Lightweight readiness endpoint used during development.
+	 * Lightweight readiness endpoint used during development
 	 *
 	 * @return DataResponse<Http::STATUS_OK, array{app: string, status: string}, array{}>
+	 *
+	 * 200: MusicCurator readiness status returned
 	 */
 	#[NoAdminRequired]
 	#[ApiRoute(verb: 'GET', url: '/api')]
