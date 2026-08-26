@@ -38,14 +38,18 @@ class ClientLogController extends Controller {
 		string $path = '',
 	): DataResponse {
 		$userId = $this->userSession->getUser()?->getUID() ?? 'unknown';
+		$operation = $this->sanitize($operation, 120);
+		$status = max(0, min(599, $status));
+		$path = $this->sanitize($path, 240);
+		$message = $this->sanitize($message, 500);
 
-		$this->logger->warning('MusicCurator frontend request failed', [
+		$this->logger->warning(sprintf('MusicCurator frontend request failed: HTTP %d %s', $status, $operation), [
 			'app' => 'musiccurator',
 			'user' => $userId,
-			'operation' => $this->sanitize($operation, 80),
-			'status' => max(0, min(599, $status)),
-			'path' => $this->sanitize($path, 240),
-			'message' => $this->sanitize($message, 500),
+			'operation' => $operation,
+			'status' => $status,
+			'path' => $path,
+			'message' => $message,
 		]);
 
 		return new DataResponse(['logged' => true]);
