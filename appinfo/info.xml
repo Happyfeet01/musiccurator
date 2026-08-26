@@ -12,7 +12,7 @@ organize files into album or playlist folders, and keep every destructive action
 The project is designed as a companion for Nextcloud Music. MusicCurator manages the library;
 Nextcloud Music remains responsible for playback.
 	]]></description>
-	<version>0.2.0</version>
+	<version>0.2.1</version>
 	<licence>AGPL-3.0-or-later</licence>
 	<author>Happyfeet01</author>
 	<namespace>MusicCurator</namespace>
