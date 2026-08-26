@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\MusicCurator\Controller;
 
+use OCA\MusicCurator\Service\ProviderCredentialsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -25,6 +26,7 @@ class SettingsController extends Controller {
 		private IRootFolder $rootFolder,
 		private IUserSession $userSession,
 		private IConfig $config,
+		private ProviderCredentialsService $credentials,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request);
@@ -73,33 +75,30 @@ class SettingsController extends Controller {
 
 		$this->config->setUserValue($userId, 'musiccurator', 'library_path', $libraryPath);
 		$this->config->setUserValue($userId, 'musiccurator', 'musicbrainz_enabled', $musicBrainzEnabled === '1' ? '1' : '0');
-		$this->storeSecretIfProvided($userId, 'acoustid_key', $acoustIdKey);
-		$this->storeSecretIfProvided($userId, 'acoustid_user_key', $acoustIdUserKey);
-		$this->storeSecretIfProvided($userId, 'discogs_token', $discogsToken);
-		$this->storeSecretIfProvided($userId, 'lastfm_key', $lastFmKey);
+		$this->credentials->storeIfProvided($userId, 'acoustid_key', $acoustIdKey);
+		$this->credentials->storeIfProvided($userId, 'acoustid_user_key', $acoustIdUserKey);
+		$this->credentials->storeIfProvided($userId, 'discogs_token', $discogsToken);
+		$this->credentials->storeIfProvided($userId, 'lastfm_key', $lastFmKey);
 
 		$this->logger->info('MusicCurator personal settings saved', [
 			'app' => 'musiccurator',
 			'user' => $userId,
 			'library_path' => $libraryPath,
+			'musicbrainz_enabled' => $musicBrainzEnabled === '1',
+			'acoustid_configured' => $this->credentials->configured($userId, 'acoustid_key'),
+			'discogs_configured' => $this->credentials->configured($userId, 'discogs_token'),
+			'lastfm_configured' => $this->credentials->configured($userId, 'lastfm_key'),
 		]);
 
 		return new DataResponse([
 			'libraryPath' => $libraryPath,
 			'libraryConfigured' => true,
 			'musicBrainzEnabled' => $musicBrainzEnabled === '1',
-			'acoustIdConfigured' => $this->config->getUserValue($userId, 'musiccurator', 'acoustid_key', '') !== '',
-			'acoustIdUserConfigured' => $this->config->getUserValue($userId, 'musiccurator', 'acoustid_user_key', '') !== '',
-			'discogsConfigured' => $this->config->getUserValue($userId, 'musiccurator', 'discogs_token', '') !== '',
-			'lastFmConfigured' => $this->config->getUserValue($userId, 'musiccurator', 'lastfm_key', '') !== '',
+			'acoustIdConfigured' => $this->credentials->configured($userId, 'acoustid_key'),
+			'acoustIdUserConfigured' => $this->credentials->configured($userId, 'acoustid_user_key'),
+			'discogsConfigured' => $this->credentials->configured($userId, 'discogs_token'),
+			'lastFmConfigured' => $this->credentials->configured($userId, 'lastfm_key'),
 		]);
-	}
-
-	private function storeSecretIfProvided(string $userId, string $key, string $value): void {
-		$value = trim($value);
-		if ($value !== '') {
-			$this->config->setUserValue($userId, 'musiccurator', $key, $value);
-		}
 	}
 
 	private function userId(): string {
