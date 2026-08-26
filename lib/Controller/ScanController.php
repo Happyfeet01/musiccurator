@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\MusicCurator\Controller;
 
 use OCA\MusicCurator\Service\AudioTagReader;
+use OCA\MusicCurator\Service\ScanIndexService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -32,6 +33,7 @@ class ScanController extends Controller {
 		private IUserSession $userSession,
 		private IConfig $config,
 		private AudioTagReader $tagReader,
+		private ScanIndexService $scanIndex,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request);
@@ -83,7 +85,10 @@ class ScanController extends Controller {
 
 			$tracks = [];
 			$playlists = [];
-			$this->scanFolder($node, $libraryPath, $tracks, $playlists);
+			$cacheHits = 0;
+			$freshReads = 0;
+			$index = $this->scanIndex->loadForUser($userId);
+			$this->scanFolder($node, $libraryPath, $userId, $index, $tracks, $playlists, $cacheHits, $freshReads);
 
 			$untagged = 0;
 			$albumKeys = [];
@@ -104,6 +109,8 @@ class ScanController extends Controller {
 				'tracks' => count($tracks),
 				'albums' => count($albumKeys),
 				'playlists' => count($playlists),
+				'cache_hits' => $cacheHits,
+				'fresh_tag_reads' => $freshReads,
 				'duration_ms' => $durationMs,
 			]);
 
@@ -116,6 +123,11 @@ class ScanController extends Controller {
 					'needsReview' => $untagged,
 					'albums' => count($albumKeys),
 					'playlists' => count($playlists),
+				],
+				'cache' => [
+					'hits' => $cacheHits,
+					'freshReads' => $freshReads,
+					'knownFiles' => count($index),
 				],
 				'truncated' => count($tracks) >= self::MAX_TRACKS,
 				'durationMs' => $durationMs,
@@ -143,10 +155,20 @@ class ScanController extends Controller {
 	}
 
 	/**
+	 * @param array<int, array<string, mixed>> $index
 	 * @param list<array<string, mixed>> $tracks
 	 * @param list<array{path: string, name: string}> $playlists
 	 */
-	private function scanFolder(Folder $folder, string $relativePath, array &$tracks, array &$playlists): void {
+	private function scanFolder(
+		Folder $folder,
+		string $relativePath,
+		string $userId,
+		array &$index,
+		array &$tracks,
+		array &$playlists,
+		int &$cacheHits,
+		int &$freshReads,
+	): void {
 		if (count($tracks) >= self::MAX_TRACKS) {
 			return;
 		}
@@ -158,7 +180,7 @@ class ScanController extends Controller {
 
 			$path = $this->joinUserPath($relativePath, $node->getName());
 			if ($node instanceof Folder) {
-				$this->scanFolder($node, $path, $tracks, $playlists);
+				$this->scanFolder($node, $path, $userId, $index, $tracks, $playlists, $cacheHits, $freshReads);
 				continue;
 			}
 			if (!$node instanceof File) {
@@ -174,17 +196,50 @@ class ScanController extends Controller {
 				continue;
 			}
 
+			$fileId = $node->getId();
+			$etag = $node->getEtag();
+			$size = (int)$node->getSize();
+			$mtime = $node->getMTime();
+			$existingRow = $index[$fileId] ?? null;
+			$cached = $existingRow !== null
+				? $this->scanIndex->cachedTrack($existingRow, $etag, $size, $mtime)
+				: null;
+
+			if ($cached !== null) {
+				$cached['path'] = $path;
+				$cached['filename'] = $node->getName();
+				$cached['extension'] = $extension;
+				$cached['mime'] = $node->getMimeType();
+				$cached['size'] = $size;
+				$cached['mtime'] = $mtime;
+				$tracks[] = $cached;
+				++$cacheHits;
+				$this->scanIndex->updateSeenPath($existingRow, $path);
+				continue;
+			}
+
 			$tags = $this->tagReader->read($node);
-			$tracks[] = [
+			$track = [
 				'path' => $path,
 				'filename' => $node->getName(),
 				'extension' => $extension,
 				'mime' => $node->getMimeType(),
-				'size' => $node->getSize(),
-				'mtime' => $node->getMTime(),
+				'size' => $size,
+				'mtime' => $mtime,
+				'fileId' => $fileId,
 				...$tags,
 				'status' => $tags['title'] !== '' && $tags['artist'] !== '' ? 'Metadata' : 'Needs tags',
+				'scanState' => 'fresh',
+				'scannedAt' => time(),
+				'musicBrainzRecordingId' => (string)($existingRow['mb_recording_id'] ?? ''),
+				'musicBrainzReleaseId' => (string)($existingRow['mb_release_id'] ?? ''),
+				'musicBrainzScore' => (int)($existingRow['mb_score'] ?? 0),
+				'musicBrainzMatchedAt' => (int)($existingRow['matched_at'] ?? 0),
 			];
+
+			$this->scanIndex->storeTrack($userId, $fileId, $path, $etag, $size, $mtime, $track, $existingRow);
+			$tracks[] = $track;
+			++$freshReads;
 		}
 	}
 
