@@ -75,7 +75,7 @@ class SettingsController extends Controller {
 		$this->config->setUserValue($userId, 'musiccurator', 'musicbrainz_enabled', $musicBrainzEnabled === '1' ? '1' : '0');
 		$this->storeSecretIfProvided($userId, 'acoustid_key', $acoustIdKey);
 		$this->storeSecretIfProvided($userId, 'acoustid_user_key', $acoustIdUserKey);
-		$this->storeSecretIfProvided($userId, 'musiccurator', 'discogs_token', $discogsToken);
+		$this->storeSecretIfProvided($userId, 'discogs_token', $discogsToken);
 		$this->storeSecretIfProvided($userId, 'lastfm_key', $lastFmKey);
 
 		$this->logger->info('MusicCurator personal settings saved', [
