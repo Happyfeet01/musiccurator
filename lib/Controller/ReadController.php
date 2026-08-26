@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace OCA\MusicCurator\Controller;
 
 use OCA\MusicCurator\Service\AudioTagReader;
-use OCA\MusicCurator\Service\MusicBrainzService;
+use OCA\MusicCurator\Service\MetadataSearchService;
+use OCA\MusicCurator\Service\ProviderCredentialsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -31,7 +32,8 @@ class ReadController extends Controller {
 		private IUserSession $userSession,
 		private IConfig $config,
 		private AudioTagReader $tagReader,
-		private MusicBrainzService $musicBrainz,
+		private MetadataSearchService $metadataSearch,
+		private ProviderCredentialsService $credentials,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request);
@@ -48,10 +50,10 @@ class ReadController extends Controller {
 			'libraryPath' => $libraryPath,
 			'libraryConfigured' => $libraryPath !== '',
 			'musicBrainzEnabled' => $this->config->getUserValue($userId, 'musiccurator', 'musicbrainz_enabled', '1') === '1',
-			'acoustIdConfigured' => $this->config->getUserValue($userId, 'musiccurator', 'acoustid_key', '') !== '',
-			'acoustIdUserConfigured' => $this->config->getUserValue($userId, 'musiccurator', 'acoustid_user_key', '') !== '',
-			'discogsConfigured' => $this->config->getUserValue($userId, 'musiccurator', 'discogs_token', '') !== '',
-			'lastFmConfigured' => $this->config->getUserValue($userId, 'musiccurator', 'lastfm_key', '') !== '',
+			'acoustIdConfigured' => $this->credentials->configured($userId, 'acoustid_key'),
+			'acoustIdUserConfigured' => $this->credentials->configured($userId, 'acoustid_user_key'),
+			'discogsConfigured' => $this->credentials->configured($userId, 'discogs_token'),
+			'lastFmConfigured' => $this->credentials->configured($userId, 'lastfm_key'),
 		]);
 	}
 
@@ -69,11 +71,8 @@ class ReadController extends Controller {
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	public function musicBrainz(string $path): DataResponse {
+	public function metadata(string $path): DataResponse {
 		$userId = $this->userId();
-		if ($this->config->getUserValue($userId, 'musiccurator', 'musicbrainz_enabled', '1') !== '1') {
-			return new DataResponse(['message' => 'MusicBrainz is disabled in your personal settings.'], 400);
-		}
 
 		try {
 			$path = $this->normalizePath($path);
@@ -86,7 +85,7 @@ class ReadController extends Controller {
 			$tags = $this->tagReader->read($node);
 			$title = $tags['title'] !== '' ? $tags['title'] : pathinfo($node->getName(), PATHINFO_FILENAME);
 
-			$this->logger->info('MusicCurator MusicBrainz lookup started', [
+			$this->logger->info('MusicCurator metadata lookup started', [
 				'app' => 'musiccurator',
 				'user' => $userId,
 				'path' => $path,
@@ -94,18 +93,19 @@ class ReadController extends Controller {
 				'artist' => $tags['artist'],
 			]);
 
-			$results = $this->musicBrainz->search($title, $tags['artist'], $tags['album']);
+			$data = $this->metadataSearch->search($userId, $node, $tags, $title);
 
-			$this->logger->info('MusicCurator MusicBrainz lookup completed', [
+			$this->logger->info('MusicCurator metadata lookup completed', [
 				'app' => 'musiccurator',
 				'user' => $userId,
 				'path' => $path,
-				'results' => count($results),
+				'results' => count($data['results']),
+				'providers' => $data['providers'],
 			]);
 
-			return new DataResponse(['results' => $results]);
+			return new DataResponse($data);
 		} catch (Throwable $e) {
-			$this->logger->warning('MusicCurator MusicBrainz lookup failed', [
+			$this->logger->warning('MusicCurator metadata lookup failed', [
 				'app' => 'musiccurator',
 				'user' => $userId,
 				'path' => $path,
@@ -113,8 +113,19 @@ class ReadController extends Controller {
 				'exception' => $e,
 			]);
 
-			return new DataResponse(['message' => 'MusicBrainz lookup failed: ' . $e->getMessage()], 502);
+			return new DataResponse(['message' => 'Metadata lookup failed: ' . $e->getMessage()], 502);
 		}
+	}
+
+	/**
+	 * Backwards-compatible endpoint for development builds that still call
+	 * /api/musicbrainz. It now runs the complete provider search.
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
+	public function musicBrainz(string $path): DataResponse {
+		return $this->metadata($path);
 	}
 
 	private function userId(): string {
