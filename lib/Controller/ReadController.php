@@ -17,14 +17,11 @@ use OCP\Files\Node;
 use OCP\IConfig;
 use OCP\IRequest;
 use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * Read-only AJAX endpoints used by the MusicCurator frontend.
- *
- * These methods never mutate user data. Keeping them separate makes the
- * temporary CSRF exemption explicit while all state-changing POST routes
- * remain CSRF protected.
  */
 class ReadController extends Controller {
 	public function __construct(
@@ -35,6 +32,7 @@ class ReadController extends Controller {
 		private IConfig $config,
 		private AudioTagReader $tagReader,
 		private MusicBrainzService $musicBrainz,
+		private LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -87,10 +85,34 @@ class ReadController extends Controller {
 
 			$tags = $this->tagReader->read($node);
 			$title = $tags['title'] !== '' ? $tags['title'] : pathinfo($node->getName(), PATHINFO_FILENAME);
+
+			$this->logger->info('MusicCurator MusicBrainz lookup started', [
+				'app' => 'musiccurator',
+				'user' => $userId,
+				'path' => $path,
+				'title' => $title,
+				'artist' => $tags['artist'],
+			]);
+
 			$results = $this->musicBrainz->search($title, $tags['artist'], $tags['album']);
+
+			$this->logger->info('MusicCurator MusicBrainz lookup completed', [
+				'app' => 'musiccurator',
+				'user' => $userId,
+				'path' => $path,
+				'results' => count($results),
+			]);
 
 			return new DataResponse(['results' => $results]);
 		} catch (Throwable $e) {
+			$this->logger->warning('MusicCurator MusicBrainz lookup failed', [
+				'app' => 'musiccurator',
+				'user' => $userId,
+				'path' => $path,
+				'library_path' => $this->libraryPath($userId),
+				'exception' => $e,
+			]);
+
 			return new DataResponse(['message' => 'MusicBrainz lookup failed: ' . $e->getMessage()], 502);
 		}
 	}
@@ -123,7 +145,7 @@ class ReadController extends Controller {
 			throw new \RuntimeException('No music folder is configured.');
 		}
 		if ($path !== $library && !str_starts_with($path, $library . '/')) {
-			throw new \RuntimeException('The requested path is outside the configured music library.');
+			throw new \RuntimeException(sprintf('The requested path "%s" is outside the configured music library "%s".', $path, $library));
 		}
 	}
 
