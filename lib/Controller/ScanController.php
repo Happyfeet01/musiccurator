@@ -43,8 +43,19 @@ class ScanController extends Controller {
 		$userId = $this->userId();
 		$startedAt = microtime(true);
 
+		if (trim($libraryPath) === '') {
+			$libraryPath = trim($this->config->getUserValue($userId, 'musiccurator', 'library_path', ''));
+		}
+
 		if ($libraryPath === '') {
-			$libraryPath = $this->config->getUserValue($userId, 'musiccurator', 'library_path', '/Music');
+			$this->logger->warning('MusicCurator scan rejected because no music folder is configured', [
+				'app' => 'musiccurator',
+				'user' => $userId,
+			]);
+
+			return new DataResponse([
+				'message' => 'No music folder is configured. Choose a music folder first.',
+			], Http::STATUS_BAD_REQUEST);
 		}
 
 		try {
@@ -115,8 +126,8 @@ class ScanController extends Controller {
 			]);
 
 			return new DataResponse([
-				'message' => 'Library scan failed: ' . $e->getMessage(),
-			], Http::STATUS_BAD_REQUEST);
+				'message' => sprintf('The selected music folder "%s" does not exist or cannot be accessed.', $libraryPath),
+			], Http::STATUS_NOT_FOUND);
 		}
 	}
 
