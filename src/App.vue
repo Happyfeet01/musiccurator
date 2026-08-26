@@ -64,6 +64,7 @@ type Change = {
 
 type Settings = {
 	libraryPath: string
+	libraryConfigured?: boolean
 	musicBrainzEnabled: boolean
 	acoustIdConfigured: boolean
 	acoustIdUserConfigured: boolean
@@ -92,6 +93,7 @@ const section = ref<Section>('library')
 const mobileMenuOpen = ref(false)
 const onlyNeedsAttention = ref(false)
 const loading = ref(false)
+const musicBrainzLoading = ref(false)
 const message = ref('')
 const error = ref('')
 const tracks = ref<Track[]>([])
@@ -110,7 +112,8 @@ const albumLimit = ref(ALBUM_PAGE_SIZE)
 const stats = ref({ tracks: 0, needsReview: 0, albums: 0, playlists: 0 })
 
 const settings = ref<Settings>({
-	libraryPath: '/Music',
+	libraryPath: '',
+	libraryConfigured: false,
 	musicBrainzEnabled: true,
 	acoustIdConfigured: false,
 	acoustIdUserConfigured: false,
@@ -249,14 +252,19 @@ async function saveSettings(showSuccessMessage = true): Promise<boolean> {
 }
 
 async function scanLibrary(): Promise<void> {
+	if (!settings.value.libraryPath.trim()) {
+		error.value = 'Choose a music folder first.'
+		return
+	}
 	if (settings.value.libraryPath === '/' && !window.confirm('The selected folder is your Nextcloud root. This may scan thousands of files and take a while. Continue?')) {
 		return
 	}
 
 	loading.value = true
 	clearNotice()
+	let firstTrack: Track | null = null
 	try {
-		const data = await apiRequest<ScanResponse>('/api/library/scan-selected', {
+		const data = await apiRequest<ScanResponse>('/api/library/scan', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
 			body: formBody({ libraryPath: settings.value.libraryPath }),
@@ -265,13 +273,15 @@ async function scanLibrary(): Promise<void> {
 		playlists.value = data.playlists
 		stats.value = data.stats
 		settings.value.libraryPath = data.libraryPath
+		settings.value.libraryConfigured = true
 		lastScannedPath.value = data.libraryPath
 		scanDurationMs.value = data.durationMs ?? null
 		truncated.value = data.truncated
 		hasScanned.value = true
 		trackLimit.value = TRACK_PAGE_SIZE
 		albumLimit.value = ALBUM_PAGE_SIZE
-		selectedTrack.value = tracks.value[0] ?? null
+		firstTrack = tracks.value[0] ?? null
+		selectedTrack.value = null
 		resetMatch()
 		const duration = scanDurationMs.value !== null ? ` in ${(scanDurationMs.value / 1000).toFixed(1)} s` : ''
 		message.value = `${data.tracks.length} audio files scanned from ${data.libraryPath}${duration}.`
@@ -279,35 +289,45 @@ async function scanLibrary(): Promise<void> {
 		setError(e)
 	} finally {
 		loading.value = false
+		if (firstTrack) {
+			selectTrack(firstTrack, false)
+		}
 	}
 }
 
-function selectTrack(track: Track): void {
-	selectedTrack.value = track
+function selectTrack(track: Track, clearMessages = true): void {
+	selectedTrack.value = { ...track }
 	resetMatch()
+	if (clearMessages) {
+		clearNotice()
+	}
 }
 
 async function searchMusicBrainz(): Promise<void> {
-	if (!selectedTrack.value) {
+	const track = selectedTrack.value
+	if (!track || musicBrainzLoading.value) {
 		return
 	}
-	loading.value = true
+	musicBrainzLoading.value = true
 	clearNotice()
-	resetMatch(false)
+	resetMatch()
 	try {
-		const data = await apiRequest<{ results: MusicBrainzSuggestion[] }>('/api/musicbrainz', {}, { path: selectedTrack.value.path })
+		const data = await apiRequest<{ results: MusicBrainzSuggestion[] }>('/api/musicbrainz', {}, { path: track.path })
+		if (selectedTrack.value?.path !== track.path) {
+			return
+		}
 		suggestions.value = data.results
 		selectedSuggestion.value = data.results[0] ?? null
 		if (selectedSuggestion.value) {
 			await previewMove()
-			message.value = `${data.results.length} MusicBrainz candidate${data.results.length === 1 ? '' : 's'} found.`
+			message.value = `${data.results.length} MusicBrainz candidate${data.results.length === 1 ? '' : 's'} found for ${track.title || track.filename}.`
 		} else {
-			message.value = 'MusicBrainz returned no matching recordings.'
+			message.value = `MusicBrainz returned no matching recordings for ${track.title || track.filename}.`
 		}
 	} catch (e) {
 		setError(e)
 	} finally {
-		loading.value = false
+		musicBrainzLoading.value = false
 	}
 }
 
@@ -377,8 +397,9 @@ async function loadChanges(): Promise<void> {
 async function openFolderPicker(): Promise<void> {
 	folderPickerOpen.value = true
 	clearNotice()
+	const startPath = settings.value.libraryPath.trim() || '/'
 	try {
-		await browseFolder(settings.value.libraryPath)
+		await browseFolder(startPath)
 	} catch {
 		await browseFolder('/')
 	}
@@ -513,10 +534,10 @@ onMounted(async () => {
 								Scan audio files, inspect the tags already stored in them, compare them with MusicBrainz,
 								and preview every file move before anything changes.
 							</p>
-							<p class="path-summary"><strong>Configured library:</strong> {{ settings.libraryPath }}</p>
+							<p class="path-summary"><strong>Configured library:</strong> {{ settings.libraryPath || 'Not configured' }}</p>
 						</div>
 						<div class="hero-actions">
-							<NcButton type="primary" :disabled="loading" @click="scanLibrary">
+							<NcButton type="primary" :disabled="loading || !settings.libraryPath" @click="scanLibrary">
 								{{ loading ? 'Working…' : 'Scan library' }}
 							</NcButton>
 							<NcButton :disabled="loading" @click="openFolderPicker">Choose music folder</NcButton>
@@ -548,7 +569,7 @@ onMounted(async () => {
 						<article class="stat-card glass-panel">
 							<span>Tracks</span>
 							<strong>{{ hasScanned ? stats.tracks : '—' }}</strong>
-							<small>{{ hasScanned ? `last scan: ${lastScannedPath}` : `configured: ${settings.libraryPath}` }}</small>
+							<small>{{ hasScanned ? `last scan: ${lastScannedPath}` : `configured: ${settings.libraryPath || 'none'}` }}</small>
 						</article>
 						<article class="stat-card glass-panel">
 							<span>Needs tags</span>
@@ -610,7 +631,7 @@ onMounted(async () => {
 						</div>
 					</section>
 
-					<section v-if="selectedTrack" class="glass-panel compare-panel">
+					<section v-if="selectedTrack" :key="selectedTrack.path" class="glass-panel compare-panel">
 						<div class="section-heading">
 							<div>
 								<p class="eyebrow">Selected track</p>
@@ -619,7 +640,9 @@ onMounted(async () => {
 							</div>
 							<div class="hero-actions">
 								<span v-if="selectedSuggestion" class="match-badge">{{ selectedSuggestion.score }}% MusicBrainz</span>
-								<NcButton :disabled="loading || !settings.musicBrainzEnabled" @click="searchMusicBrainz">Search MusicBrainz</NcButton>
+								<NcButton :disabled="musicBrainzLoading || !settings.musicBrainzEnabled" @click="searchMusicBrainz">
+									{{ musicBrainzLoading ? 'Searching…' : 'Search MusicBrainz' }}
+								</NcButton>
 							</div>
 						</div>
 
@@ -711,12 +734,13 @@ onMounted(async () => {
 					<header class="subhero glass-panel"><p class="eyebrow">Personal settings</p><h1>Your library and providers</h1><p class="muted">These settings belong to the currently signed-in Nextcloud user.</p></header>
 					<section class="glass-panel settings-card">
 						<h2>Music library</h2>
-						<p class="path-summary"><strong>Configured path:</strong> {{ settings.libraryPath }}</p>
+						<p class="path-summary"><strong>Configured path:</strong> {{ settings.libraryPath || 'Not configured' }}</p>
 						<p v-if="lastScannedPath" class="path-summary"><strong>Last scanned path:</strong> {{ lastScannedPath }}</p>
 						<label class="field-label" for="library-path">Nextcloud music folder</label>
 						<div class="field-row">
-							<input id="library-path" v-model="settings.libraryPath" class="text-input" type="text" placeholder="/Music">
-							<NcButton @click="openFolderPicker">Browse</NcButton>
+							<input id="library-path" v-model="settings.libraryPath" class="text-input" type="text" placeholder="/Musik">
+							<NcButton :disabled="loading" @click="openFolderPicker">Browse</NcButton>
+							<NcButton type="primary" :disabled="loading || !settings.libraryPath.trim()" @click="saveSettings()">Save folder</NcButton>
 						</div>
 					</section>
 					<section class="glass-panel settings-card">
