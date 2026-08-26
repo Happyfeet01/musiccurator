@@ -33,7 +33,7 @@ class SettingsController extends Controller {
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
 	public function saveSettings(
-		string $libraryPath = '/Music',
+		string $libraryPath = '',
 		string $musicBrainzEnabled = '1',
 		string $acoustIdKey = '',
 		string $acoustIdUserKey = '',
@@ -41,6 +41,16 @@ class SettingsController extends Controller {
 		string $lastFmKey = '',
 	): DataResponse {
 		$userId = $this->userId();
+		$libraryPath = trim($libraryPath);
+
+		if ($libraryPath === '') {
+			$this->logger->warning('MusicCurator settings save rejected because no music folder was selected', [
+				'app' => 'musiccurator',
+				'user' => $userId,
+			]);
+
+			return new DataResponse(['message' => 'Choose a music folder before saving.'], Http::STATUS_BAD_REQUEST);
+		}
 
 		try {
 			$libraryPath = $this->normalizePath($libraryPath);
@@ -56,14 +66,16 @@ class SettingsController extends Controller {
 				'exception' => $e,
 			]);
 
-			return new DataResponse(['message' => 'The selected music folder does not exist in your Nextcloud files.'], Http::STATUS_BAD_REQUEST);
+			return new DataResponse([
+				'message' => sprintf('The selected music folder "%s" does not exist in your Nextcloud files.', $libraryPath),
+			], Http::STATUS_BAD_REQUEST);
 		}
 
 		$this->config->setUserValue($userId, 'musiccurator', 'library_path', $libraryPath);
 		$this->config->setUserValue($userId, 'musiccurator', 'musicbrainz_enabled', $musicBrainzEnabled === '1' ? '1' : '0');
 		$this->storeSecretIfProvided($userId, 'acoustid_key', $acoustIdKey);
 		$this->storeSecretIfProvided($userId, 'acoustid_user_key', $acoustIdUserKey);
-		$this->storeSecretIfProvided($userId, 'discogs_token', $discogsToken);
+		$this->storeSecretIfProvided($userId, 'musiccurator', 'discogs_token', $discogsToken);
 		$this->storeSecretIfProvided($userId, 'lastfm_key', $lastFmKey);
 
 		$this->logger->info('MusicCurator personal settings saved', [
@@ -74,6 +86,7 @@ class SettingsController extends Controller {
 
 		return new DataResponse([
 			'libraryPath' => $libraryPath,
+			'libraryConfigured' => true,
 			'musicBrainzEnabled' => $musicBrainzEnabled === '1',
 			'acoustIdConfigured' => $this->config->getUserValue($userId, 'musiccurator', 'acoustid_key', '') !== '',
 			'acoustIdUserConfigured' => $this->config->getUserValue($userId, 'musiccurator', 'acoustid_user_key', '') !== '',
