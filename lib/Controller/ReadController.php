@@ -44,9 +44,11 @@ class ReadController extends Controller {
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
 	public function settings(): DataResponse {
 		$userId = $this->userId();
+		$libraryPath = $this->libraryPath($userId);
 
 		return new DataResponse([
-			'libraryPath' => $this->libraryPath($userId),
+			'libraryPath' => $libraryPath,
+			'libraryConfigured' => $libraryPath !== '',
 			'musicBrainzEnabled' => $this->config->getUserValue($userId, 'musiccurator', 'musicbrainz_enabled', '1') === '1',
 			'acoustIdConfigured' => $this->config->getUserValue($userId, 'musiccurator', 'acoustid_key', '') !== '',
 			'acoustIdUserConfigured' => $this->config->getUserValue($userId, 'musiccurator', 'acoustid_user_key', '') !== '',
@@ -110,13 +112,15 @@ class ReadController extends Controller {
 	}
 
 	private function libraryPath(string $userId): string {
-		return $this->normalizePath($this->config->getUserValue($userId, 'musiccurator', 'library_path', '/Music'));
+		$stored = trim($this->config->getUserValue($userId, 'musiccurator', 'library_path', ''));
+
+		return $stored === '' ? '' : $this->normalizePath($stored);
 	}
 
 	private function assertInsideLibrary(string $userId, string $path): void {
 		$library = rtrim($this->libraryPath($userId), '/');
 		if ($library === '') {
-			return;
+			throw new \RuntimeException('No music folder is configured.');
 		}
 		if ($path !== $library && !str_starts_with($path, $library . '/')) {
 			throw new \RuntimeException('The requested path is outside the configured music library.');
