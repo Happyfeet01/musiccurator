@@ -8,7 +8,7 @@ return [
 		['name' => 'settings#saveSettings', 'url' => '/api/settings', 'verb' => 'POST'],
 		['name' => 'folder#folders', 'url' => '/api/folders', 'verb' => 'GET'],
 		['name' => 'scan#scan', 'url' => '/api/library/scan', 'verb' => 'POST'],
-		['name' => 'scan#scanSelected', 'url' => '/api/library/scan-selected', 'verb' => 'POST', 'postfix' => 'selected'],
+		['name' => 'scan#scanSelected', 'url' => '/api/library/scan-selected', 'verb' => 'POST'],
 		['name' => 'read#musicBrainz', 'url' => '/api/musicbrainz', 'verb' => 'GET'],
 		['name' => 'library#previewMove', 'url' => '/api/library/preview-move', 'verb' => 'POST'],
 		['name' => 'library#move', 'url' => '/api/library/move', 'verb' => 'POST'],
