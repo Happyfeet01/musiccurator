@@ -53,6 +53,18 @@ type MusicBrainzSuggestion = {
 	releaseId: string
 	releaseGroupId: string
 	score: number
+	source?: string
+	sourceUrl?: string
+}
+
+type ProviderStatus = {
+	name: string
+	configured: boolean
+	attempted: boolean
+	ok: boolean
+	results: number
+	message: string
+	durationMs: number
 }
 
 type Change = {
@@ -102,6 +114,7 @@ const changes = ref<Change[]>([])
 const selectedTrack = ref<Track | null>(null)
 const suggestions = ref<MusicBrainzSuggestion[]>([])
 const selectedSuggestion = ref<MusicBrainzSuggestion | null>(null)
+const providerStatuses = ref<ProviderStatus[]>([])
 const proposedPath = ref('')
 const hasScanned = ref(false)
 const truncated = ref(false)
@@ -312,17 +325,18 @@ async function searchMusicBrainz(): Promise<void> {
 	clearNotice()
 	resetMatch()
 	try {
-		const data = await apiRequest<{ results: MusicBrainzSuggestion[] }>('/api/musicbrainz', {}, { path: track.path })
+		const data = await apiRequest<{ results: MusicBrainzSuggestion[], providers: ProviderStatus[] }>('/api/metadata', {}, { path: track.path })
 		if (selectedTrack.value?.path !== track.path) {
 			return
 		}
 		suggestions.value = data.results
+		providerStatuses.value = data.providers ?? []
 		selectedSuggestion.value = data.results[0] ?? null
 		if (selectedSuggestion.value) {
 			await previewMove()
-			message.value = `${data.results.length} MusicBrainz candidate${data.results.length === 1 ? '' : 's'} found for ${track.title || track.filename}.`
+			message.value = `${data.results.length} metadata candidate${data.results.length === 1 ? '' : 's'} found for ${track.title || track.filename}.`
 		} else {
-			message.value = `MusicBrainz returned no matching recordings for ${track.title || track.filename}.`
+			message.value = `No metadata candidates were found for ${track.title || track.filename}. Check the provider status below.`
 		}
 	} catch (e) {
 		setError(e)
@@ -442,6 +456,7 @@ function resetMatch(clearSuggestions = true): void {
 	if (clearSuggestions) {
 		suggestions.value = []
 		selectedSuggestion.value = null
+		providerStatuses.value = []
 	}
 	proposedPath.value = ''
 	useTitle.value = true
@@ -531,7 +546,7 @@ onMounted(async () => {
 							<p class="eyebrow">Music library manager</p>
 							<h1>Your real Nextcloud music library.</h1>
 							<p class="hero-copy">
-								Scan audio files, inspect the tags already stored in them, compare them with MusicBrainz,
+								Scan audio files, inspect the tags already stored in them, compare them with configured metadata providers,
 								and preview every file move before anything changes.
 							</p>
 							<p class="path-summary"><strong>Configured library:</strong> {{ settings.libraryPath || 'Not configured' }}</p>
@@ -639,29 +654,37 @@ onMounted(async () => {
 								<small class="muted">{{ selectedTrack.path }}</small>
 							</div>
 							<div class="hero-actions">
-								<span v-if="selectedSuggestion" class="match-badge">{{ selectedSuggestion.score }}% MusicBrainz</span>
-								<NcButton :disabled="musicBrainzLoading || !settings.musicBrainzEnabled" @click="searchMusicBrainz">
-									{{ musicBrainzLoading ? 'Searching…' : 'Search MusicBrainz' }}
+								<span v-if="selectedSuggestion" class="match-badge">{{ selectedSuggestion.score }}% · {{ selectedSuggestion.source || 'Metadata' }}</span>
+								<NcButton :disabled="musicBrainzLoading" @click="searchMusicBrainz">
+									{{ musicBrainzLoading ? 'Searching…' : 'Search metadata' }}
 								</NcButton>
+							</div>
+						</div>
+
+						<div v-if="providerStatuses.length" class="provider-status-grid">
+							<div v-for="provider in providerStatuses" :key="provider.name" class="provider-status" :data-ok="provider.ok ? 'yes' : 'no'">
+								<strong>{{ provider.name }}</strong>
+								<small v-if="provider.ok">{{ provider.results }} result{{ provider.results === 1 ? '' : 's' }} · {{ provider.durationMs }} ms</small>
+								<small v-else>{{ provider.message || (provider.configured ? 'Provider unavailable' : 'Not configured') }}</small>
 							</div>
 						</div>
 
 						<div v-if="suggestions.length > 1" class="candidate-list">
 							<button
 								v-for="candidate in suggestions"
-								:key="`${candidate.id}-${candidate.releaseId}`"
+								:key="`${candidate.source}-${candidate.id}-${candidate.releaseId}`"
 								type="button"
 								class="candidate"
-								:class="{ selected: selectedSuggestion?.id === candidate.id && selectedSuggestion?.releaseId === candidate.releaseId }"
+								:class="{ selected: selectedSuggestion?.source === candidate.source && selectedSuggestion?.id === candidate.id && selectedSuggestion?.releaseId === candidate.releaseId }"
 								@click="chooseSuggestion(candidate)">
-								<strong>{{ candidate.title }}</strong>
+								<strong>{{ candidate.title || selectedTrack.title || selectedTrack.filename }}</strong>
 								<span>{{ candidate.artist || 'Unknown artist' }} · {{ candidate.album || 'Unknown release' }}</span>
-								<small>{{ candidate.score }}%</small>
+								<small>{{ candidate.source || 'Metadata' }} · {{ candidate.score }}%</small>
 							</button>
 						</div>
 
 						<div class="metadata-grid metadata-header" aria-hidden="true">
-							<span>Field</span><span>Current file</span><span>MusicBrainz suggestion</span><span>Use</span>
+							<span>Field</span><span>Current file</span><span>Metadata suggestion</span><span>Use</span>
 						</div>
 						<div class="metadata-grid">
 							<strong>Title</strong><span>{{ currentValue('title') }}</span><span class="suggestion">{{ suggestedValue('title') }}</span><NcCheckboxRadioSwitch v-model="useTitle" :disabled="!selectedSuggestion" @update:model-value="previewMove" />
@@ -692,7 +715,7 @@ onMounted(async () => {
 					<header class="subhero glass-panel">
 						<p class="eyebrow">Albums</p>
 						<h1>Albums found in your tags</h1>
-						<p class="muted">This view is generated from the latest library scan. MusicBrainz completeness checks come next.</p>
+						<p class="muted">This view is generated from the latest library scan. Release matching and completeness checks come next.</p>
 					</header>
 					<div v-if="!hasScanned" class="glass-panel empty-state spaced">Scan your library first.</div>
 					<template v-else>
@@ -746,12 +769,12 @@ onMounted(async () => {
 					<section class="glass-panel settings-card">
 						<h2>Metadata providers</h2>
 						<NcCheckboxRadioSwitch v-model="settings.musicBrainzEnabled" type="switch">Use MusicBrainz</NcCheckboxRadioSwitch>
-						<p class="muted">MusicBrainz read searches do not require a personal API key.</p>
+						<p class="muted">MusicBrainz needs no personal API key. Discogs, Last.fm and AcoustID become active automatically after their credentials are saved. Provider failures no longer block results from the others.</p>
 						<div class="provider-grid">
-							<label><span>AcoustID client/API key</span><input v-model="acoustIdKey" class="text-input" type="password" :placeholder="settings.acoustIdConfigured ? 'Configured — enter a new value to replace' : 'Optional'" /></label>
-							<label><span>AcoustID user key</span><input v-model="acoustIdUserKey" class="text-input" type="password" :placeholder="settings.acoustIdUserConfigured ? 'Configured — enter a new value to replace' : 'Optional'" /></label>
-							<label><span>Discogs personal token</span><input v-model="discogsToken" class="text-input" type="password" :placeholder="settings.discogsConfigured ? 'Configured — enter a new value to replace' : 'Optional'" /></label>
-							<label><span>Last.fm API key</span><input v-model="lastFmKey" class="text-input" type="password" :placeholder="settings.lastFmConfigured ? 'Configured — enter a new value to replace' : 'Optional'" /></label>
+							<label><span>AcoustID client/API key</span><input v-model="acoustIdKey" class="text-input" type="password" :placeholder="settings.acoustIdConfigured ? 'Configured — enter a new value to replace' : 'Optional'" /><small class="muted">Used for fingerprint lookup. Requires fpcalc/Chromaprint on the Nextcloud server.</small></label>
+							<label><span>AcoustID user key</span><input v-model="acoustIdUserKey" class="text-input" type="password" :placeholder="settings.acoustIdUserConfigured ? 'Configured — enter a new value to replace' : 'Optional'" /><small class="muted">Reserved for future fingerprint submissions; not required for lookup.</small></label>
+							<label><span>Discogs personal token</span><input v-model="discogsToken" class="text-input" type="password" :placeholder="settings.discogsConfigured ? 'Configured — enter a new value to replace' : 'Optional'" /><small class="muted">Adds release, compilation and track-list candidates.</small></label>
+							<label><span>Last.fm API key</span><input v-model="lastFmKey" class="text-input" type="password" :placeholder="settings.lastFmConfigured ? 'Configured — enter a new value to replace' : 'Optional'" /><small class="muted">Adds track and artist fallback results.</small></label>
 						</div>
 						<div class="review-actions"><NcButton type="primary" :disabled="loading" @click="saveSettings()">Save personal settings</NcButton></div>
 					</section>
@@ -800,6 +823,11 @@ onMounted(async () => {
 .track-status[data-status="needs-tags"] { color: var(--color-warning-text); }
 .load-more-row { display: flex; justify-content: center; padding: 16px 0 4px; }
 .result-summary { max-width: 1380px; margin: 0 auto 12px; color: var(--color-text-maxcontrast); }
+.provider-status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin: 0 0 18px; }
+.provider-status { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--border-radius-large); background: var(--color-background-dark); }
+.provider-status small { color: var(--color-text-maxcontrast); overflow-wrap: anywhere; }
+.provider-status[data-ok="yes"] strong { color: var(--color-success-text); }
+.provider-status[data-ok="no"] strong { color: var(--color-warning-text); }
 .metadata-grid { display: grid; grid-template-columns: 130px minmax(160px, 1fr) minmax(160px, 1fr) 56px; align-items: center; gap: 0; border-top: 1px solid var(--color-border); }
 .metadata-grid > * { min-width: 0; padding: 12px; }
 .metadata-header { border-top: 0; color: var(--color-text-maxcontrast); font-size: 12px; font-weight: 700; text-transform: uppercase; }
