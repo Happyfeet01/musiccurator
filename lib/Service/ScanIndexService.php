@@ -78,6 +78,15 @@ class ScanIndexService {
 		$metadata = json_encode($track, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 		$now = time();
 
+		// A Nextcloud file can be encountered more than once during one recursive
+		// scan (for example through different virtual paths). The in-memory index
+		// is a snapshot from the start of the scan, so a row inserted earlier in
+		// the same request is not present there. Re-check the unique key before
+		// inserting to make repeated scans/id aliases idempotent.
+		if ($existingRow === null || !isset($existingRow['id'])) {
+			$existingRow = $this->findRow($userId, $fileId);
+		}
+
 		if ($existingRow !== null && isset($existingRow['id'])) {
 			$qb = $this->db->getQueryBuilder();
 			$qb->update(self::TABLE)
@@ -109,6 +118,24 @@ class ScanIndexService {
 				'matched_at' => $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT),
 			]);
 		$qb->executeStatement();
+	}
+
+	/** @return array<string, mixed>|null */
+	private function findRow(string $userId, int $fileId): ?array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from(self::TABLE)
+			->where($qb->expr()->andX(
+				$qb->expr()->eq('user_id', $qb->createNamedParameter($userId)),
+				$qb->expr()->eq('file_id', $qb->createNamedParameter($fileId, IQueryBuilder::PARAM_INT)),
+			))
+			->setMaxResults(1);
+
+		$result = $qb->executeQuery();
+		$row = $result->fetchAssociative();
+		$result->closeCursor();
+
+		return is_array($row) ? $row : null;
 	}
 
 	/** @param array<string, mixed> $existingRow */
