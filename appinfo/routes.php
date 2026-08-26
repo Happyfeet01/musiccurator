@@ -7,6 +7,7 @@ return [
 		['name' => 'read#settings', 'url' => '/api/settings', 'verb' => 'GET'],
 		['name' => 'library#saveSettings', 'url' => '/api/settings', 'verb' => 'POST'],
 		['name' => 'folder#folders', 'url' => '/api/folders', 'verb' => 'GET'],
+		['name' => 'scan#scan', 'url' => '/api/library/scan-selected', 'verb' => 'POST'],
 		['name' => 'library#scan', 'url' => '/api/library/scan', 'verb' => 'POST'],
 		['name' => 'read#musicBrainz', 'url' => '/api/musicbrainz', 'verb' => 'GET'],
 		['name' => 'library#previewMove', 'url' => '/api/library/preview-move', 'verb' => 'POST'],
