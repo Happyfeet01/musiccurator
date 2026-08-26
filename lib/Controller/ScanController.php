@@ -45,9 +45,9 @@ class ScanController extends Controller {
 		$requestedPath = trim($libraryPath);
 		$storedPath = trim($this->config->getUserValue($userId, 'musiccurator', 'library_path', ''));
 
-		// The folder picker persists the canonical per-user path before a scan.
-		// Prefer that saved value so a stale frontend default can never override it.
-		$libraryPath = $storedPath !== '' ? $storedPath : $requestedPath;
+		// If the user has typed or selected a path in the current UI, use that
+		// value and persist it after validation. Otherwise use the saved value.
+		$libraryPath = $requestedPath !== '' ? $requestedPath : $storedPath;
 
 		if ($libraryPath === '') {
 			$this->logger->warning('MusicCurator scan rejected because no music folder is configured', [
@@ -58,15 +58,6 @@ class ScanController extends Controller {
 			return new DataResponse([
 				'message' => 'No music folder is configured. Choose a music folder first.',
 			], Http::STATUS_BAD_REQUEST);
-		}
-
-		if ($requestedPath !== '' && $storedPath !== '' && $requestedPath !== $storedPath) {
-			$this->logger->info('MusicCurator ignored a stale requested scan path and used the saved user path', [
-				'app' => 'musiccurator',
-				'user' => $userId,
-				'requested_path' => $requestedPath,
-				'saved_path' => $storedPath,
-			]);
 		}
 
 		try {
@@ -87,6 +78,7 @@ class ScanController extends Controller {
 				'app' => 'musiccurator',
 				'user' => $userId,
 				'path' => $libraryPath,
+				'previous_saved_path' => $storedPath,
 			]);
 
 			$tracks = [];
