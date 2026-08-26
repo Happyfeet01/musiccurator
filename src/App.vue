@@ -702,8 +702,7 @@ onMounted(async () => {
 .change-row small { color: var(--color-text-maxcontrast); }
 .settings-page { padding-bottom: 24px; }
 .field-label, .provider-grid label { display: grid; gap: 6px; font-weight: 600; }
-.field-row .text-input { flex: 1 1 340px; }
-.text-input { box-sizing: border-box; width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--color-border-maxcontrast); border-radius: var(--border-radius-large); background: var(--color-main-background); color: var(--color-main-text); }
+.text-input { box-sizing: border-box; width: 100%; min-height: 44px; flex: 1 1 340px; padding: 8px 12px; border: 1px solid var(--color-border-maxcontrast); border-radius: var(--border-radius-large); background: var(--color-main-background); color: var(--color-main-text); }
 .text-input:focus { border-color: var(--color-primary-element); outline: 2px solid color-mix(in srgb, var(--color-primary-element) 28%, transparent); }
 .provider-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 18px 0; }
 
