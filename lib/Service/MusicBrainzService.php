@@ -17,26 +17,29 @@ class MusicBrainzService {
 	 */
 	public function search(string $title, string $artist = '', string $album = ''): array {
 		$title = trim($title);
+		$artist = trim($artist);
+		$album = trim($album);
 		if ($title === '') {
 			return [];
 		}
 
+		// Album tags from downloads are often inconsistent (playlist names,
+		// deluxe labels, YouTube titles, etc.). Do not make the release name a
+		// hard MusicBrainz search constraint. Prefer title + artist and use the
+		// existing album only to choose the most plausible release afterwards.
 		$query = ['recording:"' . $this->escapeQuery($title) . '"'];
-		if (trim($artist) !== '') {
+		if ($artist !== '') {
 			$query[] = 'artist:"' . $this->escapeQuery($artist) . '"';
 		}
-		if (trim($album) !== '') {
-			$query[] = 'release:"' . $this->escapeQuery($album) . '"';
-		}
 
-		$url = 'https://musicbrainz.org/ws/2/recording/?fmt=json&limit=5&query=' . rawurlencode(implode(' AND ', $query));
+		$url = 'https://musicbrainz.org/ws/2/recording/?fmt=json&limit=10&query=' . rawurlencode(implode(' AND ', $query));
 		$client = $this->clientService->newClient();
 		$response = $client->get($url, [
 			'headers' => [
 				'Accept' => 'application/json',
 				'User-Agent' => 'MusicCurator/0.1.0 (https://github.com/Happyfeet01/musiccurator)',
 			],
-			'timeout' => 12,
+			'timeout' => 15,
 		]);
 
 		$data = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
@@ -47,11 +50,10 @@ class MusicBrainzService {
 				continue;
 			}
 
-			$release = [];
-			if (is_array($recording['releases'] ?? null) && isset($recording['releases'][0]) && is_array($recording['releases'][0])) {
-				$release = $recording['releases'][0];
-			}
-
+			$release = $this->bestRelease(
+				is_array($recording['releases'] ?? null) ? $recording['releases'] : [],
+				$album,
+			);
 			$releaseGroup = is_array($release['release-group'] ?? null) ? $release['release-group'] : [];
 			$artistCredit = is_array($recording['artist-credit'] ?? null) ? $recording['artist-credit'] : [];
 			$releaseArtistCredit = is_array($release['artist-credit'] ?? null) ? $release['artist-credit'] : [];
@@ -70,9 +72,34 @@ class MusicBrainzService {
 				'releaseGroupId' => (string)($releaseGroup['id'] ?? ''),
 				'score' => max(0, min(100, (int)($recording['score'] ?? 0))),
 			];
+
+			if (count($results) >= 5) {
+				break;
+			}
 		}
 
 		return $results;
+	}
+
+	/**
+	 * @param array<int, mixed> $releases
+	 * @return array<string, mixed>
+	 */
+	private function bestRelease(array $releases, string $preferredAlbum): array {
+		$first = [];
+		foreach ($releases as $release) {
+			if (!is_array($release)) {
+				continue;
+			}
+			if ($first === []) {
+				$first = $release;
+			}
+			if ($preferredAlbum !== '' && strcasecmp(trim((string)($release['title'] ?? '')), $preferredAlbum) === 0) {
+				return $release;
+			}
+		}
+
+		return $first;
 	}
 
 	/**
