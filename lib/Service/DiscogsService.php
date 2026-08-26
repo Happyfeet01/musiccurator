@@ -8,14 +8,14 @@ use OCP\Http\Client\IClientService;
 use RuntimeException;
 
 class DiscogsService {
+	private const RETRYABLE_STATUS_CODES = [429, 500, 502, 503, 504];
+
 	public function __construct(
 		private IClientService $clientService,
 	) {
 	}
 
-	/**
-	 * @return list<array<string, mixed>>
-	 */
+	/** @return list<array<string, mixed>> */
 	public function search(string $title, string $artist, string $album, string $token): array {
 		$title = trim($title);
 		$artist = trim($artist);
@@ -25,6 +25,9 @@ class DiscogsService {
 			return [];
 		}
 
+		// Do not use the local album tag as a hard search condition. Playlist
+		// downloads commonly carry playlist/compilation names that do not match
+		// the original Discogs release. Album similarity is only a score bonus.
 		$params = [
 			'type' => 'release',
 			'track' => $title,
@@ -32,9 +35,6 @@ class DiscogsService {
 		];
 		if ($artist !== '') {
 			$params['artist'] = $artist;
-		}
-		if ($album !== '') {
-			$params['release_title'] = $album;
 		}
 
 		$url = 'https://api.discogs.com/database/search?' . http_build_query($params, '', '&', PHP_QUERY_RFC3986);
@@ -67,12 +67,12 @@ class DiscogsService {
 						$title,
 					);
 				} catch (RuntimeException) {
-					// The search result is still useful if fetching release details fails.
+					// Search metadata alone is still useful if release details fail.
 				}
 			}
 
-			$score = max(55, 94 - ($index * 5));
-			$score += $this->similarityBonus($artist, $releaseArtist, 4);
+			$score = max(55, 92 - ($index * 5));
+			$score += $this->similarityBonus($artist, $releaseArtist, 5);
 			$score += $this->similarityBonus($album, $albumTitle, 2);
 			$score = min(99, $score);
 
@@ -98,25 +98,34 @@ class DiscogsService {
 	/** @return array<string, mixed> */
 	private function requestJson(string $url, string $token): array {
 		$client = $this->clientService->newClient();
-		$response = $client->get($url, [
-			'headers' => [
-				'Accept' => 'application/json',
-				'Authorization' => 'Discogs token=' . $token,
-				'User-Agent' => 'MusicCurator/0.2.0 +https://github.com/Happyfeet01/musiccurator',
-			],
-			'connect_timeout' => 8,
-			'timeout' => 15,
-			'http_errors' => false,
-		]);
+		$lastStatus = 0;
+		for ($attempt = 0; $attempt < 2; ++$attempt) {
+			$response = $client->get($url, [
+				'headers' => [
+					'Accept' => 'application/json',
+					'Authorization' => 'Discogs token=' . $token,
+					'User-Agent' => 'MusicCurator/0.2.0 +https://github.com/Happyfeet01/musiccurator',
+				],
+				'connect_timeout' => 8,
+				'timeout' => 15,
+				'http_errors' => false,
+			]);
 
-		$status = $response->getStatusCode();
-		$body = (string)$response->getBody();
-		if ($status < 200 || $status >= 300) {
-			throw new RuntimeException(sprintf('Discogs returned HTTP %d', $status));
+			$lastStatus = $response->getStatusCode();
+			$body = (string)$response->getBody();
+			if ($lastStatus >= 200 && $lastStatus < 300) {
+				$data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+				return is_array($data) ? $data : [];
+			}
+			if ($attempt === 0 && in_array($lastStatus, self::RETRYABLE_STATUS_CODES, true)) {
+				$retryAfter = (int)$response->getHeader('Retry-After');
+				usleep(max(1_100_000, min(3_000_000, $retryAfter * 1_000_000)));
+				continue;
+			}
+			break;
 		}
 
-		$data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
-		return is_array($data) ? $data : [];
+		throw new RuntimeException(sprintf('Discogs returned HTTP %d', $lastStatus));
 	}
 
 	/** @return array{0: string, 1: string} */
@@ -125,13 +134,10 @@ class DiscogsService {
 		if (!is_array($parts) || count($parts) < 2) {
 			return ['', trim($value)];
 		}
-
 		return [trim((string)$parts[0]), trim((string)$parts[1])];
 	}
 
-	/**
-	 * @param array<int, mixed> $artists
-	 */
+	/** @param array<int, mixed> $artists */
 	private function artistsToString(array $artists): string {
 		$names = [];
 		foreach ($artists as $artist) {
@@ -139,12 +145,10 @@ class DiscogsService {
 				$names[] = trim((string)$artist['name']);
 			}
 		}
-
 		return implode(', ', array_filter($names));
 	}
 
-	/**
-	 * @param array<int, mixed> $tracklist
+	/** @param array<int, mixed> $tracklist
 	 * @return array{0: string, 1: string}
 	 */
 	private function bestTrack(array $tracklist, string $wantedTitle): array {
@@ -152,7 +156,6 @@ class DiscogsService {
 		$bestTitle = $wantedTitle;
 		$bestPosition = '';
 		$bestScore = -1.0;
-
 		foreach ($tracklist as $track) {
 			if (!is_array($track)) {
 				continue;
@@ -169,7 +172,6 @@ class DiscogsService {
 				$bestPosition = trim((string)($track['position'] ?? ''));
 			}
 		}
-
 		return [$bestTitle, $bestScore >= 65.0 ? $bestPosition : ''];
 	}
 
