@@ -1,4 +1,3 @@
-import { fetchRequestToken, getRequestToken } from '@nextcloud/auth'
 import { createApp } from 'vue'
 import App from './App.vue'
 
@@ -22,13 +21,6 @@ function isClientLogRequest(url: string): boolean {
 	return url.includes('/apps/musiccurator/api/client-error')
 }
 
-function compatibilityUrl(url: string): string {
-	// Keep the development frontend compatible with the original scan route.
-	// The backend exposes both URLs, but /api/library/scan existed from the
-	// first functional build and is therefore also safe with stale route caches.
-	return url.replace('/apps/musiccurator/api/library/scan-selected', '/apps/musiccurator/api/library/scan')
-}
-
 async function reportFrontendFailure(url: string, status: number, message: string): Promise<void> {
 	try {
 		const reportUrl = window.OC.generateUrl('/apps/musiccurator/api/client-error')
@@ -46,6 +38,7 @@ async function reportFrontendFailure(url: string, status: number, message: strin
 			headers: {
 				Accept: 'application/json',
 				'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+				'OCS-APIRequest': 'true',
 			},
 			body,
 		})
@@ -54,75 +47,40 @@ async function reportFrontendFailure(url: string, status: number, message: strin
 	}
 }
 
-async function freshRequestToken(forceRefresh = false): Promise<string> {
-	if (!forceRefresh) {
-		const current = getRequestToken()
-		if (current) {
-			return current
-		}
-	}
-
-	return fetchRequestToken()
-}
-
 async function musicCuratorFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
-	const originalUrl = inputUrl(input)
-	if (!isMusicCuratorRequest(originalUrl) || isClientLogRequest(originalUrl)) {
+	const url = inputUrl(input)
+	if (!isMusicCuratorRequest(url)) {
 		return nativeFetch(input, init)
 	}
 
-	const url = compatibilityUrl(originalUrl)
-	const method = (init.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
 	const headers = new Headers(init.headers ?? (input instanceof Request ? input.headers : undefined))
-	let requestInit: RequestInit = { ...init, headers, credentials: init.credentials ?? 'same-origin' }
+	// Nextcloud accepts OCS-APIRequest for authenticated same-origin data
+	// requests as an alternative to a CSRF token. This is more robust than
+	// relying on a global token that can become stale after session refreshes.
+	headers.set('OCS-APIRequest', 'true')
 
-	if (method !== 'GET' && method !== 'HEAD') {
-		try {
-			headers.set('requesttoken', await freshRequestToken())
-		} catch (error) {
-			await reportFrontendFailure(url, 0, `Could not obtain CSRF token: ${String(error)}`)
-		}
+	const requestInit: RequestInit = {
+		...init,
+		headers,
+		credentials: init.credentials ?? 'same-origin',
 	}
 
-	const execute = () => nativeFetch(url, requestInit)
-
 	try {
-		let response = await execute()
-
-		if (method !== 'GET' && method !== 'HEAD' && !response.ok) {
-			const errorText = await response.clone().text().catch(() => '')
-			if (errorText.includes('CSRF check failed')) {
-				try {
-					headers.set('requesttoken', await freshRequestToken(true))
-					requestInit = { ...requestInit, headers }
-					response = await execute()
-				} catch (error) {
-					await reportFrontendFailure(url, response.status, `CSRF token refresh failed: ${String(error)}`)
-				}
-			}
-		}
-
-		if (!response.ok) {
+		const response = await nativeFetch(url, requestInit)
+		if (!response.ok && !isClientLogRequest(url)) {
 			const body = await response.clone().text().catch(() => '')
 			await reportFrontendFailure(url, response.status, body || response.statusText || 'HTTP request failed')
 		}
-
 		return response
 	} catch (error) {
-		await reportFrontendFailure(url, 0, String(error))
+		if (!isClientLogRequest(url)) {
+			await reportFrontendFailure(url, 0, String(error))
+		}
 		throw error
 	}
 }
 
 window.fetch = musicCuratorFetch
 
-void (async () => {
-	try {
-		window.OC.requestToken = await freshRequestToken()
-	} catch {
-		// Individual requests will retry token acquisition and report failures.
-	}
-
-	const app = createApp(App)
-	app.mount('#musiccurator')
-})()
+const app = createApp(App)
+app.mount('#musiccurator')
