@@ -1,17 +1,16 @@
 {
-	"name": "nextcloud/app_template",
-	"description": "An example description",
+	"name": "happyfeet01/musiccurator",
+	"description": "A Nextcloud music library curator for metadata review, tagging and file organization",
 	"license": "AGPL-3.0-or-later",
 	"authors": [
 		{
-			"name": "example",
-			"email": "example@example.com",
-			"homepage": "https://example.com"
+			"name": "Happyfeet01",
+			"homepage": "https://github.com/Happyfeet01"
 		}
 	],
 	"autoload": {
 		"psr-4": {
-			"OCA\\AppTemplate\\": "lib/"
+			"OCA\\MusicCurator\\": "lib/"
 		}
 	},
 	"scripts": {
