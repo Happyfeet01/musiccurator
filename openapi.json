@@ -1,9 +1,9 @@
 {
     "openapi": "3.0.3",
     "info": {
-        "title": "app_template",
+        "title": "musiccurator",
         "version": "0.0.1",
-        "description": "An example summary",
+        "description": "Curate, tag and organize your Nextcloud music library",
         "license": {
             "name": "AGPL-3.0-or-later"
         }
@@ -47,10 +47,10 @@
         }
     },
     "paths": {
-        "/ocs/v2.php/apps/app_template/api": {
+        "/ocs/v2.php/apps/musiccurator/api": {
             "get": {
                 "operationId": "api-index",
-                "summary": "An example API endpoint",
+                "summary": "Lightweight readiness endpoint used during development",
                 "tags": [
                     "api"
                 ],
@@ -76,7 +76,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Data returned",
+                        "description": "MusicCurator readiness status returned",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -98,10 +98,14 @@
                                                 "data": {
                                                     "type": "object",
                                                     "required": [
-                                                        "message"
+                                                        "app",
+                                                        "status"
                                                     ],
                                                     "properties": {
-                                                        "message": {
+                                                        "app": {
+                                                            "type": "string"
+                                                        },
+                                                        "status": {
                                                             "type": "string"
                                                         }
                                                     }
