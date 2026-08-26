@@ -39,14 +39,24 @@ class ScanController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	public function scan(string $libraryPath = '/Music'): DataResponse {
+	public function scan(string $libraryPath = ''): DataResponse {
 		$userId = $this->userId();
 		$startedAt = microtime(true);
+
+		if ($libraryPath === '') {
+			$libraryPath = $this->config->getUserValue($userId, 'musiccurator', 'library_path', '/Music');
+		}
 
 		try {
 			$libraryPath = $this->normalizePath($libraryPath);
 			$node = $this->nodeForUserPath($userId, $libraryPath);
 			if (!$node instanceof Folder) {
+				$this->logger->warning('MusicCurator scan path is not a folder', [
+					'app' => 'musiccurator',
+					'user' => $userId,
+					'path' => $libraryPath,
+				]);
+
 				return new DataResponse(['message' => 'The selected library path is not a folder.'], Http::STATUS_BAD_REQUEST);
 			}
 
@@ -108,6 +118,12 @@ class ScanController extends Controller {
 				'message' => 'Library scan failed: ' . $e->getMessage(),
 			], Http::STATUS_BAD_REQUEST);
 		}
+	}
+
+	#[NoAdminRequired]
+	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
+	public function scanSelected(string $libraryPath = ''): DataResponse {
+		return $this->scan($libraryPath);
 	}
 
 	/**
