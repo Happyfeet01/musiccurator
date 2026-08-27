@@ -43,6 +43,7 @@ class MetadataSearchService {
 			$this->runProvider('MusicBrainz', true, function () use ($title, $artist, $album): array {
 				$rows = $this->musicBrainz->search($title, $artist, $album);
 				return array_map(static fn (array $row): array => $row + [
+					'genre' => '',
 					'source' => 'MusicBrainz',
 					'sourceUrl' => isset($row['id']) && $row['id'] !== '' ? 'https://musicbrainz.org/recording/' . rawurlencode((string)$row['id']) : '',
 				], $rows);
@@ -71,6 +72,12 @@ class MetadataSearchService {
 		} else {
 			$providers[] = $this->status('AcoustID', false, false, false, 'No client/API key configured.');
 		}
+
+		// Discogs and Last.fm often know the genre while MusicBrainz/AcoustID may
+		// win the actual recording match. Share a normalized genre only between
+		// candidates whose normalized title + artist agree, so a high-confidence
+		// recording can still carry the genre evidence from another provider.
+		$results = $this->enrichGenres($results);
 
 		usort($results, function (array $a, array $b): int {
 			$score = ((int)($b['score'] ?? 0)) <=> ((int)($a['score'] ?? 0));
@@ -141,6 +148,56 @@ class MetadataSearchService {
 	 * @param list<array<string, mixed>> $rows
 	 * @return list<array<string, mixed>>
 	 */
+	private function enrichGenres(array $rows): array {
+		$genres = [];
+
+		// Discogs is deliberately considered before Last.fm because its release
+		// genres/styles are curated structured fields, while Last.fm genres are
+		// derived from community tags.
+		$genreRows = $rows;
+		usort($genreRows, fn (array $a, array $b): int => $this->genreSourcePriority((string)($a['source'] ?? '')) <=> $this->genreSourcePriority((string)($b['source'] ?? '')));
+		foreach ($genreRows as $row) {
+			$genre = trim((string)($row['genre'] ?? ''));
+			$key = $this->recordingKey($row);
+			if ($genre !== '' && $key !== '' && !isset($genres[$key])) {
+				$genres[$key] = $genre;
+			}
+		}
+
+		foreach ($rows as &$row) {
+			if (trim((string)($row['genre'] ?? '')) !== '') {
+				continue;
+			}
+			$key = $this->recordingKey($row);
+			if ($key !== '' && isset($genres[$key])) {
+				$row['genre'] = $genres[$key];
+			}
+		}
+		unset($row);
+
+		return $rows;
+	}
+
+	/** @param array<string, mixed> $row */
+	private function recordingKey(array $row): string {
+		$title = $this->normalizeForKey((string)($row['title'] ?? ''));
+		$artist = $this->normalizeForKey((string)($row['artist'] ?? ($row['albumArtist'] ?? '')));
+		if ($title === '' || $artist === '') {
+			return '';
+		}
+		return $title . "\0" . $artist;
+	}
+
+	private function normalizeForKey(string $value): string {
+		$value = mb_strtolower(trim($value));
+		$value = preg_replace('/[^\pL\pN]+/u', ' ', $value) ?? $value;
+		return trim(preg_replace('/\s+/u', ' ', $value) ?? $value);
+	}
+
+	/**
+	 * @param list<array<string, mixed>> $rows
+	 * @return list<array<string, mixed>>
+	 */
 	private function deduplicate(array $rows): array {
 		$seen = [];
 		$out = [];
@@ -186,6 +243,16 @@ class MetadataSearchService {
 			'MusicBrainz' => 1,
 			'Discogs' => 2,
 			'Last.fm' => 3,
+			default => 9,
+		};
+	}
+
+	private function genreSourcePriority(string $source): int {
+		return match ($source) {
+			'Discogs' => 0,
+			'Last.fm' => 1,
+			'MusicBrainz' => 2,
+			'AcoustID' => 3,
 			default => 9,
 		};
 	}
