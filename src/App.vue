@@ -18,6 +18,7 @@ declare global {
 }
 
 type Section = 'library' | 'albums' | 'playlists' | 'changes' | 'settings'
+type OperationMode = 'metadata' | 'organize'
 
 type Track = {
 	path: string
@@ -116,6 +117,7 @@ const suggestions = ref<MusicBrainzSuggestion[]>([])
 const selectedSuggestion = ref<MusicBrainzSuggestion | null>(null)
 const providerStatuses = ref<ProviderStatus[]>([])
 const proposedPath = ref('')
+const operationMode = ref<OperationMode>('organize')
 const hasScanned = ref(false)
 const truncated = ref(false)
 const lastScannedPath = ref('')
@@ -185,6 +187,15 @@ const renderedAlbums = computed(() => albumGroups.value.slice(0, albumLimit.valu
 const scanPathMismatch = computed(() => hasScanned.value
 	&& lastScannedPath.value !== ''
 	&& lastScannedPath.value !== settings.value.libraryPath)
+const selectedTrackIsPlaylistLike = computed(() => selectedTrack.value !== null && isPlaylistLikePath(selectedTrack.value.path))
+const activeProviderNames = computed(() => {
+	const providers: string[] = []
+	if (settings.value.musicBrainzEnabled) providers.push('MusicBrainz')
+	if (settings.value.discogsConfigured) providers.push('Discogs')
+	if (settings.value.lastFmConfigured) providers.push('Last.fm')
+	if (settings.value.acoustIdConfigured) providers.push('AcoustID')
+	return providers
+})
 
 function apiUrl(path: string, query?: Record<string, string>): string {
 	const url = new URL(window.OC.generateUrl(`/apps/musiccurator${path}`), window.location.origin)
@@ -310,6 +321,7 @@ async function scanLibrary(): Promise<void> {
 
 function selectTrack(track: Track, clearMessages = true): void {
 	selectedTrack.value = { ...track }
+	operationMode.value = isPlaylistLikePath(track.path) ? 'metadata' : 'organize'
 	resetMatch()
 	if (clearMessages) {
 		clearNotice()
@@ -350,11 +362,22 @@ async function chooseSuggestion(suggestion: MusicBrainzSuggestion): Promise<void
 	await previewMove()
 }
 
+async function setOperationMode(mode: OperationMode): Promise<void> {
+	operationMode.value = mode
+	await previewMove()
+}
+
 async function previewMove(): Promise<void> {
 	if (!selectedTrack.value || !selectedSuggestion.value) {
 		proposedPath.value = ''
 		return
 	}
+
+	if (operationMode.value === 'metadata') {
+		proposedPath.value = selectedTrack.value.path
+		return
+	}
+
 	try {
 		const suggestion = selectedSuggestion.value
 		const data = await apiRequest<{ source: string, target: string }>('/api/library/preview-move', {
@@ -375,7 +398,7 @@ async function previewMove(): Promise<void> {
 }
 
 async function moveSelectedTrack(): Promise<void> {
-	if (!selectedTrack.value || !proposedPath.value) {
+	if (operationMode.value !== 'organize' || !selectedTrack.value || !proposedPath.value) {
 		return
 	}
 	if (!window.confirm(`Move this file?\n\n${selectedTrack.value.path}\n→\n${proposedPath.value}`)) {
@@ -464,6 +487,10 @@ function resetMatch(clearSuggestions = true): void {
 	useAlbum.value = true
 	useTrack.value = true
 	useYear.value = true
+}
+
+function isPlaylistLikePath(path: string): boolean {
+	return /(^|\/)(playlists?|playlisten)(?:\s|\(|\/|$)/i.test(path)
 }
 
 function clearNotice(): void {
@@ -652,10 +679,11 @@ onMounted(async () => {
 								<p class="eyebrow">Selected track</p>
 								<h2>{{ selectedTrack.filename }}</h2>
 								<small class="muted">{{ selectedTrack.path }}</small>
+								<small class="provider-hint">Will search: {{ activeProviderNames.length ? activeProviderNames.join(', ') : 'no provider configured' }}</small>
 							</div>
 							<div class="hero-actions">
 								<span v-if="selectedSuggestion" class="match-badge">{{ selectedSuggestion.score }}% · {{ selectedSuggestion.source || 'Metadata' }}</span>
-								<NcButton :disabled="musicBrainzLoading" @click="searchMusicBrainz">
+								<NcButton :disabled="musicBrainzLoading || activeProviderNames.length === 0" @click="searchMusicBrainz">
 									{{ musicBrainzLoading ? 'Searching…' : 'Search metadata' }}
 								</NcButton>
 							</div>
@@ -695,16 +723,41 @@ onMounted(async () => {
 							<strong>Genre</strong><span>{{ selectedTrack.genre || '—' }}</span><span class="suggestion">—</span><span />
 						</div>
 
-						<div class="read-only-note">
-							<strong>Safe development mode:</strong> embedded tags are currently read-only. MusicCurator can scan, match and move files through Nextcloud. Tag writing will be enabled only after the write path has dedicated review and rollback tests.
+						<div v-if="selectedSuggestion" class="operation-mode-panel">
+							<div class="operation-mode-heading">
+								<div>
+									<strong>What should MusicCurator do?</strong>
+									<small v-if="selectedTrackIsPlaylistLike" class="muted">Playlist-like folder detected — keeping the file in place is the safe default.</small>
+								</div>
+							</div>
+							<div class="operation-mode-options">
+								<label class="operation-option" :class="{ selected: operationMode === 'metadata' }">
+									<input :checked="operationMode === 'metadata'" type="radio" name="operation-mode" value="metadata" @change="setOperationMode('metadata')">
+									<span><strong>Metadata only</strong><small>Keep the file exactly where it is.</small></span>
+								</label>
+								<label class="operation-option" :class="{ selected: operationMode === 'organize' }">
+									<input :checked="operationMode === 'organize'" type="radio" name="operation-mode" value="organize" @change="setOperationMode('organize')">
+									<span><strong>Metadata + organize file</strong><small>Preview a move into an artist/album hierarchy.</small></span>
+								</label>
+							</div>
 						</div>
 
-						<div v-if="proposedPath" class="move-preview">
+						<div class="read-only-note">
+							<strong>Safe development mode:</strong> embedded tags are currently read-only. Metadata-only mode already guarantees that MusicCurator will not move the file. Actual tag writing will be enabled only after the write path has dedicated backup, review and rollback tests.
+						</div>
+
+						<div v-if="selectedSuggestion && operationMode === 'metadata'" class="location-preserved-note">
+							<strong>File location will be preserved.</strong>
+							<span>{{ selectedTrack.path }}</span>
+							<small>Only the checked metadata fields are intended to change once safe tag writing is enabled.</small>
+						</div>
+
+						<div v-if="proposedPath && operationMode === 'organize'" class="move-preview">
 							<div><span class="label">Current path</span><code>{{ selectedTrack.path }}</code></div>
 							<span class="arrow" aria-hidden="true">→</span>
 							<div><span class="label">Proposed path</span><code>{{ proposedPath }}</code></div>
 						</div>
-						<div class="review-actions">
+						<div v-if="operationMode === 'organize'" class="review-actions">
 							<NcButton v-if="selectedSuggestion" @click="previewMove">Refresh preview</NcButton>
 							<NcButton v-if="proposedPath" type="primary" :disabled="loading" @click="moveSelectedTrack">Move file</NcButton>
 						</div>
@@ -810,6 +863,7 @@ onMounted(async () => {
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .compact-heading { margin-bottom: 10px; }
 .section-heading h2, .settings-card h2 { margin: 2px 0 0; font-size: 24px; }
+.provider-hint { display: block; margin-top: 6px; color: var(--color-text-maxcontrast); }
 .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
 .folder-row { display: flex; align-items: center; gap: 10px; padding: 12px; border: 0; border-radius: var(--border-radius-large); background: var(--color-background-dark); color: var(--color-main-text); text-align: start; cursor: pointer; }
 .folder-row:hover { background: var(--color-background-hover); }
@@ -837,7 +891,18 @@ onMounted(async () => {
 .candidate span { grid-column: 1; color: var(--color-text-maxcontrast); }
 .candidate small { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
 .candidate.selected, .candidate:hover { background: var(--color-background-hover); border-color: var(--color-primary-element); }
+.operation-mode-panel { display: grid; gap: 12px; margin: 18px 0; padding: 16px; border: 1px solid var(--color-border); border-radius: var(--border-radius-large); background: color-mix(in srgb, var(--color-main-background) 72%, transparent); }
+.operation-mode-heading > div { display: grid; gap: 4px; }
+.operation-mode-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.operation-option { display: flex; align-items: flex-start; gap: 10px; padding: 14px; border: 1px solid var(--color-border); border-radius: var(--border-radius-large); background: var(--color-background-dark); cursor: pointer; }
+.operation-option.selected { border-color: var(--color-primary-element); background: color-mix(in srgb, var(--color-primary-element-light) 45%, var(--color-background-dark)); }
+.operation-option input { margin-top: 3px; }
+.operation-option span { display: grid; gap: 3px; }
+.operation-option small { color: var(--color-text-maxcontrast); }
 .read-only-note { margin: 18px 0; padding: 14px 16px; border-radius: var(--border-radius-large); background: var(--color-background-dark); color: var(--color-text-maxcontrast); }
+.location-preserved-note { display: grid; gap: 5px; margin: 18px 0; padding: 16px; border-radius: var(--border-radius-large); background: color-mix(in srgb, var(--color-success) 10%, var(--color-background-dark)); }
+.location-preserved-note span { overflow-wrap: anywhere; font-family: var(--font-monospace, monospace); }
+.location-preserved-note small { color: var(--color-text-maxcontrast); }
 .move-preview { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 18px; margin: 24px 0; padding: 18px; border-radius: var(--border-radius-large); background: var(--color-background-dark); }
 .move-preview > div { display: grid; gap: 6px; min-width: 0; }
 .move-preview code, .change-row code { overflow-wrap: anywhere; }
@@ -878,7 +943,7 @@ onMounted(async () => {
 	.stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	.metadata-grid { grid-template-columns: 92px 1fr 1fr 44px; font-size: 13px; }
 	.change-row { grid-template-columns: 1fr; }
-	.provider-grid { grid-template-columns: 1fr; }
+	.provider-grid, .operation-mode-options { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
