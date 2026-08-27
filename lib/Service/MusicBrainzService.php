@@ -40,9 +40,11 @@ class MusicBrainzService {
 				continue;
 			}
 
+			$recordingTitle = trim((string)($recording['title'] ?? $title));
 			$release = $this->bestRelease(
 				is_array($recording['releases'] ?? null) ? $recording['releases'] : [],
 				$album,
+				$recordingTitle,
 			);
 			$releaseGroup = is_array($release['release-group'] ?? null) ? $release['release-group'] : [];
 			$artistCredit = is_array($recording['artist-credit'] ?? null) ? $recording['artist-credit'] : [];
@@ -52,7 +54,7 @@ class MusicBrainzService {
 
 			$results[] = [
 				'id' => (string)($recording['id'] ?? ''),
-				'title' => (string)($recording['title'] ?? ''),
+				'title' => $recordingTitle,
 				'artist' => $this->artistCreditToString($artistCredit),
 				'album' => (string)($release['title'] ?? ''),
 				'albumArtist' => $this->artistCreditToString($releaseArtistCredit),
@@ -151,24 +153,70 @@ class MusicBrainzService {
 	}
 
 	/**
+	 * Prefer a release that represents the song itself instead of an arbitrary
+	 * later compilation. If an album tag already exists, that explicit album is
+	 * still the strongest signal.
+	 *
 	 * @param array<int, mixed> $releases
 	 * @return array<string, mixed>
 	 */
-	private function bestRelease(array $releases, string $preferredAlbum): array {
-		$first = [];
+	private function bestRelease(array $releases, string $preferredAlbum, string $recordingTitle): array {
+		$best = [];
+		$bestScore = PHP_INT_MIN;
+		$bestDate = '9999-99-99';
+		$recordingKey = $this->canonicalTitle($recordingTitle);
+
 		foreach ($releases as $release) {
 			if (!is_array($release)) {
 				continue;
 			}
-			if ($first === []) {
-				$first = $release;
+
+			$releaseTitle = trim((string)($release['title'] ?? ''));
+			$releaseGroup = is_array($release['release-group'] ?? null) ? $release['release-group'] : [];
+			$releaseGroupTitle = trim((string)($releaseGroup['title'] ?? ''));
+			$primaryType = mb_strtolower(trim((string)($releaseGroup['primary-type'] ?? '')));
+			$secondaryTypes = is_array($releaseGroup['secondary-types'] ?? null) ? $releaseGroup['secondary-types'] : [];
+			$status = mb_strtolower(trim((string)($release['status'] ?? '')));
+			$date = trim((string)($release['date'] ?? '9999-99-99')) ?: '9999-99-99';
+
+			$score = 0;
+			if ($preferredAlbum !== '' && strcasecmp($releaseTitle, $preferredAlbum) === 0) {
+				$score += 200;
 			}
-			if ($preferredAlbum !== '' && strcasecmp(trim((string)($release['title'] ?? '')), $preferredAlbum) === 0) {
-				return $release;
+			if ($recordingKey !== '' && $this->canonicalTitle($releaseGroupTitle) === $recordingKey) {
+				$score += 80;
+			}
+			if ($recordingKey !== '' && $this->canonicalTitle($releaseTitle) === $recordingKey) {
+				$score += 60;
+			}
+			if ($primaryType === 'single') {
+				$score += 20;
+			}
+			if ($status === 'official') {
+				$score += 8;
+			}
+			foreach ($secondaryTypes as $secondaryType) {
+				if (mb_strtolower(trim((string)$secondaryType)) === 'compilation') {
+					$score -= 35;
+					break;
+				}
+			}
+
+			if ($score > $bestScore || ($score === $bestScore && strcmp($date, $bestDate) < 0)) {
+				$best = $release;
+				$bestScore = $score;
+				$bestDate = $date;
 			}
 		}
 
-		return $first;
+		return $best;
+	}
+
+	private function canonicalTitle(string $value): string {
+		$value = mb_strtolower(trim($value));
+		$value = preg_replace('/\s*[\(\[]\s*(?:single version|single edit|radio edit|radio version|album version|original version|remaster(?:ed)?(?: \d{4})?|official video|official audio|lyric video)\s*[\)\]]\s*$/ui', '', $value) ?? $value;
+		$value = preg_replace('/[^\pL\pN]+/u', ' ', $value) ?? $value;
+		return trim(preg_replace('/\s+/u', ' ', $value) ?? $value);
 	}
 
 	/**
