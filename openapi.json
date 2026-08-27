@@ -149,5 +149,14 @@
             }
         }
     },
-    "tags": []
+    "tags": [
+        {
+            "name": "read",
+            "description": "Read-only AJAX endpoints used by the MusicCurator frontend."
+        },
+        {
+            "name": "client_log",
+            "description": "Receives sanitized frontend request failures so development errors that happen before an application controller is reached are still visible in nextcloud.log."
+        }
+    ]
 }
