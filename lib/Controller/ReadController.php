@@ -54,6 +54,13 @@ class ReadController extends Controller {
 			'acoustIdUserConfigured' => $this->credentials->configured($userId, 'acoustid_user_key'),
 			'discogsConfigured' => $this->credentials->configured($userId, 'discogs_token'),
 			'lastFmConfigured' => $this->credentials->configured($userId, 'lastfm_key'),
+			'aiProvider' => $this->config->getUserValue($userId, 'musiccurator', 'ai_provider', 'off'),
+			'openAiConfigured' => $this->credentials->configured($userId, 'openai_key'),
+			'mistralConfigured' => $this->credentials->configured($userId, 'mistral_key'),
+			'openAiModel' => $this->config->getUserValue($userId, 'musiccurator', 'openai_model', 'gpt-5.6-luna'),
+			'mistralModel' => $this->config->getUserValue($userId, 'musiccurator', 'mistral_model', 'mistral-small-latest'),
+			'ollamaModel' => $this->config->getUserValue($userId, 'musiccurator', 'ollama_model', ''),
+			'ollamaUrl' => $this->config->getUserValue($userId, 'musiccurator', 'ollama_url', 'http://127.0.0.1:11434/api'),
 		]);
 	}
 
