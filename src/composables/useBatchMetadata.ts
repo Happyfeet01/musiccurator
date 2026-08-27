@@ -34,6 +34,8 @@ export type BatchPreviewItem = {
 	path: string
 	status: 'queued' | 'searching' | 'matched' | 'review' | 'unmatched' | 'error'
 	best: BatchSuggestion | null
+	selected: BatchSuggestion | null
+	autoSelected: boolean
 	providers: BatchProviderStatus[]
 	error: string
 }
@@ -50,14 +52,24 @@ export type BatchTrack = {
 type SearchTrack = (path: string) => Promise<BatchSearchResponse>
 
 const PROVIDER_DELAY_MS = 1100
+export const AUTO_ACCEPT_SCORE = 90
 
 function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => window.setTimeout(resolve, ms))
 }
 
+function bestCandidate(results: BatchSuggestion[]): BatchSuggestion | null {
+	if (results.length === 0) return null
+	return [...results].sort((a, b) => b.score - a.score)[0] ?? null
+}
+
+function isAutoAccepted(best: BatchSuggestion | null): boolean {
+	return best !== null && best.score > AUTO_ACCEPT_SCORE
+}
+
 function resultStatus(best: BatchSuggestion | null): BatchPreviewItem['status'] {
 	if (!best) return 'unmatched'
-	if (best.score >= 90) return 'matched'
+	if (isAutoAccepted(best)) return 'matched'
 	return 'review'
 }
 
@@ -147,6 +159,8 @@ export function useBatchMetadata(searchTrack: SearchTrack) {
 				path: track.path,
 				status: 'queued',
 				best: null,
+				selected: null,
+				autoSelected: false,
 				providers: [],
 				error: '',
 			}
@@ -164,13 +178,16 @@ export function useBatchMetadata(searchTrack: SearchTrack) {
 
 				try {
 					const response = await searchTrack(track.path)
-					const best = response.results[0] ?? null
+					const best = bestCandidate(response.results)
+					const autoSelected = isAutoAccepted(best)
 					items.value = {
 						...items.value,
 						[track.path]: {
 							path: track.path,
 							status: resultStatus(best),
 							best,
+							selected: autoSelected ? best : null,
+							autoSelected,
 							providers: response.providers ?? [],
 							error: '',
 						},
@@ -182,6 +199,8 @@ export function useBatchMetadata(searchTrack: SearchTrack) {
 							path: track.path,
 							status: 'error',
 							best: null,
+							selected: null,
+							autoSelected: false,
 							providers: [],
 							error: error instanceof Error ? error.message : String(error),
 						},
