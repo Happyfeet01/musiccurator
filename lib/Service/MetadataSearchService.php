@@ -23,11 +23,18 @@ class MetadataSearchService {
 
 	/**
 	 * @param array<string, mixed> $tags
-	 * @return array{results: list<array<string, mixed>>, providers: list<array<string, mixed>>}
+	 * @return array{results: list<array<string, mixed>>, providers: list<array<string, mixed>>, query: array{title: string, artist: string, album: string}}
 	 */
 	public function search(string $userId, File $file, array $tags, string $title): array {
 		$artist = trim((string)($tags['artist'] ?? ''));
 		$album = trim((string)($tags['album'] ?? ''));
+		$title = trim($title);
+
+		// Downloads often contain a useful "Artist - Title" string but no
+		// separate artist tag. Split common separators before querying providers
+		// so Last.fm, MusicBrainz and Discogs can still match these files.
+		[$title, $artist] = $this->inferArtistAndTitle($title, $artist);
+
 		$results = [];
 		$providers = [];
 
@@ -76,6 +83,11 @@ class MetadataSearchService {
 		return [
 			'results' => array_slice($this->deduplicate($results), 0, 20),
 			'providers' => $providers,
+			'query' => [
+				'title' => $title,
+				'artist' => $artist,
+				'album' => $album,
+			],
 		];
 	}
 
@@ -144,6 +156,28 @@ class MetadataSearchService {
 			$out[] = $row;
 		}
 		return $out;
+	}
+
+	/** @return array{0: string, 1: string} */
+	private function inferArtistAndTitle(string $title, string $artist): array {
+		if ($artist !== '' || $title === '') {
+			return [$title, $artist];
+		}
+
+		foreach ([' - ', ' – ', ' — '] as $separator) {
+			$position = mb_strpos($title, $separator);
+			if ($position === false) {
+				continue;
+			}
+
+			$possibleArtist = trim(mb_substr($title, 0, $position));
+			$possibleTitle = trim(mb_substr($title, $position + mb_strlen($separator)));
+			if ($possibleArtist !== '' && $possibleTitle !== '') {
+				return [$possibleTitle, $possibleArtist];
+			}
+		}
+
+		return [$title, $artist];
 	}
 
 	private function sourcePriority(string $source): int {
