@@ -55,7 +55,13 @@ final class GenreNormalizer {
 	}
 
 	private static function isNoise(string $value): bool {
-		return preg_match('/(?:^|\b)(?:seen live|favorite|favourite|favorites|favourites|awesome|love|spotify|lastfm|last fm|under \d+ listeners|male vocalists?|female vocalists?|00s|10s|20s|80s|90s)(?:\b|$)/u', $value) === 1;
+		if (preg_match('/^(?:seen live|favorite|favourite|favorites|favourites|awesome|love|spotify|lastfm|last fm|under \d+ listeners|male vocalists?|female vocalists?)$/u', $value) === 1) {
+			return true;
+		}
+
+		// Ignore a decade only when it is the complete tag. A tag such as
+		// "90s dance" still contains useful genre evidence and must survive.
+		return preg_match('/^(?:(?:19|20)?\d0s)$/u', $value) === 1;
 	}
 
 	private static function map(string $value): string {
