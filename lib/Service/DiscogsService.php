@@ -54,6 +54,10 @@ class DiscogsService {
 			$trackNumber = '';
 			$year = (string)($row['year'] ?? '');
 			$sourceUrl = $this->discogsUrl((string)($row['uri'] ?? ''));
+			$genreValues = [
+				...(is_array($row['genre'] ?? null) ? $row['genre'] : []),
+				...(is_array($row['style'] ?? null) ? $row['style'] : []),
+			];
 
 			if ($releaseId !== '' && $index < 3) {
 				try {
@@ -62,6 +66,11 @@ class DiscogsService {
 					$year = trim((string)($details['year'] ?? $year));
 					$releaseArtist = $this->artistsToString(is_array($details['artists'] ?? null) ? $details['artists'] : []) ?: $releaseArtist;
 					$sourceUrl = trim((string)($details['uri'] ?? $sourceUrl));
+					$genreValues = [
+						...(is_array($details['genres'] ?? null) ? $details['genres'] : []),
+						...(is_array($details['styles'] ?? null) ? $details['styles'] : []),
+						...$genreValues,
+					];
 					[$trackTitle, $trackNumber] = $this->bestTrack(
 						is_array($details['tracklist'] ?? null) ? $details['tracklist'] : [],
 						$title,
@@ -84,6 +93,7 @@ class DiscogsService {
 				'albumArtist' => $releaseArtist,
 				'track' => $trackNumber,
 				'year' => preg_match('/^\d{4}$/', $year) ? $year : '',
+				'genre' => GenreNormalizer::normalize($genreValues),
 				'releaseId' => $releaseId,
 				'releaseGroupId' => (string)($row['master_id'] ?? ''),
 				'score' => $score,
@@ -104,7 +114,7 @@ class DiscogsService {
 				'headers' => [
 					'Accept' => 'application/json',
 					'Authorization' => 'Discogs token=' . $token,
-					'User-Agent' => 'MusicCurator/0.2.0 +https://github.com/Happyfeet01/musiccurator',
+					'User-Agent' => 'MusicCurator/0.2.8 +https://github.com/Happyfeet01/musiccurator',
 				],
 				'connect_timeout' => 8,
 				'timeout' => 15,
