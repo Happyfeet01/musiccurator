@@ -11,6 +11,8 @@ return [
 		['name' => 'scan#scanSelected', 'url' => '/api/library/scan-selected', 'verb' => 'POST'],
 		['name' => 'read#metadata', 'url' => '/api/metadata', 'verb' => 'GET'],
 		['name' => 'read#musicBrainz', 'url' => '/api/musicbrainz', 'verb' => 'GET'],
+		['name' => 'ai#settings', 'url' => '/api/ai/settings', 'verb' => 'GET'],
+		['name' => 'ai#saveSettings', 'url' => '/api/ai/settings', 'verb' => 'POST'],
 		['name' => 'ai#classifyFolder', 'url' => '/api/ai/classify-folder', 'verb' => 'POST'],
 		['name' => 'library#previewMove', 'url' => '/api/library/preview-move', 'verb' => 'POST'],
 		['name' => 'library#move', 'url' => '/api/library/move', 'verb' => 'POST'],
