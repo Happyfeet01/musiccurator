@@ -71,6 +71,38 @@ class MusicBrainzService {
 		return $results;
 	}
 
+	/**
+	 * Releases themselves often have no genre tags even when the logical
+	 * release group does. Query the release group explicitly and normalize its
+	 * MusicBrainz genres for use as a fallback.
+	 */
+	public function releaseGroupGenre(string $releaseGroupId): string {
+		$releaseGroupId = trim($releaseGroupId);
+		if ($releaseGroupId === '') {
+			return '';
+		}
+
+		// Respect MusicBrainz API etiquette when this lookup follows a recording
+		// search in the same metadata request.
+		usleep(1_100_000);
+
+		$url = 'https://musicbrainz.org/ws/2/release-group/' . rawurlencode($releaseGroupId) . '?inc=genres&fmt=json';
+		$data = $this->requestJson($url);
+		$genres = is_array($data['genres'] ?? null) ? $data['genres'] : [];
+		$names = [];
+		foreach ($genres as $genre) {
+			if (!is_array($genre)) {
+				continue;
+			}
+			$name = trim((string)($genre['name'] ?? ''));
+			if ($name !== '') {
+				$names[] = $name;
+			}
+		}
+
+		return GenreNormalizer::normalize($names);
+	}
+
 	/** @return array<string, mixed> */
 	private function requestJson(string $url): array {
 		$client = $this->clientService->newClient();
@@ -82,7 +114,7 @@ class MusicBrainzService {
 			$response = $client->get($url, [
 				'headers' => [
 					'Accept' => 'application/json',
-					'User-Agent' => 'MusicCurator/0.2.0 (https://github.com/Happyfeet01/musiccurator)',
+					'User-Agent' => 'MusicCurator/0.2.10 (https://github.com/Happyfeet01/musiccurator)',
 				],
 				'connect_timeout' => 8,
 				'timeout' => 15,
