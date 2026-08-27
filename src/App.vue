@@ -8,6 +8,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcContent from '@nextcloud/vue/components/NcContent'
 import BatchTrackList from './components/BatchTrackList.vue'
+import AiAdvisorPanel from './components/AiAdvisorPanel.vue'
 
 declare global {
 	interface Window {
@@ -835,6 +836,7 @@ onMounted(async () => {
 						</div>
 						<div class="review-actions"><NcButton type="primary" :disabled="loading" @click="saveSettings()">Save personal settings</NcButton></div>
 					</section>
+					<AiAdvisorPanel :library-path="settings.libraryPath" :selected-track-path="selectedTrack?.path || ''" />
 				</section>
 			</main>
 		</NcAppContent>
