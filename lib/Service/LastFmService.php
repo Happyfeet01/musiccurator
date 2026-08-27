@@ -52,6 +52,7 @@ class LastFmService {
 			$url = trim((string)($match['url'] ?? ''));
 			$album = '';
 			$year = '';
+			$genre = '';
 
 			if ($index < 2 && $candidateTitle !== '') {
 				try {
@@ -59,6 +60,7 @@ class LastFmService {
 					$track = is_array($info['track'] ?? null) ? $info['track'] : [];
 					$albumInfo = is_array($track['album'] ?? null) ? $track['album'] : [];
 					$album = trim((string)($albumInfo['title'] ?? ''));
+					$genre = GenreNormalizer::normalize($this->tagNames($track['toptags']['tag'] ?? []));
 					if ($url === '') {
 						$url = trim((string)($track['url'] ?? ''));
 					}
@@ -76,6 +78,7 @@ class LastFmService {
 				'albumArtist' => $candidateArtist,
 				'track' => '',
 				'year' => $year,
+				'genre' => $genre,
 				'releaseId' => '',
 				'releaseGroupId' => '',
 				'score' => $score,
@@ -101,13 +104,37 @@ class LastFmService {
 		return $this->requestJson('https://ws.audioscrobbler.com/2.0/?' . http_build_query($params, '', '&', PHP_QUERY_RFC3986));
 	}
 
+	/**
+	 * @param mixed $tags
+	 * @return list<string>
+	 */
+	private function tagNames(mixed $tags): array {
+		if (!is_array($tags)) {
+			return [];
+		}
+		if (isset($tags['name'])) {
+			$tags = [$tags];
+		}
+
+		$names = [];
+		foreach ($tags as $tag) {
+			if (is_array($tag) && isset($tag['name'])) {
+				$name = trim((string)$tag['name']);
+				if ($name !== '') {
+					$names[] = $name;
+				}
+			}
+		}
+		return $names;
+	}
+
 	/** @return array<string, mixed> */
 	private function requestJson(string $url): array {
 		$client = $this->clientService->newClient();
 		$response = $client->get($url, [
 			'headers' => [
 				'Accept' => 'application/json',
-				'User-Agent' => 'MusicCurator/0.2.0 (https://github.com/Happyfeet01/musiccurator)',
+				'User-Agent' => 'MusicCurator/0.2.8 (https://github.com/Happyfeet01/musiccurator)',
 			],
 			'connect_timeout' => 8,
 			'timeout' => 15,
