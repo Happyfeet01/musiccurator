@@ -6,9 +6,11 @@ namespace OCA\MusicCurator\Controller;
 
 use OCA\MusicCurator\Service\AiAdvisorService;
 use OCA\MusicCurator\Service\AudioTagReader;
+use OCA\MusicCurator\Service\ProviderCredentialsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\OpenAPI;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\Files\File;
@@ -24,6 +26,9 @@ use Throwable;
 class AiController extends Controller {
 	private const AUDIO_EXTENSIONS = ['mp3', 'flac', 'm4a', 'm4b', 'aac', 'ogg', 'opus', 'wav'];
 	private const MAX_TRACKS = 100;
+	private const DEFAULT_OPENAI_MODEL = 'gpt-5.6-luna';
+	private const DEFAULT_MISTRAL_MODEL = 'mistral-small-latest';
+	private const DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434/api';
 
 	public function __construct(
 		string $appName,
@@ -33,9 +38,63 @@ class AiController extends Controller {
 		private IConfig $config,
 		private AudioTagReader $tagReader,
 		private AiAdvisorService $advisor,
+		private ProviderCredentialsService $credentials,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request);
+	}
+
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
+	public function settings(): DataResponse {
+		$userId = $this->userId();
+
+		return new DataResponse($this->settingsPayload($userId));
+	}
+
+	#[NoAdminRequired]
+	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
+	public function saveSettings(
+		string $aiProvider = 'off',
+		string $openAiKey = '',
+		string $mistralKey = '',
+		string $openAiModel = self::DEFAULT_OPENAI_MODEL,
+		string $mistralModel = self::DEFAULT_MISTRAL_MODEL,
+		string $ollamaModel = '',
+		string $ollamaUrl = self::DEFAULT_OLLAMA_URL,
+	): DataResponse {
+		$userId = $this->userId();
+		$aiProvider = strtolower(trim($aiProvider));
+		if (!in_array($aiProvider, ['off', 'openai', 'mistral', 'ollama'], true)) {
+			return new DataResponse(['message' => 'Unknown AI provider.'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$openAiModel = trim($openAiModel) !== '' ? trim($openAiModel) : self::DEFAULT_OPENAI_MODEL;
+		$mistralModel = trim($mistralModel) !== '' ? trim($mistralModel) : self::DEFAULT_MISTRAL_MODEL;
+		$ollamaModel = trim($ollamaModel);
+		$ollamaUrl = rtrim(trim($ollamaUrl), '/');
+		if ($ollamaUrl === '') {
+			$ollamaUrl = self::DEFAULT_OLLAMA_URL;
+		}
+
+		$this->config->setUserValue($userId, 'musiccurator', 'ai_provider', $aiProvider);
+		$this->config->setUserValue($userId, 'musiccurator', 'openai_model', $openAiModel);
+		$this->config->setUserValue($userId, 'musiccurator', 'mistral_model', $mistralModel);
+		$this->config->setUserValue($userId, 'musiccurator', 'ollama_model', $ollamaModel);
+		$this->config->setUserValue($userId, 'musiccurator', 'ollama_url', $ollamaUrl);
+		$this->credentials->storeIfProvided($userId, 'openai_key', $openAiKey);
+		$this->credentials->storeIfProvided($userId, 'mistral_key', $mistralKey);
+
+		$this->logger->info('MusicCurator AI advisor settings saved', [
+			'app' => 'musiccurator',
+			'user' => $userId,
+			'ai_provider' => $aiProvider,
+			'openai_configured' => $this->credentials->configured($userId, 'openai_key'),
+			'mistral_configured' => $this->credentials->configured($userId, 'mistral_key'),
+		]);
+
+		return new DataResponse($this->settingsPayload($userId));
 	}
 
 	#[NoAdminRequired]
@@ -103,6 +162,19 @@ class AiController extends Controller {
 
 			return new DataResponse(['message' => 'AI classification failed: ' . $e->getMessage()], Http::STATUS_BAD_GATEWAY);
 		}
+	}
+
+	/** @return array<string, mixed> */
+	private function settingsPayload(string $userId): array {
+		return [
+			'aiProvider' => $this->config->getUserValue($userId, 'musiccurator', 'ai_provider', 'off'),
+			'openAiConfigured' => $this->credentials->configured($userId, 'openai_key'),
+			'mistralConfigured' => $this->credentials->configured($userId, 'mistral_key'),
+			'openAiModel' => $this->config->getUserValue($userId, 'musiccurator', 'openai_model', self::DEFAULT_OPENAI_MODEL),
+			'mistralModel' => $this->config->getUserValue($userId, 'musiccurator', 'mistral_model', self::DEFAULT_MISTRAL_MODEL),
+			'ollamaModel' => $this->config->getUserValue($userId, 'musiccurator', 'ollama_model', ''),
+			'ollamaUrl' => $this->config->getUserValue($userId, 'musiccurator', 'ollama_url', self::DEFAULT_OLLAMA_URL),
+		];
 	}
 
 	private function userId(): string {
