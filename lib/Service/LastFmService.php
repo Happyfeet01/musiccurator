@@ -69,6 +69,18 @@ class LastFmService {
 				}
 			}
 
+			// Track tags are the preferred Last.fm genre signal. If the best track
+			// has no useful tags, fall back once to the artist's top tags instead of
+			// leaving obvious cases without a genre. The normalizer still rejects
+			// social/noisy tags and only returns a stable library genre.
+			if ($index === 0 && $genre === '' && $candidateArtist !== '') {
+				try {
+					$genre = $this->artistGenre($candidateArtist, $apiKey);
+				} catch (RuntimeException) {
+					// Artist genre enrichment is optional.
+				}
+			}
+
 			$score = $this->score($title, $artist, $candidateTitle, $candidateArtist, $index);
 			$results[] = [
 				'id' => (string)($match['mbid'] ?? '') ?: 'lastfm:' . sha1($candidateArtist . "\0" . $candidateTitle),
@@ -104,6 +116,19 @@ class LastFmService {
 		return $this->requestJson('https://ws.audioscrobbler.com/2.0/?' . http_build_query($params, '', '&', PHP_QUERY_RFC3986));
 	}
 
+	private function artistGenre(string $artist, string $apiKey): string {
+		$params = [
+			'method' => 'artist.getTopTags',
+			'artist' => $artist,
+			'api_key' => $apiKey,
+			'format' => 'json',
+			'autocorrect' => '1',
+		];
+
+		$data = $this->requestJson('https://ws.audioscrobbler.com/2.0/?' . http_build_query($params, '', '&', PHP_QUERY_RFC3986));
+		return GenreNormalizer::normalize($this->tagNames($data['toptags']['tag'] ?? []));
+	}
+
 	/**
 	 * @param mixed $tags
 	 * @return list<string>
@@ -134,7 +159,7 @@ class LastFmService {
 		$response = $client->get($url, [
 			'headers' => [
 				'Accept' => 'application/json',
-				'User-Agent' => 'MusicCurator/0.2.8 (https://github.com/Happyfeet01/musiccurator)',
+				'User-Agent' => 'MusicCurator/0.2.11 (https://github.com/Happyfeet01/musiccurator)',
 			],
 			'connect_timeout' => 8,
 			'timeout' => 15,
