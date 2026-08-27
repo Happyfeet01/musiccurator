@@ -73,11 +73,12 @@ class MetadataSearchService {
 			$providers[] = $this->status('AcoustID', false, false, false, 'No client/API key configured.');
 		}
 
-		// Discogs and Last.fm often know the genre while MusicBrainz/AcoustID may
-		// win the actual recording match. Enrich the winner from another provider
-		// when title and artist still clearly describe the same recording. This is
-		// deliberately fuzzy enough for spelling/styling differences such as
-		// Kesha/Ke$ha and harmless title suffixes such as "(single version)".
+		// Genre evidence has its own priority and is deliberately independent of
+		// which provider wins the recording match. Prefer MusicBrainz release-group
+		// genres, then Last.fm track/artist tags. Discogs remains an optional extra
+		// signal when the user configured a token. Fuzzy title/artist matching lets
+		// equivalent rows share genre evidence across providers without blindly
+		// applying genres to covers or unrelated recordings.
 		$results = $this->enrichGenres($results);
 
 		usort($results, function (array $a, array $b): int {
@@ -154,7 +155,6 @@ class MetadataSearchService {
 			$rows,
 			static fn (array $row): bool => trim((string)($row['genre'] ?? '')) !== '',
 		));
-		usort($genreRows, fn (array $a, array $b): int => $this->genreSourcePriority((string)($a['source'] ?? '')) <=> $this->genreSourcePriority((string)($b['source'] ?? '')));
 
 		foreach ($rows as &$row) {
 			if (trim((string)($row['genre'] ?? '')) !== '') {
@@ -169,10 +169,11 @@ class MetadataSearchService {
 				if ($matchScore <= 0.0) {
 					continue;
 				}
+
 				$priority = $this->genreSourcePriority((string)($genreRow['source'] ?? ''));
-				if ($matchScore > $bestScore || ($matchScore === $bestScore && $priority < $bestPriority)) {
-					$bestScore = $matchScore;
+				if ($priority < $bestPriority || ($priority === $bestPriority && $matchScore > $bestScore)) {
 					$bestPriority = $priority;
+					$bestScore = $matchScore;
 					$bestGenre = trim((string)($genreRow['genre'] ?? ''));
 				}
 			}
@@ -297,9 +298,9 @@ class MetadataSearchService {
 
 	private function genreSourcePriority(string $source): int {
 		return match ($source) {
-			'Discogs' => 0,
+			'MusicBrainz' => 0,
 			'Last.fm' => 1,
-			'MusicBrainz' => 2,
+			'Discogs' => 2,
 			'AcoustID' => 3,
 			default => 9,
 		};
