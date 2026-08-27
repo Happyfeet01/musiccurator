@@ -74,9 +74,10 @@ class MetadataSearchService {
 		}
 
 		// Discogs and Last.fm often know the genre while MusicBrainz/AcoustID may
-		// win the actual recording match. Share a normalized genre only between
-		// candidates whose normalized title + artist agree, so a high-confidence
-		// recording can still carry the genre evidence from another provider.
+		// win the actual recording match. Enrich the winner from another provider
+		// when title and artist still clearly describe the same recording. This is
+		// deliberately fuzzy enough for spelling/styling differences such as
+		// Kesha/Ke$ha and harmless title suffixes such as "(single version)".
 		$results = $this->enrichGenres($results);
 
 		usort($results, function (array $a, array $b): int {
@@ -149,28 +150,35 @@ class MetadataSearchService {
 	 * @return list<array<string, mixed>>
 	 */
 	private function enrichGenres(array $rows): array {
-		$genres = [];
-
-		// Discogs is deliberately considered before Last.fm because its release
-		// genres/styles are curated structured fields, while Last.fm genres are
-		// derived from community tags.
-		$genreRows = $rows;
+		$genreRows = array_values(array_filter(
+			$rows,
+			static fn (array $row): bool => trim((string)($row['genre'] ?? '')) !== '',
+		));
 		usort($genreRows, fn (array $a, array $b): int => $this->genreSourcePriority((string)($a['source'] ?? '')) <=> $this->genreSourcePriority((string)($b['source'] ?? '')));
-		foreach ($genreRows as $row) {
-			$genre = trim((string)($row['genre'] ?? ''));
-			$key = $this->recordingKey($row);
-			if ($genre !== '' && $key !== '' && !isset($genres[$key])) {
-				$genres[$key] = $genre;
-			}
-		}
 
 		foreach ($rows as &$row) {
 			if (trim((string)($row['genre'] ?? '')) !== '') {
 				continue;
 			}
-			$key = $this->recordingKey($row);
-			if ($key !== '' && isset($genres[$key])) {
-				$row['genre'] = $genres[$key];
+
+			$bestGenre = '';
+			$bestScore = 0.0;
+			$bestPriority = PHP_INT_MAX;
+			foreach ($genreRows as $genreRow) {
+				$matchScore = $this->genreMatchScore($row, $genreRow);
+				if ($matchScore <= 0.0) {
+					continue;
+				}
+				$priority = $this->genreSourcePriority((string)($genreRow['source'] ?? ''));
+				if ($matchScore > $bestScore || ($matchScore === $bestScore && $priority < $bestPriority)) {
+					$bestScore = $matchScore;
+					$bestPriority = $priority;
+					$bestGenre = trim((string)($genreRow['genre'] ?? ''));
+				}
+			}
+
+			if ($bestGenre !== '') {
+				$row['genre'] = $bestGenre;
 			}
 		}
 		unset($row);
@@ -178,14 +186,54 @@ class MetadataSearchService {
 		return $rows;
 	}
 
-	/** @param array<string, mixed> $row */
-	private function recordingKey(array $row): string {
-		$title = $this->normalizeForKey((string)($row['title'] ?? ''));
-		$artist = $this->normalizeForKey((string)($row['artist'] ?? ($row['albumArtist'] ?? '')));
-		if ($title === '' || $artist === '') {
-			return '';
+	/**
+	 * Return a positive score only when two provider rows are sufficiently
+	 * similar to safely share broad genre metadata.
+	 *
+	 * @param array<string, mixed> $target
+	 * @param array<string, mixed> $source
+	 */
+	private function genreMatchScore(array $target, array $source): float {
+		$targetTitle = $this->normalizeTitleForGenre((string)($target['title'] ?? ''));
+		$sourceTitle = $this->normalizeTitleForGenre((string)($source['title'] ?? ''));
+		$targetArtist = $this->normalizeArtistForGenre((string)($target['artist'] ?? ($target['albumArtist'] ?? '')));
+		$sourceArtist = $this->normalizeArtistForGenre((string)($source['artist'] ?? ($source['albumArtist'] ?? '')));
+
+		if ($targetTitle === '' || $sourceTitle === '' || $targetArtist === '' || $sourceArtist === '') {
+			return 0.0;
 		}
-		return $title . "\0" . $artist;
+
+		$titleScore = 0.0;
+		$artistScore = 0.0;
+		similar_text($targetTitle, $sourceTitle, $titleScore);
+		similar_text($targetArtist, $sourceArtist, $artistScore);
+
+		// Require both dimensions to be credible. A nearly exact title can allow
+		// slightly more artist variation (stylized names), but never a completely
+		// different performer, which prevents genre bleed between cover versions.
+		if (($titleScore < 82.0 || $artistScore < 75.0)
+			&& ($titleScore < 96.0 || $artistScore < 65.0)) {
+			return 0.0;
+		}
+
+		return ($titleScore * 0.65) + ($artistScore * 0.35);
+	}
+
+	private function normalizeTitleForGenre(string $value): string {
+		$value = mb_strtolower(trim($value));
+		$value = preg_replace(
+			'/\s*[\(\[][^\)\]]*(?:single\s+version|radio\s+edit|album\s+version|remaster(?:ed)?(?:\s+\d{4})?|official(?:\s+(?:video|audio))?|lyric(?:s)?(?:\s+video)?)[^\)\]]*[\)\]]\s*$/u',
+			'',
+			$value,
+		) ?? $value;
+		return $this->normalizeForKey($value);
+	}
+
+	private function normalizeArtistForGenre(string $value): string {
+		$value = mb_strtolower(trim($value));
+		// Common artist-name stylisation: Ke$ha -> Kesha.
+		$value = str_replace('$', 's', $value);
+		return $this->normalizeForKey($value);
 	}
 
 	private function normalizeForKey(string $value): string {
