@@ -41,6 +41,13 @@ class SettingsController extends Controller {
 		string $acoustIdUserKey = '',
 		string $discogsToken = '',
 		string $lastFmKey = '',
+		string $aiProvider = 'off',
+		string $openAiKey = '',
+		string $mistralKey = '',
+		string $openAiModel = 'gpt-5.6-luna',
+		string $mistralModel = 'mistral-small-latest',
+		string $ollamaModel = '',
+		string $ollamaUrl = 'http://127.0.0.1:11434/api',
 	): DataResponse {
 		$userId = $this->userId();
 		$libraryPath = trim($libraryPath);
@@ -73,12 +80,31 @@ class SettingsController extends Controller {
 			], Http::STATUS_BAD_REQUEST);
 		}
 
+		$aiProvider = strtolower(trim($aiProvider));
+		if (!in_array($aiProvider, ['off', 'openai', 'mistral', 'ollama'], true)) {
+			$aiProvider = 'off';
+		}
+		$openAiModel = trim($openAiModel) !== '' ? trim($openAiModel) : 'gpt-5.6-luna';
+		$mistralModel = trim($mistralModel) !== '' ? trim($mistralModel) : 'mistral-small-latest';
+		$ollamaModel = trim($ollamaModel);
+		$ollamaUrl = rtrim(trim($ollamaUrl), '/');
+		if ($ollamaUrl === '') {
+			$ollamaUrl = 'http://127.0.0.1:11434/api';
+		}
+
 		$this->config->setUserValue($userId, 'musiccurator', 'library_path', $libraryPath);
 		$this->config->setUserValue($userId, 'musiccurator', 'musicbrainz_enabled', $musicBrainzEnabled === '1' ? '1' : '0');
+		$this->config->setUserValue($userId, 'musiccurator', 'ai_provider', $aiProvider);
+		$this->config->setUserValue($userId, 'musiccurator', 'openai_model', $openAiModel);
+		$this->config->setUserValue($userId, 'musiccurator', 'mistral_model', $mistralModel);
+		$this->config->setUserValue($userId, 'musiccurator', 'ollama_model', $ollamaModel);
+		$this->config->setUserValue($userId, 'musiccurator', 'ollama_url', $ollamaUrl);
 		$this->credentials->storeIfProvided($userId, 'acoustid_key', $acoustIdKey);
 		$this->credentials->storeIfProvided($userId, 'acoustid_user_key', $acoustIdUserKey);
 		$this->credentials->storeIfProvided($userId, 'discogs_token', $discogsToken);
 		$this->credentials->storeIfProvided($userId, 'lastfm_key', $lastFmKey);
+		$this->credentials->storeIfProvided($userId, 'openai_key', $openAiKey);
+		$this->credentials->storeIfProvided($userId, 'mistral_key', $mistralKey);
 
 		$this->logger->info('MusicCurator personal settings saved', [
 			'app' => 'musiccurator',
@@ -88,6 +114,9 @@ class SettingsController extends Controller {
 			'acoustid_configured' => $this->credentials->configured($userId, 'acoustid_key'),
 			'discogs_configured' => $this->credentials->configured($userId, 'discogs_token'),
 			'lastfm_configured' => $this->credentials->configured($userId, 'lastfm_key'),
+			'ai_provider' => $aiProvider,
+			'openai_configured' => $this->credentials->configured($userId, 'openai_key'),
+			'mistral_configured' => $this->credentials->configured($userId, 'mistral_key'),
 		]);
 
 		return new DataResponse([
@@ -98,6 +127,13 @@ class SettingsController extends Controller {
 			'acoustIdUserConfigured' => $this->credentials->configured($userId, 'acoustid_user_key'),
 			'discogsConfigured' => $this->credentials->configured($userId, 'discogs_token'),
 			'lastFmConfigured' => $this->credentials->configured($userId, 'lastfm_key'),
+			'aiProvider' => $aiProvider,
+			'openAiConfigured' => $this->credentials->configured($userId, 'openai_key'),
+			'mistralConfigured' => $this->credentials->configured($userId, 'mistral_key'),
+			'openAiModel' => $openAiModel,
+			'mistralModel' => $mistralModel,
+			'ollamaModel' => $ollamaModel,
+			'ollamaUrl' => $ollamaUrl,
 		]);
 	}
 
