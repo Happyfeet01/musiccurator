@@ -260,9 +260,9 @@ class AiAdvisorService {
 
 	/** @param array<string, mixed> $summary */
 	private function classificationPrompt(array $summary): string {
-		return "Classify this music folder using only the supplied filenames, tags and statistics. Do not claim to hear or fingerprint audio.\n\n" .
-			json_encode($summary, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) .
-			"\n\nReturn only the required JSON object. Prefer metadata mode for playlists, compilations, mixed folders, or uncertain cases. Recommend organize only for a coherent album where moving files into Artist/Album is likely safe.";
+		return "Classify this music folder using only the supplied filenames, tags and statistics. Do not claim to hear or fingerprint audio.\n\n"
+			. json_encode($summary, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+			. "\n\nReturn only the required JSON object. Prefer metadata mode for playlists, compilations, mixed folders, or uncertain cases. Recommend organize only for a coherent album where moving files into Artist/Album is likely safe.";
 	}
 
 	private function systemPrompt(): string {
