@@ -128,14 +128,14 @@ async function writeCandidate(track: Track, candidate: BatchSuggestion): Promise
 			albumArtist: candidate.albumArtist || '',
 			track: candidate.track || '',
 			year: candidate.year || '',
-			genre: '',
+			genre: candidate.genre || '',
 			useTitle: candidate.title ? '1' : '0',
 			useArtist: candidate.artist ? '1' : '0',
 			useAlbum: candidate.album ? '1' : '0',
 			useAlbumArtist: candidate.albumArtist ? '1' : '0',
 			useTrack: candidate.track ? '1' : '0',
 			useYear: candidate.year ? '1' : '0',
-			useGenre: '0',
+			useGenre: candidate.genre ? '1' : '0',
 		})
 		const response = await fetch(apiUrl('/api/tags/write'), {
 			method: 'POST',
@@ -162,9 +162,12 @@ async function writeOne(track: Track, candidate: BatchSuggestion): Promise<void>
 		writeError.value = 'Experimental tag writing currently supports MP3 files only.'
 		return
 	}
-	if (!window.confirm(`Write this metadata into the MP3 file?\n\n${track.filename}\n\n${candidate.artist || 'Unknown artist'} — ${candidate.title || track.title || track.filename}\n${candidate.album || 'No album'}\n\nA rollback record for the changed fields will be stored.`)) {
+
+	const genreLine = candidate.genre ? `\nGenre: ${candidate.genre}` : '\nGenre: no reliable suggestion'
+	if (!window.confirm(`Write this metadata into the MP3 file?\n\n${track.filename}\n\n${candidate.artist || 'Unknown artist'} — ${candidate.title || track.title || track.filename}\n${candidate.album || 'No album'}${genreLine}\n\nA rollback record for every changed field will be stored.`)) {
 		return
 	}
+
 	writeMessage.value = ''
 	writeError.value = ''
 	try {
@@ -178,7 +181,8 @@ async function writeOne(track: Track, candidate: BatchSuggestion): Promise<void>
 async function writeAutoSelected(): Promise<void> {
 	const rows = autoWriteRows.value
 	if (rows.length === 0 || bulkWriting.value) return
-	if (!window.confirm(`Write the ${rows.length} auto-selected high-confidence matches into their MP3 files?\n\nOnly matches above ${AUTO_ACCEPT_SCORE}% are included. Review items are NOT written. A rollback record is stored for every file.`)) {
+	const withGenre = rows.filter((row) => Boolean(row.item?.selected?.genre)).length
+	if (!window.confirm(`Write the ${rows.length} auto-selected high-confidence matches into their MP3 files?\n\nOnly matches above ${AUTO_ACCEPT_SCORE}% are included. Review items are NOT written. ${withGenre} of these matches also have a normalized genre suggestion. A rollback record is stored for every file.`)) {
 		return
 	}
 
@@ -198,7 +202,7 @@ async function writeAutoSelected(): Promise<void> {
 			}
 		}
 		if (written > 0) {
-			writeMessage.value = `${written} MP3 file${written === 1 ? '' : 's'} updated. Run Scan library to refresh the displayed current tags.`
+			writeMessage.value = `${written} MP3 file${written === 1 ? '' : 's'} updated. Run Scan library to refresh title, artist, album and genre from the files.`
 		}
 	} finally {
 		bulkWriting.value = false
@@ -238,7 +242,7 @@ function candidateSummary(candidate: BatchSuggestion): string {
 			<div class="batch-heading">
 				<div>
 					<strong>Batch metadata preview</strong>
-					<small>Choose several tracks and let MusicCurator check them sequentially. Searching is still a preview; writing requires a separate confirmation below.</small>
+					<small>Choose several tracks and let MusicCurator check them sequentially. Searching is a preview; writing requires a separate confirmation below.</small>
 				</div>
 				<span class="selection-count">{{ batch.selectedCount.value }} selected</span>
 			</div>
@@ -260,6 +264,7 @@ function candidateSummary(candidate: BatchSuggestion): string {
 			<div class="batch-hint">
 				<span>Providers: {{ activeProviderNames.length ? activeProviderNames.join(', ') : 'none configured' }}</span>
 				<span>Best result &gt; {{ AUTO_ACCEPT_SCORE }}% is auto-selected for the preview.</span>
+				<span>Genre: Discogs genres/styles first, Last.fm tags as fallback.</span>
 			</div>
 
 			<div v-if="batch.running.value || batch.total.value > 0" class="batch-progress">
@@ -327,7 +332,7 @@ function candidateSummary(candidate: BatchSuggestion): string {
 			<div v-if="writeMessage" class="write-notice success">{{ writeMessage }}</div>
 			<div v-if="writeError" class="write-notice error">{{ writeError }}</div>
 			<div class="write-warning">
-				<strong>Experimental write mode:</strong> currently MP3 only. Title, artist, album, album artist, track number and year can be written. Genre support comes next. Audio is stream-copied by ffmpeg without re-encoding, and MusicCurator stores rollback values for every changed field.
+				<strong>Experimental write mode:</strong> currently MP3 only. Title, artist, album, album artist, track number, year and a normalized genre can be written. Audio is stream-copied by ffmpeg without re-encoding, and MusicCurator stores rollback values for every changed field.
 			</div>
 
 			<div class="batch-result-list">
@@ -351,6 +356,8 @@ function candidateSummary(candidate: BatchSuggestion): string {
 					<div v-if="row.item?.best" class="result-candidate">
 						<strong>{{ row.item.best.title || row.track!.title || row.track!.filename }}</strong>
 						<span>{{ candidateSummary(row.item.best) }}</span>
+						<small v-if="row.item.best.genre" class="genre-copy">Genre: {{ row.item.best.genre }}</small>
+						<small v-else class="genre-copy muted-genre">Genre: no reliable suggestion</small>
 						<small>{{ row.item.best.source || 'Metadata' }} · {{ row.item.best.score }}%</small>
 						<small v-if="providerSummary(row.item.providers)" class="provider-copy">{{ providerSummary(row.item.providers) }}</small>
 						<div v-if="isMp3(row.track!.filename) && !writtenPaths[row.track!.path]" class="row-write-action">
@@ -426,6 +433,8 @@ function candidateSummary(candidate: BatchSuggestion): string {
 .batch-result[data-state="matched"] .result-state strong { color: var(--color-success-text); }
 .batch-result[data-state="review"] .result-state strong { color: var(--color-warning-text); }
 .batch-result[data-state="error"] .result-state strong, .error-copy { color: var(--color-error-text); }
+.genre-copy { font-weight: 650; color: var(--color-main-text) !important; }
+.muted-genre { font-weight: 400; color: var(--color-text-maxcontrast) !important; }
 .row-write-action { margin-top: 8px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
