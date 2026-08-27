@@ -8,6 +8,7 @@ export type BatchSuggestion = {
 	albumArtist: string
 	track: string
 	year: string
+	genre: string
 	releaseId: string
 	releaseGroupId: string
 	score: number
