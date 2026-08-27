@@ -264,7 +264,7 @@ function candidateSummary(candidate: BatchSuggestion): string {
 			<div class="batch-hint">
 				<span>Providers: {{ activeProviderNames.length ? activeProviderNames.join(', ') : 'none configured' }}</span>
 				<span>Best result &gt; {{ AUTO_ACCEPT_SCORE }}% is auto-selected for the preview.</span>
-				<span>Genre: Discogs genres/styles first, Last.fm tags as fallback.</span>
+				<span>Genre: MusicBrainz first, Last.fm track/artist tags as fallback; Discogs is optional.</span>
 			</div>
 
 			<div v-if="batch.running.value || batch.total.value > 0" class="batch-progress">
