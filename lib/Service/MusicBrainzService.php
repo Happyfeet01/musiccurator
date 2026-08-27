@@ -16,7 +16,7 @@ class MusicBrainzService {
 	}
 
 	/**
-	 * @return list<array{id: string, title: string, artist: string, album: string, albumArtist: string, track: string, year: string, releaseId: string, releaseGroupId: string, score: int}>
+	 * @return list<array{id: string, title: string, artist: string, album: string, albumArtist: string, track: string, year: string, genre: string, releaseId: string, releaseGroupId: string, score: int}>
 	 */
 	public function search(string $title, string $artist = '', string $album = ''): array {
 		$title = trim($title);
@@ -60,6 +60,7 @@ class MusicBrainzService {
 				'albumArtist' => $this->artistCreditToString($releaseArtistCredit),
 				'track' => '',
 				'year' => $year,
+				'genre' => '',
 				'releaseId' => (string)($release['id'] ?? ''),
 				'releaseGroupId' => (string)($releaseGroup['id'] ?? ''),
 				'score' => max(0, min(100, (int)($recording['score'] ?? 0))),
@@ -67,6 +68,20 @@ class MusicBrainzService {
 
 			if (count($results) >= 5) {
 				break;
+			}
+		}
+
+		// Only enrich the best MusicBrainz recording. This keeps batch lookups
+		// reasonably light while fixing the common case where a release has no
+		// genres but its release group does.
+		if (isset($results[0])) {
+			$releaseGroupId = trim((string)($results[0]['releaseGroupId'] ?? ''));
+			if ($releaseGroupId !== '') {
+				try {
+					$results[0]['genre'] = $this->releaseGroupGenre($releaseGroupId);
+				} catch (RuntimeException) {
+					// Genre enrichment is optional; the recording match remains useful.
+				}
 			}
 		}
 
