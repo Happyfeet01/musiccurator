@@ -14,8 +14,6 @@ declare global {
 type AiProvider = 'off' | 'openai' | 'mistral' | 'ollama'
 
 type SettingsResponse = {
-	libraryPath: string
-	musicBrainzEnabled: boolean
 	aiProvider?: AiProvider
 	openAiConfigured?: boolean
 	mistralConfigured?: boolean
@@ -56,7 +54,6 @@ const openAiModel = ref('gpt-5.6-luna')
 const mistralModel = ref('mistral-small-latest')
 const ollamaModel = ref('')
 const ollamaUrl = ref('http://127.0.0.1:11434/api')
-const musicBrainzEnabled = ref(true)
 const saving = ref(false)
 const testing = ref(false)
 const message = ref('')
@@ -85,7 +82,7 @@ function apiUrl(path: string): string {
 
 async function load(): Promise<void> {
 	try {
-		const response = await fetch(apiUrl('/api/settings'), {
+		const response = await fetch(apiUrl('/api/ai/settings'), {
 			headers: { Accept: 'application/json' },
 			credentials: 'same-origin',
 		})
@@ -98,7 +95,6 @@ async function load(): Promise<void> {
 		mistralModel.value = data.mistralModel || 'mistral-small-latest'
 		ollamaModel.value = data.ollamaModel || ''
 		ollamaUrl.value = data.ollamaUrl || 'http://127.0.0.1:11434/api'
-		musicBrainzEnabled.value = data.musicBrainzEnabled
 	} catch (e) {
 		error.value = e instanceof Error ? e.message : String(e)
 	}
@@ -110,8 +106,6 @@ async function save(): Promise<boolean> {
 	error.value = ''
 	try {
 		const body = new URLSearchParams({
-			libraryPath: props.libraryPath,
-			musicBrainzEnabled: musicBrainzEnabled.value ? '1' : '0',
 			aiProvider: provider.value,
 			openAiKey: openAiKey.value,
 			mistralKey: mistralKey.value,
@@ -120,7 +114,7 @@ async function save(): Promise<boolean> {
 			ollamaModel: ollamaModel.value,
 			ollamaUrl: ollamaUrl.value,
 		})
-		const response = await fetch(apiUrl('/api/settings'), {
+		const response = await fetch(apiUrl('/api/ai/settings'), {
 			method: 'POST',
 			credentials: 'same-origin',
 			headers: {
@@ -135,6 +129,10 @@ async function save(): Promise<boolean> {
 		provider.value = data.aiProvider ?? provider.value
 		openAiConfigured.value = Boolean(data.openAiConfigured)
 		mistralConfigured.value = Boolean(data.mistralConfigured)
+		openAiModel.value = data.openAiModel || openAiModel.value
+		mistralModel.value = data.mistralModel || mistralModel.value
+		ollamaModel.value = data.ollamaModel ?? ollamaModel.value
+		ollamaUrl.value = data.ollamaUrl || ollamaUrl.value
 		openAiKey.value = ''
 		mistralKey.value = ''
 		message.value = 'AI advisor settings saved.'
