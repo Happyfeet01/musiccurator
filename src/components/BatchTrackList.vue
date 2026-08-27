@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import {
 	AUTO_ACCEPT_SCORE,
@@ -29,6 +29,15 @@ type Track = {
 	status: string
 }
 
+type TagWriteResponse = {
+	written: boolean
+	path: string
+	fields: string[]
+	bytes: number
+	backupId: string
+	message?: string
+}
+
 const props = defineProps<{
 	shownTracks: Track[]
 	allTracks: Track[]
@@ -42,6 +51,12 @@ const emit = defineEmits<{
 	selectTrack: [track: Track]
 	loadMore: []
 }>()
+
+const bulkWriting = ref(false)
+const writingPath = ref('')
+const writeMessage = ref('')
+const writeError = ref('')
+const writtenPaths = ref<Record<string, boolean>>({})
 
 function apiUrl(path: string, query?: Record<string, string>): string {
 	const url = new URL(window.OC.generateUrl(`/apps/musiccurator${path}`), window.location.origin)
@@ -76,6 +91,10 @@ const batchRows = computed(() => batch.selectedPaths.value.map((path) => ({
 const hasResults = computed(() => Object.keys(batch.items.value).length > 0)
 const canSelectAlbum = computed(() => Boolean(currentTrack.value?.album))
 const canSearch = computed(() => batch.selectedCount.value > 0 && props.activeProviderNames.length > 0 && !batch.running.value)
+const autoWriteRows = computed(() => batchRows.value.filter((row) => row.item?.autoSelected
+	&& row.item.selected !== null
+	&& isMp3(row.track!.filename)
+	&& !writtenPaths.value[row.track!.path]))
 
 function selectAllShown(): void {
 	batch.addSelection(props.shownTracks.map((track) => track.path))
@@ -90,6 +109,99 @@ function selectCurrentAlbum(): void {
 function selectCurrentFolder(): void {
 	if (currentTrack.value) {
 		batch.selectFolder(currentTrack.value, props.allTracks)
+	}
+}
+
+function isMp3(filename: string): boolean {
+	return filename.toLowerCase().endsWith('.mp3')
+}
+
+async function writeCandidate(track: Track, candidate: BatchSuggestion): Promise<void> {
+	writingPath.value = track.path
+	writeError.value = ''
+	try {
+		const body = new URLSearchParams({
+			path: track.path,
+			title: candidate.title || '',
+			artist: candidate.artist || '',
+			album: candidate.album || '',
+			albumArtist: candidate.albumArtist || '',
+			track: candidate.track || '',
+			year: candidate.year || '',
+			genre: '',
+			useTitle: candidate.title ? '1' : '0',
+			useArtist: candidate.artist ? '1' : '0',
+			useAlbum: candidate.album ? '1' : '0',
+			useAlbumArtist: candidate.albumArtist ? '1' : '0',
+			useTrack: candidate.track ? '1' : '0',
+			useYear: candidate.year ? '1' : '0',
+			useGenre: '0',
+		})
+		const response = await fetch(apiUrl('/api/tags/write'), {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+				requesttoken: window.OC.requestToken,
+			},
+			body,
+		})
+		const data = await response.json().catch(() => ({})) as TagWriteResponse
+		if (!response.ok) {
+			throw new Error(data.message || `Metadata write failed with HTTP ${response.status}`)
+		}
+		writtenPaths.value = { ...writtenPaths.value, [track.path]: true }
+	} finally {
+		writingPath.value = ''
+	}
+}
+
+async function writeOne(track: Track, candidate: BatchSuggestion): Promise<void> {
+	if (!isMp3(track.filename)) {
+		writeError.value = 'Experimental tag writing currently supports MP3 files only.'
+		return
+	}
+	if (!window.confirm(`Write this metadata into the MP3 file?\n\n${track.filename}\n\n${candidate.artist || 'Unknown artist'} — ${candidate.title || track.title || track.filename}\n${candidate.album || 'No album'}\n\nA rollback record for the changed fields will be stored.`)) {
+		return
+	}
+	writeMessage.value = ''
+	writeError.value = ''
+	try {
+		await writeCandidate(track, candidate)
+		writeMessage.value = `Metadata saved in ${track.filename}. Run Scan library to refresh the displayed current tags.`
+	} catch (error) {
+		writeError.value = error instanceof Error ? error.message : String(error)
+	}
+}
+
+async function writeAutoSelected(): Promise<void> {
+	const rows = autoWriteRows.value
+	if (rows.length === 0 || bulkWriting.value) return
+	if (!window.confirm(`Write the ${rows.length} auto-selected high-confidence matches into their MP3 files?\n\nOnly matches above ${AUTO_ACCEPT_SCORE}% are included. Review items are NOT written. A rollback record is stored for every file.`)) {
+		return
+	}
+
+	bulkWriting.value = true
+	writeMessage.value = ''
+	writeError.value = ''
+	let written = 0
+	try {
+		for (const row of rows) {
+			if (!row.item?.selected) continue
+			try {
+				await writeCandidate(row.track!, row.item.selected)
+				written += 1
+			} catch (error) {
+				writeError.value = `Stopped after ${written} file${written === 1 ? '' : 's'}: ${error instanceof Error ? error.message : String(error)}`
+				break
+			}
+		}
+		if (written > 0) {
+			writeMessage.value = `${written} MP3 file${written === 1 ? '' : 's'} updated. Run Scan library to refresh the displayed current tags.`
+		}
+	} finally {
+		bulkWriting.value = false
 	}
 }
 
@@ -126,7 +238,7 @@ function candidateSummary(candidate: BatchSuggestion): string {
 			<div class="batch-heading">
 				<div>
 					<strong>Batch metadata preview</strong>
-					<small>Choose several tracks and let MusicCurator check them sequentially. This preview never writes tags or moves files.</small>
+					<small>Choose several tracks and let MusicCurator check them sequentially. Searching is still a preview; writing requires a separate confirmation below.</small>
 				</div>
 				<span class="selection-count">{{ batch.selectedCount.value }} selected</span>
 			</div>
@@ -198,9 +310,24 @@ function candidateSummary(candidate: BatchSuggestion): string {
 			<div class="batch-results-heading">
 				<div>
 					<strong>Batch review</strong>
-					<small>High-confidence matches are selected automatically. Everything else stays manual.</small>
+					<small>High-confidence matches are selected automatically. Review items stay manual and are never included in bulk writes.</small>
 				</div>
-				<NcButton :disabled="batch.running.value" @click="batch.clearResults">Clear preview</NcButton>
+				<div class="batch-write-actions">
+					<NcButton
+						v-if="autoWriteRows.length"
+						type="primary"
+						:disabled="batch.running.value || bulkWriting || writingPath !== ''"
+						@click="writeAutoSelected">
+						{{ bulkWriting ? 'Writing MP3 tags…' : `Write ${autoWriteRows.length} auto-selected to MP3` }}
+					</NcButton>
+					<NcButton :disabled="batch.running.value || bulkWriting" @click="batch.clearResults">Clear preview</NcButton>
+				</div>
+			</div>
+
+			<div v-if="writeMessage" class="write-notice success">{{ writeMessage }}</div>
+			<div v-if="writeError" class="write-notice error">{{ writeError }}</div>
+			<div class="write-warning">
+				<strong>Experimental write mode:</strong> currently MP3 only. Title, artist, album, album artist, track number and year can be written. Genre support comes next. Audio is stream-copied by ffmpeg without re-encoding, and MusicCurator stores rollback values for every changed field.
 			</div>
 
 			<div class="batch-result-list">
@@ -215,8 +342,9 @@ function candidateSummary(candidate: BatchSuggestion): string {
 					</div>
 
 					<div class="result-state">
-						<strong>{{ statusLabel(row.item?.status || 'queued') }}</strong>
-						<small v-if="row.item?.autoSelected">Auto selected &gt; {{ AUTO_ACCEPT_SCORE }}%</small>
+						<strong>{{ writtenPaths[row.track!.path] ? 'Saved to MP3' : statusLabel(row.item?.status || 'queued') }}</strong>
+						<small v-if="writtenPaths[row.track!.path]">Rollback record stored</small>
+						<small v-else-if="row.item?.autoSelected">Auto selected &gt; {{ AUTO_ACCEPT_SCORE }}%</small>
 						<small v-else-if="row.item?.status === 'review'">Not selected automatically</small>
 					</div>
 
@@ -225,6 +353,13 @@ function candidateSummary(candidate: BatchSuggestion): string {
 						<span>{{ candidateSummary(row.item.best) }}</span>
 						<small>{{ row.item.best.source || 'Metadata' }} · {{ row.item.best.score }}%</small>
 						<small v-if="providerSummary(row.item.providers)" class="provider-copy">{{ providerSummary(row.item.providers) }}</small>
+						<div v-if="isMp3(row.track!.filename) && !writtenPaths[row.track!.path]" class="row-write-action">
+							<NcButton
+								:disabled="bulkWriting || writingPath !== ''"
+								@click="writeOne(row.track!, row.item.best)">
+								{{ writingPath === row.track!.path ? 'Writing…' : 'Write this suggestion to MP3' }}
+							</NcButton>
+						</div>
 					</div>
 					<div v-else-if="row.item?.status === 'error'" class="result-candidate error-copy">
 						<strong>Lookup failed</strong>
@@ -251,7 +386,7 @@ function candidateSummary(candidate: BatchSuggestion): string {
 .batch-heading > div, .batch-results-heading > div { display: grid; gap: 3px; }
 .batch-heading small, .batch-results-heading small, .batch-hint, .provider-copy { color: var(--color-text-maxcontrast); }
 .selection-count { padding: 5px 10px; border-radius: 999px; background: var(--color-background-dark); font-size: 12px; font-weight: 700; white-space: nowrap; }
-.batch-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.batch-actions, .batch-write-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .batch-hint { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; }
 .batch-progress { display: grid; gap: 7px; }
 .batch-progress progress { width: 100%; height: 10px; accent-color: var(--color-primary-element); }
@@ -260,6 +395,11 @@ function candidateSummary(candidate: BatchSuggestion): string {
 .batch-summary [data-state="matched"] { color: var(--color-success-text); }
 .batch-summary [data-state="review"] { color: var(--color-warning-text); }
 .batch-summary [data-state="error"] { color: var(--color-error-text); }
+.write-notice, .write-warning { padding: 10px 12px; border-radius: var(--border-radius-large); background: var(--color-background-dark); }
+.write-notice.success { color: var(--color-success-text); }
+.write-notice.error { color: var(--color-error-text); }
+.write-warning { color: var(--color-text-maxcontrast); font-size: 12px; line-height: 1.45; }
+.write-warning strong { color: var(--color-warning-text); }
 .track-list { display: grid; gap: 6px; }
 .track-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 6px; width: 100%; padding: 4px 10px 4px 6px; border-radius: var(--border-radius-large); background: transparent; }
 .track-row:hover, .track-row.selected { background: var(--color-background-hover); }
@@ -286,6 +426,7 @@ function candidateSummary(candidate: BatchSuggestion): string {
 .batch-result[data-state="matched"] .result-state strong { color: var(--color-success-text); }
 .batch-result[data-state="review"] .result-state strong { color: var(--color-warning-text); }
 .batch-result[data-state="error"] .result-state strong, .error-copy { color: var(--color-error-text); }
+.row-write-action { margin-top: 8px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 @media (max-width: 900px) {
@@ -296,7 +437,7 @@ function candidateSummary(candidate: BatchSuggestion): string {
 @media (max-width: 640px) {
 	.batch-heading, .batch-results-heading { align-items: stretch; flex-direction: column; }
 	.selection-count { align-self: flex-start; }
-	.batch-actions :deep(button) { flex: 1 1 auto; }
+	.batch-actions :deep(button), .batch-write-actions :deep(button) { flex: 1 1 auto; }
 	.track-row { grid-template-columns: 30px minmax(0, 1fr); }
 	.track-status { grid-column: 2; justify-self: start; margin-bottom: 4px; }
 	.batch-result { grid-template-columns: 1fr; }
