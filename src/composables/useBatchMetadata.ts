@@ -15,6 +15,11 @@ export type BatchSuggestion = {
 	source?: string
 	sourceUrl?: string
 	artworkUrl?: string
+	autoAccept?: boolean
+	querySource?: string
+	inputConflict?: boolean
+	fingerprintConfirmed?: boolean
+	fingerprintConflict?: boolean
 }
 
 export type BatchProviderStatus = {
@@ -66,7 +71,9 @@ function bestCandidate(results: BatchSuggestion[]): BatchSuggestion | null {
 }
 
 function isAutoAccepted(best: BatchSuggestion | null): boolean {
-	return best !== null && best.score > AUTO_ACCEPT_SCORE
+	return best !== null
+		&& best.score > AUTO_ACCEPT_SCORE
+		&& best.autoAccept !== false
 }
 
 function resultStatus(best: BatchSuggestion | null): BatchPreviewItem['status'] {
