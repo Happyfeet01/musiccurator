@@ -133,7 +133,7 @@ class MusicBrainzService {
 			$response = $client->get($url, [
 				'headers' => [
 					'Accept' => 'application/json',
-					'User-Agent' => 'MusicCurator/0.2.12 (https://github.com/Happyfeet01/musiccurator)',
+					'User-Agent' => 'MusicCurator/0.2.14 (https://github.com/Happyfeet01/musiccurator)',
 				],
 				'connect_timeout' => 8,
 				'timeout' => 15,
