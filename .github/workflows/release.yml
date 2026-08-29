@@ -1,0 +1,123 @@
+name: GitHub beta release
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+concurrency:
+  group: musiccurator-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+
+      - name: Read app version
+        id: version
+        shell: bash
+        run: |
+          VERSION="$(php -r '$xml=simplexml_load_file("appinfo/info.xml"); echo (string)$xml->version;')"
+          if [ -z "$VERSION" ]; then
+            echo "Could not read version from appinfo/info.xml" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Skip an already published version
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "$TAG is already published; nothing to do."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install frontend dependencies
+        if: steps.existing.outputs.published != 'true'
+        run: npm ci --no-audit --no-fund
+
+      - name: Build frontend
+        if: steps.existing.outputs.published != 'true'
+        run: npm run build
+
+      - name: Install production PHP dependencies
+        if: steps.existing.outputs.published != 'true'
+        run: composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+
+      - name: Build Nextcloud app archive
+        if: steps.existing.outputs.published != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          mkdir -p dist/musiccurator
+          rsync -a ./ dist/musiccurator/ \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'node_modules/' \
+            --exclude 'dist/' \
+            --exclude 'tests/' \
+            --exclude 'vendor-bin/' \
+            --exclude '.idea/' \
+            --exclude '.php-cs-fixer.cache'
+          tar -C dist -czf "musiccurator-v${VERSION}.tar.gz" musiccurator
+
+      - name: Prepare release notes
+        if: steps.existing.outputs.published != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          cat > release-notes.md <<EOF
+          # MusicCurator ${VERSION} — first public beta
+
+          This is the first public GitHub beta of MusicCurator, a Nextcloud-native music library curation app designed to complement Nextcloud Music and compatible players.
+
+          Highlights include a persistent library index, MusicBrainz/Last.fm metadata enrichment, optional Discogs and AcoustID support, cover artwork, batch metadata review, experimental MP3 tag writing with rollback records, managed M3U8 playlist creation, album/playlist ordering, and the optional AI Advisor.
+
+          **Beta warning:** MP3 tag writing is still experimental. Test with backed-up music first. This release is not yet published in the Nextcloud App Store.
+
+          See `CHANGELOG.md` for the detailed feature and limitation list.
+          EOF
+
+      - name: Publish GitHub prerelease
+        if: steps.existing.outputs.published != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          gh release create "$TAG" \
+            "musiccurator-v${VERSION}.tar.gz" \
+            --target "$GITHUB_SHA" \
+            --title "MusicCurator ${VERSION} Beta" \
+            --notes-file release-notes.md \
+            --prerelease
