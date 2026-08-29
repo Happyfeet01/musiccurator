@@ -23,17 +23,46 @@ class MetadataSearchService {
 
 	/**
 	 * @param array<string, mixed> $tags
-	 * @return array{results: list<array<string, mixed>>, providers: list<array<string, mixed>>, query: array{title: string, artist: string, album: string}}
+	 * @return array{results: list<array<string, mixed>>, providers: list<array<string, mixed>>, query: array{title: string, artist: string, album: string, source: string, inputConflict: bool}}
 	 */
 	public function search(string $userId, File $file, array $tags, string $title): array {
-		$artist = trim((string)($tags['artist'] ?? ''));
-		$album = trim((string)($tags['album'] ?? ''));
-		$title = trim($title);
+		$tagArtist = trim((string)($tags['artist'] ?? ''));
+		$tagAlbum = trim((string)($tags['album'] ?? ''));
+		$tagTitle = trim($title);
 
 		// Downloads often contain a useful "Artist - Title" string but no
 		// separate artist tag. Split common separators before querying providers
 		// so Last.fm, MusicBrainz and Discogs can still match these files.
-		[$title, $artist] = $this->inferArtistAndTitle($title, $artist);
+		[$tagTitle, $tagArtist] = $this->inferArtistAndTitle($tagTitle, $tagArtist);
+
+		$filenameStem = $this->cleanFilenameStem(pathinfo($file->getName(), PATHINFO_FILENAME));
+		[$filenameTitle, $filenameArtist] = $this->inferArtistAndTitle($filenameStem, '');
+
+		$title = $tagTitle;
+		$artist = $tagArtist;
+		$album = $tagAlbum;
+		$querySource = 'tags';
+		$inputConflict = false;
+
+		// Existing tags are not automatically trustworthy: MusicCurator is often
+		// used precisely because downloaded files contain somebody else's tags.
+		// A clearly structured "Artist - Title" filename is valuable independent
+		// evidence. If it strongly disagrees with the embedded tags, search from
+		// the filename and force manual review instead of treating a provider's
+		// exact match to the bad tags as safe.
+		if ($filenameArtist !== '' && $filenameTitle !== '') {
+			if ($artist === '' || $title === '') {
+				$title = $filenameTitle;
+				$artist = $filenameArtist;
+				$querySource = 'filename';
+			} elseif ($this->metadataConflict($tagTitle, $tagArtist, $filenameTitle, $filenameArtist)) {
+				$title = $filenameTitle;
+				$artist = $filenameArtist;
+				$album = '';
+				$querySource = 'filename';
+				$inputConflict = true;
+			}
+		}
 
 		$results = [];
 		$providers = [];
@@ -81,6 +110,21 @@ class MetadataSearchService {
 		// applying genres to covers or unrelated recordings.
 		$results = $this->enrichGenres($results);
 
+		// When a strong Chromaprint/AcoustID result exists, it is evidence from the
+		// actual audio rather than filenames or embedded tags. Conflicting textual
+		// matches are deliberately demoted so a 100% MusicBrainz search score can no
+		// longer beat a strong fingerprint for a completely different recording.
+		$results = $this->applyFingerprintEvidence($results);
+
+		foreach ($results as &$row) {
+			$row['querySource'] = $querySource;
+			$row['inputConflict'] = $inputConflict;
+			$fingerprintConfirmed = (bool)($row['fingerprintConfirmed'] ?? false);
+			$fingerprintConflict = (bool)($row['fingerprintConflict'] ?? false);
+			$row['autoAccept'] = !$fingerprintConflict && (!$inputConflict || $fingerprintConfirmed);
+		}
+		unset($row);
+
 		usort($results, function (array $a, array $b): int {
 			$score = ((int)($b['score'] ?? 0)) <=> ((int)($a['score'] ?? 0));
 			if ($score !== 0) {
@@ -96,6 +140,8 @@ class MetadataSearchService {
 				'title' => $title,
 				'artist' => $artist,
 				'album' => $album,
+				'source' => $querySource,
+				'inputConflict' => $inputConflict,
 			],
 		];
 	}
@@ -188,6 +234,49 @@ class MetadataSearchService {
 	}
 
 	/**
+	 * @param list<array<string, mixed>> $rows
+	 * @return list<array<string, mixed>>
+	 */
+	private function applyFingerprintEvidence(array $rows): array {
+		$fingerprint = null;
+		foreach ($rows as $row) {
+			if ((string)($row['source'] ?? '') !== 'AcoustID' || (int)($row['score'] ?? 0) < 90) {
+				continue;
+			}
+			if (trim((string)($row['title'] ?? '')) === '' || trim((string)($row['artist'] ?? '')) === '') {
+				continue;
+			}
+			$fingerprint = $row;
+			break;
+		}
+
+		if ($fingerprint === null) {
+			return $rows;
+		}
+
+		foreach ($rows as &$row) {
+			if ((string)($row['source'] ?? '') === 'AcoustID') {
+				$row['fingerprintConfirmed'] = $this->recordingsMatch($row, $fingerprint);
+				$row['fingerprintConflict'] = false;
+				continue;
+			}
+
+			if ($this->recordingsMatch($row, $fingerprint)) {
+				$row['fingerprintConfirmed'] = true;
+				$row['fingerprintConflict'] = false;
+				continue;
+			}
+
+			$row['fingerprintConfirmed'] = false;
+			$row['fingerprintConflict'] = true;
+			$row['score'] = min(70, (int)($row['score'] ?? 0));
+		}
+		unset($row);
+
+		return $rows;
+	}
+
+	/**
 	 * Return a positive score only when two provider rows are sufficiently
 	 * similar to safely share broad genre metadata.
 	 *
@@ -218,6 +307,49 @@ class MetadataSearchService {
 		}
 
 		return ($titleScore * 0.65) + ($artistScore * 0.35);
+	}
+
+	/** @param array<string, mixed> $a @param array<string, mixed> $b */
+	private function recordingsMatch(array $a, array $b): bool {
+		$titleA = $this->normalizeTitleForGenre((string)($a['title'] ?? ''));
+		$titleB = $this->normalizeTitleForGenre((string)($b['title'] ?? ''));
+		$artistA = $this->normalizeArtistForGenre((string)($a['artist'] ?? ($a['albumArtist'] ?? '')));
+		$artistB = $this->normalizeArtistForGenre((string)($b['artist'] ?? ($b['albumArtist'] ?? '')));
+		if ($titleA === '' || $titleB === '' || $artistA === '' || $artistB === '') {
+			return false;
+		}
+
+		$titleScore = 0.0;
+		$artistScore = 0.0;
+		similar_text($titleA, $titleB, $titleScore);
+		similar_text($artistA, $artistB, $artistScore);
+
+		return ($titleScore >= 82.0 && $artistScore >= 75.0)
+			|| ($titleScore >= 96.0 && $artistScore >= 65.0);
+	}
+
+	private function metadataConflict(string $tagTitle, string $tagArtist, string $filenameTitle, string $filenameArtist): bool {
+		$tagTitle = $this->normalizeTitleForGenre($tagTitle);
+		$filenameTitle = $this->normalizeTitleForGenre($filenameTitle);
+		$tagArtist = $this->normalizeArtistForGenre($tagArtist);
+		$filenameArtist = $this->normalizeArtistForGenre($filenameArtist);
+		if ($tagTitle === '' || $filenameTitle === '' || $tagArtist === '' || $filenameArtist === '') {
+			return false;
+		}
+
+		$titleScore = 0.0;
+		$artistScore = 0.0;
+		similar_text($tagTitle, $filenameTitle, $titleScore);
+		similar_text($tagArtist, $filenameArtist, $artistScore);
+
+		return $titleScore < 45.0 || $artistScore < 45.0;
+	}
+
+	private function cleanFilenameStem(string $value): string {
+		$value = trim($value);
+		$value = preg_replace('/^\s*(?:\d{1,3}\s*[._-]\s*)+/u', '', $value) ?? $value;
+		$value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+		return trim($value);
 	}
 
 	private function normalizeTitleForGenre(string $value): string {
