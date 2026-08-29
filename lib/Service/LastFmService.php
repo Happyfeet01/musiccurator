@@ -53,6 +53,7 @@ class LastFmService {
 			$album = '';
 			$year = '';
 			$genre = '';
+			$artworkUrl = $this->imageUrl($match['image'] ?? []);
 
 			if ($index < 2 && $candidateTitle !== '') {
 				try {
@@ -61,6 +62,10 @@ class LastFmService {
 					$albumInfo = is_array($track['album'] ?? null) ? $track['album'] : [];
 					$album = trim((string)($albumInfo['title'] ?? ''));
 					$genre = GenreNormalizer::normalize($this->tagNames($track['toptags']['tag'] ?? []));
+					$albumArtwork = $this->imageUrl($albumInfo['image'] ?? []);
+					if ($albumArtwork !== '') {
+						$artworkUrl = $albumArtwork;
+					}
 					if ($url === '') {
 						$url = trim((string)($track['url'] ?? ''));
 					}
@@ -91,6 +96,7 @@ class LastFmService {
 				'track' => '',
 				'year' => $year,
 				'genre' => $genre,
+				'artworkUrl' => $artworkUrl,
 				'releaseId' => '',
 				'releaseGroupId' => '',
 				'score' => $score,
@@ -130,6 +136,30 @@ class LastFmService {
 	}
 
 	/**
+	 * @param mixed $images
+	 */
+	private function imageUrl(mixed $images): string {
+		if (!is_array($images)) {
+			return '';
+		}
+		if (isset($images['#text'])) {
+			$images = [$images];
+		}
+
+		foreach (array_reverse($images) as $image) {
+			if (!is_array($image)) {
+				continue;
+			}
+			$url = trim((string)($image['#text'] ?? ''));
+			if ($url !== '' && str_starts_with($url, 'https://')) {
+				return $url;
+			}
+		}
+
+		return '';
+	}
+
+	/**
 	 * @param mixed $tags
 	 * @return list<string>
 	 */
@@ -159,7 +189,7 @@ class LastFmService {
 		$response = $client->get($url, [
 			'headers' => [
 				'Accept' => 'application/json',
-				'User-Agent' => 'MusicCurator/0.2.11 (https://github.com/Happyfeet01/musiccurator)',
+				'User-Agent' => 'MusicCurator/0.2.12 (https://github.com/Happyfeet01/musiccurator)',
 			],
 			'connect_timeout' => 8,
 			'timeout' => 15,
