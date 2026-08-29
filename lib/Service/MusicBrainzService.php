@@ -59,7 +59,7 @@ class MusicBrainzService {
 				'artist' => $this->artistCreditToString($artistCredit),
 				'album' => (string)($release['title'] ?? ''),
 				'albumArtist' => $this->artistCreditToString($releaseArtistCredit),
-				'track' => '',
+				'track' => $this->trackNumberFromRelease($release),
 				'year' => $year,
 				'genre' => '',
 				'artworkUrl' => $releaseId !== '' ? 'https://coverartarchive.org/release/' . rawurlencode($releaseId) . '/front-250' : '',
@@ -88,6 +88,49 @@ class MusicBrainzService {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Recording search responses already include the matching track inside each
+	 * release's media data. Reuse that position instead of making another API
+	 * request, so album track numbers remain cheap enough for batch matching.
+	 *
+	 * @param array<string, mixed> $release
+	 */
+	private function trackNumberFromRelease(array $release): string {
+		$media = is_array($release['media'] ?? null) ? $release['media'] : [];
+		foreach ($media as $medium) {
+			if (!is_array($medium)) {
+				continue;
+			}
+
+			$tracks = is_array($medium['track'] ?? null)
+				? $medium['track']
+				: (is_array($medium['tracks'] ?? null) ? $medium['tracks'] : []);
+			foreach ($tracks as $track) {
+				if (!is_array($track)) {
+					continue;
+				}
+				$number = trim((string)($track['number'] ?? ''));
+				if ($number !== '') {
+					return $number;
+				}
+				$position = (int)($track['position'] ?? 0);
+				if ($position > 0) {
+					return (string)$position;
+				}
+			}
+
+			// MusicBrainz search results often expose one matching track plus its
+			// zero-based offset in the medium. This is a reliable fallback when the
+			// free-text track number itself is missing.
+			$offset = (int)($medium['track-offset'] ?? -1);
+			if ($offset >= 0 && $tracks !== []) {
+				return (string)($offset + 1);
+			}
+		}
+
+		return '';
 	}
 
 	/**
@@ -133,7 +176,7 @@ class MusicBrainzService {
 			$response = $client->get($url, [
 				'headers' => [
 					'Accept' => 'application/json',
-					'User-Agent' => 'MusicCurator/0.2.14 (https://github.com/Happyfeet01/musiccurator)',
+					'User-Agent' => 'MusicCurator/0.2.15 (https://github.com/Happyfeet01/musiccurator)',
 				],
 				'connect_timeout' => 8,
 				'timeout' => 15,
