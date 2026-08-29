@@ -38,6 +38,14 @@ type TagWriteResponse = {
 	message?: string
 }
 
+type PlaylistCreateResponse = {
+	path: string
+	name: string
+	entries: number
+	managed: boolean
+	message?: string
+}
+
 const props = defineProps<{
 	shownTracks: Track[]
 	allTracks: Track[]
@@ -57,6 +65,9 @@ const writingPath = ref('')
 const writeMessage = ref('')
 const writeError = ref('')
 const writtenPaths = ref<Record<string, boolean>>({})
+const playlistCreating = ref(false)
+const playlistMessage = ref('')
+const playlistError = ref('')
 
 function apiUrl(path: string, query?: Record<string, string>): string {
 	const url = new URL(window.OC.generateUrl(`/apps/musiccurator${path}`), window.location.origin)
@@ -95,6 +106,10 @@ async function searchTrack(path: string): Promise<BatchSearchResponse> {
 const batch = useBatchMetadata(searchTrack)
 
 const currentTrack = computed(() => props.allTracks.find((track) => track.path === props.selectedPath) ?? null)
+const currentFolder = computed(() => currentTrack.value ? folderOf(currentTrack.value.path) : '')
+const currentFolderTrackCount = computed(() => currentFolder.value
+	? props.allTracks.filter((track) => folderOf(track.path) === currentFolder.value).length
+	: 0)
 const batchRows = computed(() => batch.selectedPaths.value.map((path) => ({
 	track: props.allTracks.find((track) => track.path === path) ?? null,
 	item: batch.items.value[path] ?? null,
@@ -106,6 +121,11 @@ const autoWriteRows = computed(() => batchRows.value.filter((row) => row.item?.a
 	&& row.item.selected !== null
 	&& isMp3(row.track!.filename)
 	&& !writtenPaths.value[row.track!.path]))
+
+function folderOf(path: string): string {
+	const slash = path.lastIndexOf('/')
+	return slash > 0 ? path.slice(0, slash) : '/'
+}
 
 function selectAllShown(): void {
 	batch.addSelection(props.shownTracks.map((track) => track.path))
@@ -120,6 +140,38 @@ function selectCurrentAlbum(): void {
 function selectCurrentFolder(): void {
 	if (currentTrack.value) {
 		batch.selectFolder(currentTrack.value, props.allTracks)
+	}
+}
+
+async function createPlaylistFromCurrentFolder(): Promise<void> {
+	if (!currentTrack.value || !currentFolder.value || playlistCreating.value) return
+	if (!window.confirm(`Create or refresh a MusicCurator-managed .m3u8 playlist in this folder?\n\n${currentFolder.value}\n\n${currentFolderTrackCount.value} indexed audio file${currentFolderTrackCount.value === 1 ? '' : 's'} in this folder will be listed. Existing playlists that are not managed by MusicCurator are never overwritten.`)) {
+		return
+	}
+
+	playlistCreating.value = true
+	playlistMessage.value = ''
+	playlistError.value = ''
+	try {
+		const response = await fetch(apiUrl('/api/playlists/from-folder'), {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+				requesttoken: window.OC.requestToken,
+			},
+			body: new URLSearchParams({ folderPath: currentFolder.value }),
+		})
+		const data = await response.json().catch(() => ({})) as Partial<PlaylistCreateResponse> & { message?: string }
+		if (!response.ok) {
+			throw new Error(data.message || `Playlist creation failed with HTTP ${response.status}`)
+		}
+		playlistMessage.value = `${data.name || 'Playlist'} saved with ${data.entries ?? currentFolderTrackCount.value} track${(data.entries ?? currentFolderTrackCount.value) === 1 ? '' : 's'}. It is marked as MusicCurator-managed and will show in Playlists after reopening the app or refreshing the library index.`
+	} catch (error) {
+		playlistError.value = error instanceof Error ? error.message : String(error)
+	} finally {
+		playlistCreating.value = false
 	}
 }
 
@@ -262,6 +314,9 @@ function candidateSummary(candidate: BatchSuggestion): string {
 				<NcButton :disabled="batch.running.value || shownTracks.length === 0" @click="selectAllShown">Select all shown</NcButton>
 				<NcButton :disabled="batch.running.value || !canSelectAlbum" @click="selectCurrentAlbum">Select current album</NcButton>
 				<NcButton :disabled="batch.running.value || !currentTrack" @click="selectCurrentFolder">Select current folder</NcButton>
+				<NcButton :disabled="batch.running.value || !currentTrack || playlistCreating" @click="createPlaylistFromCurrentFolder">
+					{{ playlistCreating ? 'Creating playlist…' : 'Create / refresh folder .m3u8' }}
+				</NcButton>
 				<NcButton :disabled="batch.running.value || batch.selectedCount.value === 0" @click="batch.clearSelection">Clear selection</NcButton>
 				<NcButton
 					type="primary"
@@ -272,10 +327,14 @@ function candidateSummary(candidate: BatchSuggestion): string {
 				<NcButton v-if="batch.running.value" @click="batch.cancel">Stop after current track</NcButton>
 			</div>
 
+			<div v-if="playlistMessage" class="playlist-notice success">{{ playlistMessage }}</div>
+			<div v-if="playlistError" class="playlist-notice error">{{ playlistError }}</div>
+
 			<div class="batch-hint">
 				<span>Providers: {{ activeProviderNames.length ? activeProviderNames.join(', ') : 'none configured' }}</span>
 				<span>Best result &gt; {{ AUTO_ACCEPT_SCORE }}% is auto-selected for the preview.</span>
 				<span>Genre: MusicBrainz first, Last.fm track/artist tags as fallback; Discogs is optional.</span>
+				<span v-if="currentFolder">Folder playlist: {{ currentFolderTrackCount }} direct audio file{{ currentFolderTrackCount === 1 ? '' : 's' }} in {{ currentFolder }}.</span>
 			</div>
 
 			<div v-if="batch.running.value || batch.total.value > 0" class="batch-progress">
@@ -419,6 +478,9 @@ function candidateSummary(candidate: BatchSuggestion): string {
 .selection-count { padding: 5px 10px; border-radius: 999px; background: var(--color-background-dark); font-size: 12px; font-weight: 700; white-space: nowrap; }
 .batch-actions, .batch-write-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .batch-hint { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; }
+.playlist-notice { padding: 9px 11px; border-radius: var(--border-radius-large); background: var(--color-background-dark); font-size: 12px; }
+.playlist-notice.success { color: var(--color-success-text); }
+.playlist-notice.error { color: var(--color-error-text); }
 .batch-progress { display: grid; gap: 7px; }
 .batch-progress progress { width: 100%; height: 10px; accent-color: var(--color-primary-element); }
 .batch-summary { display: flex; flex-wrap: wrap; gap: 6px; }
