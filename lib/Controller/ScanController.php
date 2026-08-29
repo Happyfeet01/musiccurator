@@ -9,6 +9,7 @@ use OCA\MusicCurator\Service\ScanIndexService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\OpenAPI;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\Files\File;
@@ -37,6 +38,60 @@ class ScanController extends Controller {
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request);
+	}
+
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
+	public function cached(): DataResponse {
+		$userId = $this->userId();
+		$storedPath = trim($this->config->getUserValue($userId, 'musiccurator', 'library_path', ''));
+		if ($storedPath === '') {
+			return new DataResponse([
+				'libraryPath' => '',
+				'tracks' => [],
+				'playlists' => [],
+				'stats' => ['tracks' => 0, 'needsReview' => 0, 'albums' => 0, 'playlists' => 0],
+				'truncated' => false,
+				'durationMs' => 0,
+				'lastScanAt' => 0,
+				'fromCache' => true,
+			]);
+		}
+
+		$libraryPath = $this->normalizePath($storedPath);
+		$tracks = [];
+		foreach ($this->scanIndex->loadForUser($userId) as $row) {
+			$path = (string)($row['path'] ?? '');
+			if (!$this->isInsideLibraryPath($path, $libraryPath)) {
+				continue;
+			}
+			$track = $this->scanIndex->snapshotTrack($row);
+			if ($track !== null) {
+				$tracks[] = $track;
+			}
+		}
+		usort($tracks, static fn (array $a, array $b): int => strcasecmp((string)($a['path'] ?? ''), (string)($b['path'] ?? '')));
+
+		$lastScanPath = trim($this->config->getUserValue($userId, 'musiccurator', 'last_scan_path', ''));
+		$playlists = [];
+		if ($lastScanPath !== '' && $this->normalizePath($lastScanPath) === $libraryPath) {
+			$decoded = json_decode($this->config->getUserValue($userId, 'musiccurator', 'last_scan_playlists', '[]'), true);
+			if (is_array($decoded)) {
+				$playlists = array_values(array_filter($decoded, static fn (mixed $playlist): bool => is_array($playlist)));
+			}
+		}
+
+		return new DataResponse([
+			'libraryPath' => $libraryPath,
+			'tracks' => $tracks,
+			'playlists' => $playlists,
+			'stats' => $this->libraryStats($tracks, $playlists),
+			'truncated' => $this->config->getUserValue($userId, 'musiccurator', 'last_scan_truncated', '0') === '1',
+			'durationMs' => 0,
+			'lastScanAt' => (int)$this->config->getUserValue($userId, 'musiccurator', 'last_scan_at', '0'),
+			'fromCache' => true,
+		]);
 	}
 
 	#[NoAdminRequired]
@@ -89,26 +144,29 @@ class ScanController extends Controller {
 			$freshReads = 0;
 			$index = $this->scanIndex->loadForUser($userId);
 			$this->scanFolder($node, $libraryPath, $userId, $index, $tracks, $playlists, $cacheHits, $freshReads);
-
-			$untagged = 0;
-			$albumKeys = [];
-			foreach ($tracks as $track) {
-				if (!$track['tagged'] || $track['title'] === '' || $track['artist'] === '') {
-					++$untagged;
-				}
-				if ($track['album'] !== '') {
-					$albumKeys[strtolower($track['albumArtist'] . "\0" . $track['artist'] . "\0" . $track['album'])] = true;
-				}
-			}
+			$playlists = $this->decoratePlaylists($playlists, $tracks);
+			$stats = $this->libraryStats($tracks, $playlists);
 
 			$durationMs = (int)round((microtime(true) - $startedAt) * 1000);
+			$truncated = count($tracks) >= self::MAX_TRACKS;
+			$scanTime = time();
+			$this->config->setUserValue($userId, 'musiccurator', 'last_scan_path', $libraryPath);
+			$this->config->setUserValue($userId, 'musiccurator', 'last_scan_at', (string)$scanTime);
+			$this->config->setUserValue($userId, 'musiccurator', 'last_scan_truncated', $truncated ? '1' : '0');
+			$this->config->setUserValue(
+				$userId,
+				'musiccurator',
+				'last_scan_playlists',
+				json_encode($playlists, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+			);
+
 			$this->logger->info('MusicCurator library scan completed', [
 				'app' => 'musiccurator',
 				'user' => $userId,
 				'path' => $libraryPath,
-				'tracks' => count($tracks),
-				'albums' => count($albumKeys),
-				'playlists' => count($playlists),
+				'tracks' => $stats['tracks'],
+				'albums' => $stats['albums'],
+				'playlists' => $stats['playlists'],
 				'cache_hits' => $cacheHits,
 				'fresh_tag_reads' => $freshReads,
 				'duration_ms' => $durationMs,
@@ -118,19 +176,16 @@ class ScanController extends Controller {
 				'libraryPath' => $libraryPath,
 				'tracks' => $tracks,
 				'playlists' => $playlists,
-				'stats' => [
-					'tracks' => count($tracks),
-					'needsReview' => $untagged,
-					'albums' => count($albumKeys),
-					'playlists' => count($playlists),
-				],
+				'stats' => $stats,
 				'cache' => [
 					'hits' => $cacheHits,
 					'freshReads' => $freshReads,
 					'knownFiles' => count($index),
 				],
-				'truncated' => count($tracks) >= self::MAX_TRACKS,
+				'truncated' => $truncated,
 				'durationMs' => $durationMs,
+				'lastScanAt' => $scanTime,
+				'fromCache' => false,
 			]);
 		} catch (Throwable $e) {
 			$this->logger->warning('MusicCurator library scan failed', [
@@ -157,7 +212,7 @@ class ScanController extends Controller {
 	/**
 	 * @param array<int, array<string, mixed>> $index
 	 * @param list<array<string, mixed>> $tracks
-	 * @param list<array{path: string, name: string}> $playlists
+	 * @param list<array<string, mixed>> $playlists
 	 */
 	private function scanFolder(
 		Folder $folder,
@@ -189,7 +244,11 @@ class ScanController extends Controller {
 
 			$extension = strtolower(pathinfo($node->getName(), PATHINFO_EXTENSION));
 			if (in_array($extension, self::PLAYLIST_EXTENSIONS, true)) {
-				$playlists[] = ['path' => $path, 'name' => $node->getName()];
+				$playlists[] = [
+					'path' => $path,
+					'name' => $node->getName(),
+					'entries' => $this->playlistEntries($node, $path),
+				];
 				continue;
 			}
 			if (!in_array($extension, self::AUDIO_EXTENSIONS, true)) {
@@ -241,6 +300,111 @@ class ScanController extends Controller {
 			$tracks[] = $track;
 			++$freshReads;
 		}
+	}
+
+	/**
+	 * @param list<array<string, mixed>> $playlists
+	 * @param list<array<string, mixed>> $tracks
+	 * @return list<array<string, mixed>>
+	 */
+	private function decoratePlaylists(array $playlists, array $tracks): array {
+		$releaseByPath = [];
+		foreach ($tracks as $track) {
+			$releaseId = trim((string)($track['musicBrainzReleaseId'] ?? ''));
+			$path = (string)($track['path'] ?? '');
+			if ($releaseId !== '' && $path !== '') {
+				$releaseByPath[$path] = $releaseId;
+			}
+		}
+
+		foreach ($playlists as &$playlist) {
+			$releaseIds = [];
+			$entries = is_array($playlist['entries'] ?? null) ? $playlist['entries'] : [];
+			foreach ($entries as $entry) {
+				$releaseId = $releaseByPath[(string)$entry] ?? '';
+				if ($releaseId === '' || in_array($releaseId, $releaseIds, true)) {
+					continue;
+				}
+				$releaseIds[] = $releaseId;
+				if (count($releaseIds) >= 4) {
+					break;
+				}
+			}
+			$playlist['artworkReleaseIds'] = $releaseIds;
+			unset($playlist['entries']);
+		}
+		unset($playlist);
+
+		return $playlists;
+	}
+
+	/** @return list<string> */
+	private function playlistEntries(File $file, string $playlistPath): array {
+		try {
+			$content = $file->getContent();
+		} catch (Throwable) {
+			return [];
+		}
+		if ($content === '') {
+			return [];
+		}
+
+		$base = str_replace('\\', '/', dirname($playlistPath));
+		$base = $base === '.' ? '/' : $base;
+		$entries = [];
+		foreach (preg_split('/\R/u', $content) ?: [] as $line) {
+			$line = trim((string)$line, "\xEF\xBB\xBF \t\r\n");
+			if ($line === '' || str_starts_with($line, '#') || preg_match('~^[a-z][a-z0-9+.-]*://~i', $line)) {
+				continue;
+			}
+			$line = rawurldecode(str_replace('\\', '/', $line));
+			try {
+				$entries[] = str_starts_with($line, '/')
+					? $this->normalizePath($line)
+					: $this->joinUserPath($base, $line);
+			} catch (Throwable) {
+				continue;
+			}
+			if (count($entries) >= 1000) {
+				break;
+			}
+		}
+
+		return array_values(array_unique($entries));
+	}
+
+	/**
+	 * @param list<array<string, mixed>> $tracks
+	 * @param list<array<string, mixed>> $playlists
+	 * @return array{tracks: int, needsReview: int, albums: int, playlists: int}
+	 */
+	private function libraryStats(array $tracks, array $playlists): array {
+		$untagged = 0;
+		$albumKeys = [];
+		foreach ($tracks as $track) {
+			if (!($track['tagged'] ?? false) || (string)($track['title'] ?? '') === '' || (string)($track['artist'] ?? '') === '') {
+				++$untagged;
+			}
+			if ((string)($track['album'] ?? '') !== '') {
+				$albumKeys[strtolower((string)($track['albumArtist'] ?? '') . "\0" . (string)($track['artist'] ?? '') . "\0" . (string)$track['album'])] = true;
+			}
+		}
+
+		return [
+			'tracks' => count($tracks),
+			'needsReview' => $untagged,
+			'albums' => count($albumKeys),
+			'playlists' => count($playlists),
+		];
+	}
+
+	private function isInsideLibraryPath(string $path, string $libraryPath): bool {
+		if ($libraryPath === '/') {
+			return str_starts_with($path, '/');
+		}
+		$libraryPath = rtrim($libraryPath, '/');
+
+		return $path === $libraryPath || str_starts_with($path, $libraryPath . '/');
 	}
 
 	private function userId(): string {
