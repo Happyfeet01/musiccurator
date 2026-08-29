@@ -36,6 +36,34 @@ class ScanIndexService {
 	}
 
 	/**
+	 * Return the last indexed metadata without touching the filesystem. This is
+	 * intentionally a snapshot: a normal scan is still the source of truth for
+	 * detecting new, changed or deleted files.
+	 *
+	 * @param array<string, mixed> $row
+	 * @return array<string, mixed>|null
+	 */
+	public function snapshotTrack(array $row): ?array {
+		$metadata = json_decode((string)($row['metadata'] ?? ''), true);
+		if (!is_array($metadata)) {
+			return null;
+		}
+
+		$metadata['path'] = (string)($row['path'] ?? ($metadata['path'] ?? ''));
+		$metadata['fileId'] = (int)($row['file_id'] ?? ($metadata['fileId'] ?? 0));
+		$metadata['size'] = (int)($row['size'] ?? ($metadata['size'] ?? 0));
+		$metadata['mtime'] = (int)($row['mtime'] ?? ($metadata['mtime'] ?? 0));
+		$metadata['scanState'] = 'snapshot';
+		$metadata['scannedAt'] = (int)($row['scanned_at'] ?? 0);
+		$metadata['musicBrainzRecordingId'] = (string)($row['mb_recording_id'] ?? '');
+		$metadata['musicBrainzReleaseId'] = (string)($row['mb_release_id'] ?? '');
+		$metadata['musicBrainzScore'] = (int)($row['mb_score'] ?? 0);
+		$metadata['musicBrainzMatchedAt'] = (int)($row['matched_at'] ?? 0);
+
+		return $metadata;
+	}
+
+	/**
 	 * @param array<string, mixed> $row
 	 * @return array<string, mixed>|null
 	 */
@@ -46,17 +74,12 @@ class ScanIndexService {
 			return null;
 		}
 
-		$metadata = json_decode((string)($row['metadata'] ?? ''), true);
-		if (!is_array($metadata)) {
+		$metadata = $this->snapshotTrack($row);
+		if ($metadata === null) {
 			return null;
 		}
 
 		$metadata['scanState'] = 'cached';
-		$metadata['scannedAt'] = (int)($row['scanned_at'] ?? 0);
-		$metadata['musicBrainzRecordingId'] = (string)($row['mb_recording_id'] ?? '');
-		$metadata['musicBrainzReleaseId'] = (string)($row['mb_release_id'] ?? '');
-		$metadata['musicBrainzScore'] = (int)($row['mb_score'] ?? 0);
-		$metadata['musicBrainzMatchedAt'] = (int)($row['matched_at'] ?? 0);
 
 		return $metadata;
 	}
