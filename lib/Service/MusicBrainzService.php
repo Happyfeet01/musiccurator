@@ -16,7 +16,7 @@ class MusicBrainzService {
 	}
 
 	/**
-	 * @return list<array{id: string, title: string, artist: string, album: string, albumArtist: string, track: string, year: string, genre: string, releaseId: string, releaseGroupId: string, score: int}>
+	 * @return list<array{id: string, title: string, artist: string, album: string, albumArtist: string, track: string, year: string, genre: string, artworkUrl: string, releaseId: string, releaseGroupId: string, score: int}>
 	 */
 	public function search(string $title, string $artist = '', string $album = ''): array {
 		$title = trim($title);
@@ -51,6 +51,7 @@ class MusicBrainzService {
 			$releaseArtistCredit = is_array($release['artist-credit'] ?? null) ? $release['artist-credit'] : [];
 			$date = (string)($release['date'] ?? ($recording['first-release-date'] ?? ''));
 			$year = preg_match('/\d{4}/', $date, $match) ? $match[0] : '';
+			$releaseId = (string)($release['id'] ?? '');
 
 			$results[] = [
 				'id' => (string)($recording['id'] ?? ''),
@@ -61,7 +62,8 @@ class MusicBrainzService {
 				'track' => '',
 				'year' => $year,
 				'genre' => '',
-				'releaseId' => (string)($release['id'] ?? ''),
+				'artworkUrl' => $releaseId !== '' ? 'https://coverartarchive.org/release/' . rawurlencode($releaseId) . '/front-250' : '',
+				'releaseId' => $releaseId,
 				'releaseGroupId' => (string)($releaseGroup['id'] ?? ''),
 				'score' => max(0, min(100, (int)($recording['score'] ?? 0))),
 			];
@@ -131,7 +133,7 @@ class MusicBrainzService {
 			$response = $client->get($url, [
 				'headers' => [
 					'Accept' => 'application/json',
-					'User-Agent' => 'MusicCurator/0.2.10 (https://github.com/Happyfeet01/musiccurator)',
+					'User-Agent' => 'MusicCurator/0.2.12 (https://github.com/Happyfeet01/musiccurator)',
 				],
 				'connect_timeout' => 8,
 				'timeout' => 15,
