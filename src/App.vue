@@ -29,6 +29,7 @@ type Track = {
 	mime: string
 	size: number
 	mtime: number
+	fileId?: number
 	title: string
 	artist: string
 	album: string
@@ -38,6 +39,10 @@ type Track = {
 	genre: string
 	tagged: boolean
 	status: string
+	musicBrainzRecordingId?: string
+	musicBrainzReleaseId?: string
+	musicBrainzScore?: number
+	musicBrainzMatchedAt?: number
 }
 
 type BatchTrackReference = {
@@ -47,6 +52,7 @@ type BatchTrackReference = {
 type Playlist = {
 	path: string
 	name: string
+	artworkReleaseIds?: string[]
 }
 
 type MetadataSuggestion = {
@@ -57,11 +63,13 @@ type MetadataSuggestion = {
 	albumArtist: string
 	track: string
 	year: string
+	genre: string
 	releaseId: string
 	releaseGroupId: string
 	score: number
 	source?: string
 	sourceUrl?: string
+	artworkUrl?: string
 }
 
 type ProviderStatus = {
@@ -103,6 +111,8 @@ type ScanResponse = {
 	}
 	truncated: boolean
 	durationMs?: number
+	lastScanAt?: number
+	fromCache?: boolean
 }
 
 const TRACK_PAGE_SIZE = 100
@@ -128,6 +138,7 @@ const hasScanned = ref(false)
 const truncated = ref(false)
 const lastScannedPath = ref('')
 const scanDurationMs = ref<number | null>(null)
+const lastScanAt = ref<number | null>(null)
 const trackLimit = ref(TRACK_PAGE_SIZE)
 const albumLimit = ref(ALBUM_PAGE_SIZE)
 const stats = ref({ tracks: 0, needsReview: 0, albums: 0, playlists: 0 })
@@ -174,7 +185,7 @@ const visibleTracks = computed(() => onlyNeedsAttention.value
 const renderedTracks = computed(() => visibleTracks.value.slice(0, trackLimit.value))
 
 const albumGroups = computed(() => {
-	const groups = new Map<string, { artist: string, album: string, tracks: Track[] }>()
+	const groups = new Map<string, { artist: string, album: string, tracks: Track[], releaseId: string }>()
 	for (const track of tracks.value) {
 		if (!track.album) {
 			continue
@@ -182,9 +193,18 @@ const albumGroups = computed(() => {
 		const artist = track.albumArtist || track.artist || 'Unknown Artist'
 		const key = `${artist}\u0000${track.album}`
 		if (!groups.has(key)) {
-			groups.set(key, { artist, album: track.album, tracks: [] })
+			groups.set(key, {
+				artist,
+				album: track.album,
+				tracks: [],
+				releaseId: track.musicBrainzReleaseId || '',
+			})
 		}
-		groups.get(key)?.tracks.push(track)
+		const group = groups.get(key)
+		group?.tracks.push(track)
+		if (group && !group.releaseId && track.musicBrainzReleaseId) {
+			group.releaseId = track.musicBrainzReleaseId
+		}
 	}
 	return [...groups.values()].sort((a, b) => `${a.artist} ${a.album}`.localeCompare(`${b.artist} ${b.album}`))
 })
@@ -209,6 +229,21 @@ function apiUrl(path: string, query?: Record<string, string>): string {
 		url.searchParams.set(key, value)
 	}
 	return url.toString()
+}
+
+function artworkForRelease(releaseId: string): string {
+	return releaseId ? apiUrl('/api/artwork', { releaseId }) : ''
+}
+
+function artworkProxy(url: string): string {
+	return url ? apiUrl('/api/artwork', { url }) : ''
+}
+
+function hideBrokenImage(event: Event): void {
+	const target = event.target
+	if (target instanceof HTMLImageElement) {
+		target.style.display = 'none'
+	}
 }
 
 async function apiRequest<T>(path: string, options: RequestInit = {}, query?: Record<string, string>): Promise<T> {
@@ -245,6 +280,26 @@ function switchSection(target: Section): void {
 async function loadSettings(): Promise<void> {
 	try {
 		settings.value = await apiRequest<Settings>('/api/settings')
+	} catch (e) {
+		setError(e)
+	}
+}
+
+async function loadCachedLibrary(): Promise<void> {
+	if (!settings.value.libraryPath.trim()) {
+		return
+	}
+	try {
+		const data = await apiRequest<ScanResponse>('/api/library/cache')
+		tracks.value = data.tracks
+		playlists.value = data.playlists
+		stats.value = data.stats
+		lastScannedPath.value = data.libraryPath
+		lastScanAt.value = data.lastScanAt && data.lastScanAt > 0 ? data.lastScanAt : null
+		truncated.value = data.truncated
+		hasScanned.value = Boolean(lastScanAt.value) || data.tracks.length > 0 || data.playlists.length > 0
+		trackLimit.value = TRACK_PAGE_SIZE
+		albumLimit.value = ALBUM_PAGE_SIZE
 	} catch (e) {
 		setError(e)
 	}
@@ -306,6 +361,7 @@ async function scanLibrary(): Promise<void> {
 		settings.value.libraryPath = data.libraryPath
 		settings.value.libraryConfigured = true
 		lastScannedPath.value = data.libraryPath
+		lastScanAt.value = data.lastScanAt && data.lastScanAt > 0 ? data.lastScanAt : Math.floor(Date.now() / 1000)
 		scanDurationMs.value = data.durationMs ?? null
 		truncated.value = data.truncated
 		hasScanned.value = true
@@ -315,7 +371,7 @@ async function scanLibrary(): Promise<void> {
 		selectedTrack.value = null
 		resetMatch()
 		const duration = scanDurationMs.value !== null ? ` in ${(scanDurationMs.value / 1000).toFixed(1)} s` : ''
-		message.value = `${data.tracks.length} audio files scanned from ${data.libraryPath}${duration}.`
+		message.value = `${data.tracks.length} audio files indexed from ${data.libraryPath}${duration}.`
 	} catch (e) {
 		setError(e)
 	} finally {
@@ -342,6 +398,25 @@ function selectTrackFromBatch(reference: BatchTrackReference): void {
 	}
 }
 
+function rememberMusicBrainzArtwork(path: string, results: MetadataSuggestion[]): void {
+	const match = results.find((candidate) => candidate.source === 'MusicBrainz' && candidate.releaseId)
+	if (!match) return
+
+	const index = tracks.value.findIndex((track) => track.path === path)
+	if (index < 0) return
+	const updated = {
+		...tracks.value[index],
+		musicBrainzRecordingId: match.id,
+		musicBrainzReleaseId: match.releaseId,
+		musicBrainzScore: match.score,
+		musicBrainzMatchedAt: Math.floor(Date.now() / 1000),
+	}
+	tracks.value[index] = updated
+	if (selectedTrack.value?.path === path) {
+		selectedTrack.value = { ...selectedTrack.value, ...updated }
+	}
+}
+
 async function searchMetadata(): Promise<void> {
 	const track = selectedTrack.value
 	if (!track || metadataLoading.value) {
@@ -358,6 +433,7 @@ async function searchMetadata(): Promise<void> {
 		suggestions.value = data.results
 		providerStatuses.value = data.providers ?? []
 		selectedSuggestion.value = data.results[0] ?? null
+		rememberMusicBrainzArtwork(track.path, data.results)
 		if (selectedSuggestion.value) {
 			await previewMove()
 			message.value = `${data.results.length} metadata candidate${data.results.length === 1 ? '' : 's'} found for ${track.title || track.filename}.`
@@ -481,12 +557,13 @@ async function selectCurrentFolder(): Promise<void> {
 	folderPickerOpen.value = false
 	hasScanned.value = false
 	lastScannedPath.value = ''
+	lastScanAt.value = null
 	scanDurationMs.value = null
 	tracks.value = []
 	playlists.value = []
 	selectedTrack.value = null
 	stats.value = { tracks: 0, needsReview: 0, albums: 0, playlists: 0 }
-	message.value = `Music folder set to ${settings.value.libraryPath}. Ready to scan.`
+	message.value = `Music folder set to ${settings.value.libraryPath}. Scan once to create its persistent index.`
 }
 
 function resetMatch(clearSuggestions = true): void {
@@ -529,7 +606,8 @@ function formatDate(timestamp: number): string {
 }
 
 onMounted(async () => {
-	await Promise.all([loadSettings(), loadChanges()])
+	await loadSettings()
+	await Promise.all([loadCachedLibrary(), loadChanges()])
 })
 </script>
 
@@ -574,7 +652,7 @@ onMounted(async () => {
 				<div v-if="message" class="notice notice-success">{{ message }}</div>
 				<div v-if="error" class="notice notice-error">{{ error }}</div>
 				<div v-if="scanPathMismatch" class="notice notice-warning">
-					The displayed results were scanned from <strong>{{ lastScannedPath }}</strong>, while your configured library is now <strong>{{ settings.libraryPath }}</strong>. Scan again to refresh the view.
+					The displayed results were indexed from <strong>{{ lastScannedPath }}</strong>, while your configured library is now <strong>{{ settings.libraryPath }}</strong>. Refresh the library index to update the view.
 				</div>
 
 				<section v-if="folderPickerOpen" class="folder-picker glass-panel global-picker">
@@ -604,14 +682,14 @@ onMounted(async () => {
 							<p class="eyebrow">Music library manager</p>
 							<h1>Your real Nextcloud music library.</h1>
 							<p class="hero-copy">
-								Scan audio files, inspect their embedded tags, compare them with your configured metadata providers,
-								and now preview metadata matches for whole albums or folders in one batch.
+								MusicCurator now loads the last indexed library instantly from its database. Refresh the index only when files changed,
+								then compare and write metadata with your configured providers.
 							</p>
 							<p class="path-summary"><strong>Configured library:</strong> {{ settings.libraryPath || 'Not configured' }}</p>
 						</div>
 						<div class="hero-actions">
 							<NcButton type="primary" :disabled="loading || !settings.libraryPath" @click="scanLibrary">
-								{{ loading ? 'Working…' : 'Scan library' }}
+								{{ loading ? 'Working…' : (hasScanned ? 'Refresh library index' : 'Scan library') }}
 							</NcButton>
 							<NcButton :disabled="loading" @click="openFolderPicker">Choose music folder</NcButton>
 						</div>
@@ -621,7 +699,7 @@ onMounted(async () => {
 						<article class="stat-card glass-panel">
 							<span>Tracks</span>
 							<strong>{{ hasScanned ? stats.tracks : '—' }}</strong>
-							<small>{{ hasScanned ? `last scan: ${lastScannedPath}` : `configured: ${settings.libraryPath || 'none'}` }}</small>
+							<small>{{ lastScanAt ? `indexed ${formatDate(lastScanAt)}` : `configured: ${settings.libraryPath || 'none'}` }}</small>
 						</article>
 						<article class="stat-card glass-panel">
 							<span>Needs tags</span>
@@ -631,7 +709,7 @@ onMounted(async () => {
 						<article class="stat-card glass-panel">
 							<span>Albums</span>
 							<strong>{{ hasScanned ? stats.albums : '—' }}</strong>
-							<small>from embedded tags</small>
+							<small>from indexed tags</small>
 						</article>
 						<article class="stat-card glass-panel">
 							<span>Playlists</span>
@@ -640,13 +718,13 @@ onMounted(async () => {
 						</article>
 					</div>
 
-					<div v-if="truncated" class="notice">The scan stopped after 5,000 audio files for this development build.</div>
+					<div v-if="truncated" class="notice">The index stopped after 5,000 audio files for this development build.</div>
 
 					<section class="glass-panel library-panel">
 						<div class="section-heading">
 							<div>
 								<p class="eyebrow">Library</p>
-								<h2>{{ hasScanned ? `${tracks.length} audio files` : 'Ready to scan' }}</h2>
+								<h2>{{ hasScanned ? `${tracks.length} audio files` : 'Ready to index' }}</h2>
 								<small v-if="hasScanned && visibleTracks.length > renderedTracks.length" class="muted">Showing {{ renderedTracks.length }} of {{ visibleTracks.length }} for a faster interface.</small>
 							</div>
 							<NcCheckboxRadioSwitch v-model="onlyNeedsAttention" type="switch" :disabled="!hasScanned" @update:model-value="trackLimit = TRACK_PAGE_SIZE">
@@ -655,8 +733,7 @@ onMounted(async () => {
 						</div>
 
 						<div v-if="!hasScanned" class="empty-state">
-							<strong>No demo data.</strong>
-							<span>Select your music folder and scan it to load the real files from your Nextcloud account.</span>
+							<span>Choose your music folder and scan it once. After that MusicCurator loads the persistent index automatically whenever you open the app.</span>
 						</div>
 						<div v-else-if="visibleTracks.length === 0" class="empty-state">
 							<strong>Nothing to review.</strong>
@@ -676,11 +753,28 @@ onMounted(async () => {
 
 					<section v-if="selectedTrack" :key="selectedTrack.path" class="glass-panel compare-panel">
 						<div class="section-heading">
-							<div>
-								<p class="eyebrow">Selected track</p>
-								<h2>{{ selectedTrack.filename }}</h2>
-								<small class="muted selected-path">{{ selectedTrack.path }}</small>
-								<small class="provider-hint">Will search: {{ activeProviderNames.length ? activeProviderNames.join(', ') : 'no provider configured' }}</small>
+							<div class="selected-heading">
+								<span class="selected-art" aria-hidden="true">
+									<span>♫</span>
+									<img
+										v-if="selectedSuggestion?.artworkUrl"
+										:src="artworkProxy(selectedSuggestion.artworkUrl)"
+										alt=""
+										loading="lazy"
+										@error="hideBrokenImage">
+									<img
+										v-else-if="selectedTrack.musicBrainzReleaseId"
+										:src="artworkForRelease(selectedTrack.musicBrainzReleaseId)"
+										alt=""
+										loading="lazy"
+										@error="hideBrokenImage">
+								</span>
+								<div>
+									<p class="eyebrow">Selected track</p>
+									<h2>{{ selectedTrack.filename }}</h2>
+									<small class="muted selected-path">{{ selectedTrack.path }}</small>
+									<small class="provider-hint">Will search: {{ activeProviderNames.length ? activeProviderNames.join(', ') : 'no provider configured' }}</small>
+								</div>
 							</div>
 							<div class="hero-actions">
 								<span v-if="selectedSuggestion" class="match-badge">{{ selectedSuggestion.score }}% · {{ selectedSuggestion.source || 'Metadata' }}</span>
@@ -706,8 +800,14 @@ onMounted(async () => {
 								class="candidate"
 								:class="{ selected: selectedSuggestion?.source === candidate.source && selectedSuggestion?.id === candidate.id && selectedSuggestion?.releaseId === candidate.releaseId }"
 								@click="chooseSuggestion(candidate)">
-								<strong>{{ candidate.title || selectedTrack.title || selectedTrack.filename }}</strong>
-								<span>{{ candidate.artist || 'Unknown artist' }} · {{ candidate.album || 'Unknown release' }}</span>
+								<span class="candidate-cover" aria-hidden="true">
+									<span>♫</span>
+									<img v-if="candidate.artworkUrl" :src="artworkProxy(candidate.artworkUrl)" alt="" loading="lazy" @error="hideBrokenImage">
+								</span>
+								<span class="candidate-main">
+									<strong>{{ candidate.title || selectedTrack.title || selectedTrack.filename }}</strong>
+									<span>{{ candidate.artist || 'Unknown artist' }} · {{ candidate.album || 'Unknown release' }}</span>
+								</span>
 								<small>{{ candidate.source || 'Metadata' }} · {{ candidate.score }}%</small>
 							</button>
 						</div>
@@ -721,7 +821,7 @@ onMounted(async () => {
 							<strong>Album</strong><span>{{ currentValue('album') }}</span><span class="suggestion">{{ suggestedValue('album') }}</span><NcCheckboxRadioSwitch v-model="useAlbum" :disabled="!selectedSuggestion" @update:model-value="previewMove" />
 							<strong>Track</strong><span>{{ currentValue('track') }}</span><span class="suggestion">{{ suggestedValue('track') }}</span><NcCheckboxRadioSwitch v-model="useTrack" :disabled="!selectedSuggestion" @update:model-value="previewMove" />
 							<strong>Year</strong><span>{{ currentValue('year') }}</span><span class="suggestion">{{ suggestedValue('year') }}</span><NcCheckboxRadioSwitch v-model="useYear" :disabled="!selectedSuggestion" />
-							<strong>Genre</strong><span>{{ selectedTrack.genre || '—' }}</span><span class="suggestion">Coming next</span><span />
+							<strong>Genre</strong><span>{{ selectedTrack.genre || '—' }}</span><span class="suggestion">{{ selectedSuggestion?.genre || '—' }}</span><span />
 						</div>
 
 						<div v-if="selectedSuggestion" class="operation-mode-panel">
@@ -744,13 +844,13 @@ onMounted(async () => {
 						</div>
 
 						<div class="read-only-note">
-							<strong>Safe development mode:</strong> embedded tags are read-only. Single-track and batch metadata matching are previews only. Actual tag writing will be enabled after backup, review and rollback are implemented.
+							<strong>Safe workflow:</strong> metadata lookup and file moves stay behind a preview. MP3 tag writing, including genre, is available in the Batch review with confirmation and rollback values.
 						</div>
 
 						<div v-if="selectedSuggestion && operationMode === 'metadata'" class="location-preserved-note">
 							<strong>File location will be preserved.</strong>
 							<span>{{ selectedTrack.path }}</span>
-							<small>Only approved metadata fields are intended to change once safe tag writing is enabled.</small>
+							<small>Use the Batch review to write approved MP3 metadata without moving the file.</small>
 						</div>
 
 						<div v-if="proposedPath && operationMode === 'organize'" class="move-preview">
@@ -769,14 +869,17 @@ onMounted(async () => {
 					<header class="subhero glass-panel">
 						<p class="eyebrow">Albums</p>
 						<h1>Albums found in your tags</h1>
-						<p class="muted">This view comes from the latest scan. In the Library you can select a track and use “Select current album” for a batch metadata preview.</p>
+						<p class="muted">Album covers appear automatically when MusicCurator has a confident MusicBrainz release match. Provider lookups enrich the persistent index as you use the app.</p>
 					</header>
-					<div v-if="!hasScanned" class="glass-panel empty-state spaced">Scan your library first.</div>
+					<div v-if="!hasScanned" class="glass-panel empty-state spaced">Index your library first.</div>
 					<template v-else>
 						<div class="result-summary">Showing {{ renderedAlbums.length }} of {{ albumGroups.length }} albums.</div>
 						<div class="album-grid">
 							<article v-for="album in renderedAlbums" :key="`${album.artist}-${album.album}`" class="album-card glass-panel">
-								<span class="album-art" aria-hidden="true">♫</span>
+								<span class="album-art" aria-hidden="true">
+									<span>♫</span>
+									<img v-if="album.releaseId" :src="artworkForRelease(album.releaseId)" alt="" loading="lazy" @error="hideBrokenImage">
+								</span>
 								<div><strong>{{ album.album }}</strong><small>{{ album.artist }}</small></div>
 								<b>{{ album.tracks.length }}</b>
 							</article>
@@ -791,12 +894,24 @@ onMounted(async () => {
 					<header class="subhero glass-panel">
 						<p class="eyebrow">Playlists</p>
 						<h1>Playlist files</h1>
-						<p class="muted">MusicCurator detects .m3u and .m3u8 files without altering them. Playlist-like folders default to metadata-only review.</p>
+						<p class="muted">MusicCurator detects .m3u and .m3u8 files without altering them. If indexed playlist tracks already have MusicBrainz matches, their covers form a small playlist mosaic.</p>
 					</header>
-					<div v-if="!hasScanned" class="glass-panel empty-state spaced">Scan your library first.</div>
+					<div v-if="!hasScanned" class="glass-panel empty-state spaced">Index your library first.</div>
 					<div v-else-if="playlists.length === 0" class="glass-panel empty-state spaced">No playlist files found in the selected library.</div>
-					<div v-else class="simple-list glass-panel">
-						<div v-for="playlist in playlists" :key="playlist.path" class="simple-row"><strong>{{ playlist.name }}</strong><small>{{ playlist.path }}</small></div>
+					<div v-else class="simple-list glass-panel playlist-list">
+						<div v-for="playlist in playlists" :key="playlist.path" class="simple-row playlist-row">
+							<span class="playlist-art" aria-hidden="true">
+								<span v-if="!playlist.artworkReleaseIds?.length" class="playlist-placeholder">♫</span>
+								<img
+									v-for="releaseId in (playlist.artworkReleaseIds || []).slice(0, 4)"
+									:key="releaseId"
+									:src="artworkForRelease(releaseId)"
+									alt=""
+									loading="lazy"
+									@error="hideBrokenImage">
+							</span>
+							<div><strong>{{ playlist.name }}</strong><small>{{ playlist.path }}</small></div>
+						</div>
 					</div>
 				</section>
 
@@ -816,7 +931,8 @@ onMounted(async () => {
 					<section class="glass-panel settings-card">
 						<h2>Music library</h2>
 						<p class="path-summary"><strong>Configured path:</strong> {{ settings.libraryPath || 'Not configured' }}</p>
-						<p v-if="lastScannedPath" class="path-summary"><strong>Last scanned path:</strong> {{ lastScannedPath }}</p>
+						<p v-if="lastScannedPath" class="path-summary"><strong>Indexed path:</strong> {{ lastScannedPath }}</p>
+						<p v-if="lastScanAt" class="path-summary"><strong>Last index refresh:</strong> {{ formatDate(lastScanAt) }}</p>
 						<label class="field-label" for="library-path">Nextcloud music folder</label>
 						<div class="field-row">
 							<input id="library-path" v-model="settings.libraryPath" class="text-input" type="text" placeholder="/Musik">
@@ -831,8 +947,8 @@ onMounted(async () => {
 						<div class="provider-grid">
 							<label><span>AcoustID client/API key</span><input v-model="acoustIdKey" class="text-input" type="password" :placeholder="settings.acoustIdConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Used for fingerprint lookup. Requires fpcalc/Chromaprint on the Nextcloud server.</small></label>
 							<label><span>AcoustID user key</span><input v-model="acoustIdUserKey" class="text-input" type="password" :placeholder="settings.acoustIdUserConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Reserved for future fingerprint submissions; not required for lookup.</small></label>
-							<label><span>Discogs personal token</span><input v-model="discogsToken" class="text-input" type="password" :placeholder="settings.discogsConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Adds release, compilation and track-list candidates.</small></label>
-							<label><span>Last.fm API key</span><input v-model="lastFmKey" class="text-input" type="password" :placeholder="settings.lastFmConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Adds track and artist fallback results.</small></label>
+							<label><span>Discogs personal token</span><input v-model="discogsToken" class="text-input" type="password" :placeholder="settings.discogsConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Adds release, compilation and track-list candidates plus cover artwork when available.</small></label>
+							<label><span>Last.fm API key</span><input v-model="lastFmKey" class="text-input" type="password" :placeholder="settings.lastFmConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Adds track, artist and genre fallbacks plus album artwork when available.</small></label>
 						</div>
 						<div class="review-actions"><NcButton type="primary" :disabled="loading" @click="saveSettings()">Save personal settings</NcButton></div>
 					</section>
@@ -872,6 +988,11 @@ onMounted(async () => {
 .section-heading h2, .settings-card h2 { margin: 2px 0 0; font-size: 24px; }
 .provider-hint { display: block; margin-top: 6px; color: var(--color-text-maxcontrast); }
 .selected-path { display: block; max-width: 760px; overflow-wrap: anywhere; }
+.selected-heading { display: flex; min-width: 0; align-items: center; gap: 14px; }
+.selected-heading > div { min-width: 0; }
+.selected-art, .candidate-cover, .album-art { position: relative; display: grid; flex: 0 0 auto; place-items: center; overflow: hidden; background: var(--color-primary-element-light); color: var(--color-primary-element-light-text); }
+.selected-art { width: 72px; height: 72px; border-radius: 20px; font-size: 28px; }
+.selected-art img, .candidate-cover img, .album-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
 .folder-row { display: flex; align-items: center; gap: 10px; padding: 12px; border: 0; border-radius: var(--border-radius-large); background: var(--color-background-dark); color: var(--color-main-text); text-align: start; cursor: pointer; }
 .folder-row:hover { background: var(--color-background-hover); }
@@ -888,9 +1009,12 @@ onMounted(async () => {
 .metadata-header { border-top: 0; color: var(--color-text-maxcontrast); font-size: 12px; font-weight: 700; text-transform: uppercase; }
 .suggestion { border-radius: var(--border-radius); background: color-mix(in srgb, var(--color-primary-element-light) 55%, transparent); }
 .candidate-list { display: grid; gap: 6px; margin-bottom: 18px; }
-.candidate { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--border-radius-large); background: transparent; color: var(--color-main-text); text-align: start; cursor: pointer; }
-.candidate span { grid-column: 1; color: var(--color-text-maxcontrast); }
-.candidate small { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.candidate { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--border-radius-large); background: transparent; color: var(--color-main-text); text-align: start; cursor: pointer; }
+.candidate-cover { width: 48px; height: 48px; border-radius: 13px; font-size: 20px; }
+.candidate-main { display: grid; min-width: 0; gap: 2px; }
+.candidate-main strong, .candidate-main > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.candidate-main > span { color: var(--color-text-maxcontrast); }
+.candidate small { align-self: center; }
 .candidate.selected, .candidate:hover { background: var(--color-background-hover); border-color: var(--color-primary-element); }
 .operation-mode-panel { display: grid; gap: 12px; margin: 18px 0; padding: 16px; border: 1px solid var(--color-border); border-radius: var(--border-radius-large); background: color-mix(in srgb, var(--color-main-background) 72%, transparent); }
 .operation-mode-heading > div { display: grid; gap: 4px; }
@@ -914,15 +1038,21 @@ onMounted(async () => {
 .empty-state strong { color: var(--color-main-text); font-size: 18px; }
 .spaced { margin-top: 12px; }
 .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-.album-card { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-width: 0; padding: 16px; }
+.album-card { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-width: 0; padding: 14px; }
 .album-card div { display: grid; min-width: 0; }
 .album-card strong, .album-card small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .album-card small { color: var(--color-text-maxcontrast); }
-.album-art { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 16px; background: var(--color-primary-element-light); font-size: 24px; }
+.album-art { width: 58px; height: 58px; border-radius: 16px; font-size: 24px; }
 .simple-list { padding: 8px; }
 .simple-row { display: grid; gap: 2px; padding: 12px; border-bottom: 1px solid var(--color-border); }
 .simple-row:last-child { border-bottom: 0; }
 .simple-row small { color: var(--color-text-maxcontrast); }
+.playlist-row { grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 12px; }
+.playlist-row > div { display: grid; min-width: 0; }
+.playlist-row strong, .playlist-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.playlist-art { position: relative; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 60px; height: 60px; overflow: hidden; border-radius: 16px; background: var(--color-primary-element-light); }
+.playlist-art img { width: 100%; height: 100%; object-fit: cover; }
+.playlist-placeholder { position: absolute; inset: 0; display: grid; place-items: center; color: var(--color-primary-element-light-text); font-size: 24px; }
 .change-row { display: grid; grid-template-columns: 160px minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--color-border); }
 .change-row:last-child { border-bottom: 0; }
 .change-row > div { display: grid; }
@@ -934,6 +1064,7 @@ onMounted(async () => {
 .provider-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 18px 0; }
 
 @media (max-width: 900px) {
+	:deep(.app-navigation), :deep(.app-navigation-toggle), :deep(.app-navigation__toggle) { display: none !important; }
 	.musiccurator-shell { padding: 12px; }
 	.mobile-section-navigation { position: relative; z-index: 30; display: block; max-width: 1380px; margin: 0 auto 12px; }
 	.mobile-menu-trigger { display: flex; width: 100%; min-height: 44px; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid var(--color-border); border-radius: var(--border-radius-large); background: color-mix(in srgb, var(--color-main-background) 86%, transparent); color: var(--color-main-text); font-weight: 700; text-align: start; backdrop-filter: blur(18px); }
@@ -950,10 +1081,14 @@ onMounted(async () => {
 @media (max-width: 640px) {
 	.stats-grid { grid-template-columns: 1fr 1fr; }
 	.section-heading { align-items: flex-start; flex-direction: column; }
+	.selected-heading { width: 100%; align-items: flex-start; }
+	.selected-art { width: 60px; height: 60px; border-radius: 16px; }
 	.metadata-header { display: none; }
 	.metadata-grid:not(.metadata-header) { display: grid; grid-template-columns: 96px 1fr 44px; }
 	.metadata-grid:not(.metadata-header) > :nth-child(4n + 3) { grid-column: 2; padding-top: 0; }
 	.metadata-grid:not(.metadata-header) > :nth-child(4n + 4) { grid-column: 3; grid-row: span 2; }
+	.candidate { grid-template-columns: 48px minmax(0, 1fr); }
+	.candidate small { grid-column: 2; }
 	.move-preview { grid-template-columns: 1fr; }
 	.arrow { transform: rotate(90deg); text-align: center; }
 	.review-actions { justify-content: stretch; }
