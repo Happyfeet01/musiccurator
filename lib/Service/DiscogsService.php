@@ -54,6 +54,7 @@ class DiscogsService {
 			$trackNumber = '';
 			$year = (string)($row['year'] ?? '');
 			$sourceUrl = $this->discogsUrl((string)($row['uri'] ?? ''));
+			$artworkUrl = $this->httpsImage((string)($row['cover_image'] ?? ($row['thumb'] ?? '')));
 			$genreValues = [
 				...(is_array($row['genre'] ?? null) ? $row['genre'] : []),
 				...(is_array($row['style'] ?? null) ? $row['style'] : []),
@@ -66,6 +67,10 @@ class DiscogsService {
 					$year = trim((string)($details['year'] ?? $year));
 					$releaseArtist = $this->artistsToString(is_array($details['artists'] ?? null) ? $details['artists'] : []) ?: $releaseArtist;
 					$sourceUrl = trim((string)($details['uri'] ?? $sourceUrl));
+					$detailArtwork = $this->detailArtwork(is_array($details['images'] ?? null) ? $details['images'] : []);
+					if ($detailArtwork !== '') {
+						$artworkUrl = $detailArtwork;
+					}
 					$genreValues = [
 						...(is_array($details['genres'] ?? null) ? $details['genres'] : []),
 						...(is_array($details['styles'] ?? null) ? $details['styles'] : []),
@@ -94,6 +99,7 @@ class DiscogsService {
 				'track' => $trackNumber,
 				'year' => preg_match('/^\d{4}$/', $year) ? $year : '',
 				'genre' => GenreNormalizer::normalize($genreValues),
+				'artworkUrl' => $artworkUrl,
 				'releaseId' => $releaseId,
 				'releaseGroupId' => (string)($row['master_id'] ?? ''),
 				'score' => $score,
@@ -114,7 +120,7 @@ class DiscogsService {
 				'headers' => [
 					'Accept' => 'application/json',
 					'Authorization' => 'Discogs token=' . $token,
-					'User-Agent' => 'MusicCurator/0.2.8 +https://github.com/Happyfeet01/musiccurator',
+					'User-Agent' => 'MusicCurator/0.2.12 +https://github.com/Happyfeet01/musiccurator',
 				],
 				'connect_timeout' => 8,
 				'timeout' => 15,
@@ -156,6 +162,27 @@ class DiscogsService {
 			}
 		}
 		return implode(', ', array_filter($names));
+	}
+
+	/** @param array<int, mixed> $images */
+	private function detailArtwork(array $images): string {
+		foreach ($images as $image) {
+			if (!is_array($image)) {
+				continue;
+			}
+			$url = $this->httpsImage((string)($image['uri150'] ?? ($image['resource_url'] ?? ($image['uri'] ?? ''))));
+			if ($url !== '') {
+				return $url;
+			}
+		}
+
+		return '';
+	}
+
+	private function httpsImage(string $url): string {
+		$url = trim($url);
+
+		return str_starts_with($url, 'https://') ? $url : '';
 	}
 
 	/** @param array<int, mixed> $tracklist
