@@ -14,6 +14,7 @@ export type BatchSuggestion = {
 	score: number
 	source?: string
 	sourceUrl?: string
+	artworkUrl?: string
 }
 
 export type BatchProviderStatus = {
