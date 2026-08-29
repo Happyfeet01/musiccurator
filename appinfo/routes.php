@@ -10,6 +10,7 @@ return [
 		['name' => 'scan#cached', 'url' => '/api/library/cache', 'verb' => 'GET'],
 		['name' => 'scan#scan', 'url' => '/api/library/scan', 'verb' => 'POST'],
 		['name' => 'scan#scanSelected', 'url' => '/api/library/scan-selected', 'verb' => 'POST'],
+		['name' => 'playlist#createFromFolder', 'url' => '/api/playlists/from-folder', 'verb' => 'POST'],
 		['name' => 'read#metadata', 'url' => '/api/metadata', 'verb' => 'GET'],
 		['name' => 'read#musicBrainz', 'url' => '/api/musicbrainz', 'verb' => 'GET'],
 		['name' => 'artwork#artwork', 'url' => '/api/artwork', 'verb' => 'GET'],
