@@ -19,6 +19,7 @@ class PlaylistService {
 	public function __construct(
 		private IRootFolder $rootFolder,
 		private IConfig $config,
+		private AudioTagReader $tagReader,
 	) {
 	}
 
@@ -33,14 +34,14 @@ class PlaylistService {
 			throw new RuntimeException('The selected path is not a folder.');
 		}
 
-		$audioFiles = $this->audioFiles($node);
-		if ($audioFiles === []) {
+		$audioEntries = $this->audioEntries($node);
+		if ($audioEntries === []) {
 			throw new RuntimeException('This folder contains no supported audio files.');
 		}
 
 		$playlistName = $this->playlistName($node, $requestedName);
 		$playlistPath = $this->joinUserPath($folderPath, $playlistName);
-		$content = $this->render($audioFiles);
+		$content = $this->render($audioEntries);
 
 		if ($node->nodeExists($playlistName)) {
 			$playlist = $node->get($playlistName);
@@ -61,7 +62,7 @@ class PlaylistService {
 		return [
 			'path' => $playlistPath,
 			'name' => $playlistName,
-			'entries' => count($audioFiles),
+			'entries' => count($audioEntries),
 			'managed' => true,
 		];
 	}
@@ -76,7 +77,7 @@ class PlaylistService {
 				if (!$node instanceof Folder) {
 					continue;
 				}
-				$audioFiles = $this->audioFiles($node);
+				$audioEntries = $this->audioEntries($node);
 				foreach ($node->getDirectoryListing() as $child) {
 					if (!$child instanceof File || strtolower(pathinfo($child->getName(), PATHINFO_EXTENSION)) !== 'm3u8') {
 						continue;
@@ -84,7 +85,7 @@ class PlaylistService {
 					if (!str_contains($this->safeContent($child), self::MANAGED_MARKER)) {
 						continue;
 					}
-					$child->putContent($this->render($audioFiles));
+					$child->putContent($this->render($audioEntries));
 				}
 			} catch (Throwable) {
 				// Playlist maintenance is best-effort and must never make a file move fail.
@@ -92,32 +93,106 @@ class PlaylistService {
 		}
 	}
 
-	/** @return list<File> */
-	private function audioFiles(Folder $folder): array {
-		$files = [];
+	/**
+	 * Album-like folders are sorted by their embedded track number when enough
+	 * files agree on one album. Mixed folders keep natural filename order, which
+	 * preserves playlist indices such as "01 - ...", "02 - ..." from downloads.
+	 *
+	 * @return list<array{file: File, tags: array<string, mixed>, trackNumber: int|null}>
+	 */
+	private function audioEntries(Folder $folder): array {
+		$entries = [];
 		foreach ($folder->getDirectoryListing() as $child) {
 			if (!$child instanceof File) {
 				continue;
 			}
 			$extension = strtolower(pathinfo($child->getName(), PATHINFO_EXTENSION));
-			if (in_array($extension, self::AUDIO_EXTENSIONS, true)) {
-				$files[] = $child;
+			if (!in_array($extension, self::AUDIO_EXTENSIONS, true)) {
+				continue;
+			}
+
+			$tags = $this->tagReader->read($child);
+			$entries[] = [
+				'file' => $child,
+				'tags' => $tags,
+				'trackNumber' => $this->numericTrack((string)($tags['track'] ?? '')),
+			];
+		}
+
+		$albumKeys = [];
+		$albumTagged = 0;
+		$trackTagged = 0;
+		foreach ($entries as $entry) {
+			$tags = $entry['tags'];
+			$album = trim((string)($tags['album'] ?? ''));
+			if ($album !== '') {
+				++$albumTagged;
+				$artist = trim((string)($tags['albumArtist'] ?? ''));
+				if ($artist === '') {
+					$artist = trim((string)($tags['artist'] ?? ''));
+				}
+				$albumKeys[mb_strtolower($artist . "\0" . $album)] = true;
+			}
+			if ($entry['trackNumber'] !== null) {
+				++$trackTagged;
 			}
 		}
-		usort($files, static fn (File $a, File $b): int => strnatcasecmp($a->getName(), $b->getName()));
 
-		return $files;
+		$minimumAgreement = max(2, (int)ceil(count($entries) * 0.75));
+		$useAlbumTrackOrder = count($entries) > 1
+			&& count($albumKeys) === 1
+			&& $albumTagged >= $minimumAgreement
+			&& $trackTagged >= $minimumAgreement;
+
+		usort($entries, static function (array $a, array $b) use ($useAlbumTrackOrder): int {
+			if ($useAlbumTrackOrder) {
+				$aTrack = $a['trackNumber'] ?? PHP_INT_MAX;
+				$bTrack = $b['trackNumber'] ?? PHP_INT_MAX;
+				if ($aTrack !== $bTrack) {
+					return $aTrack <=> $bTrack;
+				}
+			}
+
+			return strnatcasecmp($a['file']->getName(), $b['file']->getName());
+		});
+
+		return $entries;
 	}
 
-	/** @param list<File> $audioFiles */
-	private function render(array $audioFiles): string {
+	/**
+	 * @param list<array{file: File, tags: array<string, mixed>, trackNumber: int|null}> $audioEntries
+	 */
+	private function render(array $audioEntries): string {
 		$lines = ['#EXTM3U', self::MANAGED_MARKER];
-		foreach ($audioFiles as $file) {
+		foreach ($audioEntries as $index => $entry) {
+			$file = $entry['file'];
+			$tags = $entry['tags'];
 			$name = str_replace(["\r", "\n"], ' ', $file->getName());
+			$title = trim((string)($tags['title'] ?? ''));
+			if ($title === '') {
+				$title = pathinfo($name, PATHINFO_FILENAME);
+			}
+			$artist = trim((string)($tags['artist'] ?? ''));
+			$sequence = str_pad((string)($index + 1), 2, '0', STR_PAD_LEFT);
+			$label = $sequence . '. ' . ($artist !== '' ? $artist . ' - ' : '') . $title;
+			$label = str_replace(["\r", "\n"], ' ', $label);
+
+			// Extended M3U keeps the playlist position visible for players that use
+			// EXTINF while the following relative filename stays maximally portable.
+			$lines[] = '#EXTINF:-1,' . $label;
 			$lines[] = $name;
 		}
 
 		return implode("\n", $lines) . "\n";
+	}
+
+	private function numericTrack(string $value): ?int {
+		if (!preg_match('/^\s*(\d{1,4})(?:\s*\/\s*\d+)?/u', trim($value), $match)) {
+			return null;
+		}
+
+		$track = (int)$match[1];
+		return $track > 0 ? $track : null;
 	}
 
 	private function playlistName(Folder $folder, string $requestedName): string {
