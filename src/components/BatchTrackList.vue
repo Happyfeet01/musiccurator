@@ -66,6 +66,17 @@ function apiUrl(path: string, query?: Record<string, string>): string {
 	return url.toString()
 }
 
+function artworkProxy(url: string): string {
+	return url ? apiUrl('/api/artwork', { url }) : ''
+}
+
+function hideBrokenImage(event: Event): void {
+	const target = event.target
+	if (target instanceof HTMLImageElement) {
+		target.style.display = 'none'
+	}
+}
+
 async function searchTrack(path: string): Promise<BatchSearchResponse> {
 	const response = await fetch(apiUrl('/api/metadata', { path }), {
 		headers: { Accept: 'application/json' },
@@ -354,10 +365,23 @@ function candidateSummary(candidate: BatchSuggestion): string {
 					</div>
 
 					<div v-if="row.item?.best" class="result-candidate">
-						<strong>{{ row.item.best.title || row.track!.title || row.track!.filename }}</strong>
-						<span>{{ candidateSummary(row.item.best) }}</span>
-						<small v-if="row.item.best.genre" class="genre-copy">Genre: {{ row.item.best.genre }}</small>
-						<small v-else class="genre-copy muted-genre">Genre: no reliable suggestion</small>
+						<div class="candidate-with-art">
+							<span class="candidate-art" aria-hidden="true">
+								<span>♫</span>
+								<img
+									v-if="row.item.best.artworkUrl"
+									:src="artworkProxy(row.item.best.artworkUrl)"
+									alt=""
+									loading="lazy"
+									@error="hideBrokenImage">
+							</span>
+							<div class="candidate-copy">
+								<strong>{{ row.item.best.title || row.track!.title || row.track!.filename }}</strong>
+								<span>{{ candidateSummary(row.item.best) }}</span>
+								<small v-if="row.item.best.genre" class="genre-copy">Genre: {{ row.item.best.genre }}</small>
+								<small v-else class="genre-copy muted-genre">Genre: no reliable suggestion</small>
+							</div>
+						</div>
 						<small>{{ row.item.best.source || 'Metadata' }} · {{ row.item.best.score }}%</small>
 						<small v-if="providerSummary(row.item.providers)" class="provider-copy">{{ providerSummary(row.item.providers) }}</small>
 						<div v-if="isMp3(row.track!.filename) && !writtenPaths[row.track!.path]" class="row-write-action">
@@ -428,11 +452,16 @@ function candidateSummary(candidate: BatchSuggestion): string {
 .batch-result[data-state="review"] { border-color: color-mix(in srgb, var(--color-warning) 55%, var(--color-border)); }
 .batch-result[data-state="error"] { border-color: color-mix(in srgb, var(--color-error) 50%, var(--color-border)); }
 .result-track, .result-state, .result-candidate { display: grid; gap: 2px; min-width: 0; }
-.result-track small, .result-state small, .result-candidate small, .result-candidate span { overflow: hidden; color: var(--color-text-maxcontrast); text-overflow: ellipsis; white-space: nowrap; }
+.result-track small, .result-state small, .result-candidate small, .candidate-copy span { overflow: hidden; color: var(--color-text-maxcontrast); text-overflow: ellipsis; white-space: nowrap; }
 .result-state strong { font-size: 13px; }
 .batch-result[data-state="matched"] .result-state strong { color: var(--color-success-text); }
 .batch-result[data-state="review"] .result-state strong { color: var(--color-warning-text); }
 .batch-result[data-state="error"] .result-state strong, .error-copy { color: var(--color-error-text); }
+.candidate-with-art { display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 10px; margin-bottom: 4px; }
+.candidate-art { position: relative; display: grid; width: 54px; height: 54px; place-items: center; overflow: hidden; border-radius: 14px; background: var(--color-primary-element-light); color: var(--color-primary-element-light-text); font-size: 22px; }
+.candidate-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.candidate-copy { display: grid; min-width: 0; gap: 2px; }
+.candidate-copy strong, .candidate-copy small, .candidate-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .genre-copy { font-weight: 650; color: var(--color-main-text) !important; }
 .muted-genre { font-weight: 400; color: var(--color-text-maxcontrast) !important; }
 .row-write-action { margin-top: 8px; }
