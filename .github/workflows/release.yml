@@ -45,7 +45,25 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Skip an already published version
+      - name: Prepare release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          cat > release-notes.md <<'EOF'
+          # MusicCurator __VERSION__ — first public beta
+
+          This is the first public GitHub beta of MusicCurator, a Nextcloud-native music library curation app designed to complement Nextcloud Music and compatible players.
+
+          Highlights include a persistent library index, MusicBrainz/Last.fm metadata enrichment, optional Discogs and AcoustID support, cover artwork, batch metadata review, experimental MP3 tag writing with rollback records, managed M3U8 playlist creation, album/playlist ordering, and the optional AI Advisor.
+
+          **Beta warning:** MP3 tag writing is still experimental. Test with backed-up music first. This release is not yet published in the Nextcloud App Store.
+
+          See [CHANGELOG.md](https://github.com/Happyfeet01/musiccurator/blob/master/CHANGELOG.md) for the detailed feature and limitation list.
+          EOF
+          sed -i "s/__VERSION__/${VERSION}/g" release-notes.md
+
+      - name: Check whether this version is already published
         id: existing
         env:
           GH_TOKEN: ${{ github.token }}
@@ -54,10 +72,23 @@ jobs:
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "published=true" >> "$GITHUB_OUTPUT"
-            echo "$TAG is already published; nothing to do."
+            echo "$TAG is already published; release notes will be refreshed."
           else
             echo "published=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Refresh existing prerelease notes
+        if: steps.existing.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          gh release edit "$TAG" \
+            --title "MusicCurator ${VERSION} Beta" \
+            --notes-file release-notes.md \
+            --prerelease
 
       - name: Install frontend dependencies
         if: steps.existing.outputs.published != 'true'
@@ -88,24 +119,6 @@ jobs:
             --exclude '.idea/' \
             --exclude '.php-cs-fixer.cache'
           tar -C dist -czf "musiccurator-v${VERSION}.tar.gz" musiccurator
-
-      - name: Prepare release notes
-        if: steps.existing.outputs.published != 'true'
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        shell: bash
-        run: |
-          cat > release-notes.md <<EOF
-          # MusicCurator ${VERSION} — first public beta
-
-          This is the first public GitHub beta of MusicCurator, a Nextcloud-native music library curation app designed to complement Nextcloud Music and compatible players.
-
-          Highlights include a persistent library index, MusicBrainz/Last.fm metadata enrichment, optional Discogs and AcoustID support, cover artwork, batch metadata review, experimental MP3 tag writing with rollback records, managed M3U8 playlist creation, album/playlist ordering, and the optional AI Advisor.
-
-          **Beta warning:** MP3 tag writing is still experimental. Test with backed-up music first. This release is not yet published in the Nextcloud App Store.
-
-          See `CHANGELOG.md` for the detailed feature and limitation list.
-          EOF
 
       - name: Publish GitHub prerelease
         if: steps.existing.outputs.published != 'true'
