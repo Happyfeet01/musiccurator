@@ -7,6 +7,7 @@ namespace OCA\MusicCurator\Controller;
 use OCA\MusicCurator\Service\AudioTagReader;
 use OCA\MusicCurator\Service\MetadataSearchService;
 use OCA\MusicCurator\Service\ProviderCredentialsService;
+use OCA\MusicCurator\Service\ScanIndexService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -34,6 +35,7 @@ class ReadController extends Controller {
 		private AudioTagReader $tagReader,
 		private MetadataSearchService $metadataSearch,
 		private ProviderCredentialsService $credentials,
+		private ScanIndexService $scanIndex,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request);
@@ -101,6 +103,7 @@ class ReadController extends Controller {
 			]);
 
 			$data = $this->metadataSearch->search($userId, $node, $tags, $title);
+			$this->rememberBestMusicBrainzMatch($userId, $node, $data['results']);
 
 			$this->logger->info('MusicCurator metadata lookup completed', [
 				'app' => 'musiccurator',
@@ -133,6 +136,26 @@ class ReadController extends Controller {
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
 	public function musicBrainz(string $path): DataResponse {
 		return $this->metadata($path);
+	}
+
+	/**
+	 * @param list<array<string, mixed>> $results
+	 */
+	private function rememberBestMusicBrainzMatch(string $userId, File $file, array $results): void {
+		foreach ($results as $result) {
+			if ((string)($result['source'] ?? '') !== 'MusicBrainz') {
+				continue;
+			}
+			$recordingId = trim((string)($result['id'] ?? ''));
+			$releaseId = trim((string)($result['releaseId'] ?? ''));
+			$score = (int)($result['score'] ?? 0);
+			if ($recordingId === '' || $releaseId === '' || $score < 85) {
+				return;
+			}
+
+			$this->scanIndex->storeMusicBrainzMatch($userId, $file->getId(), $recordingId, $releaseId, $score);
+			return;
+		}
 	}
 
 	private function userId(): string {
