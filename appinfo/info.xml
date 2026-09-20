@@ -17,8 +17,8 @@ Nextcloud Music remains responsible for playback.
 	<author>Happyfeet01</author>
 	<namespace>MusicCurator</namespace>
 	<category>multimedia</category>
-	<bugs>https://github.com/Happyfeet01/musiccurator/issues</bugs>
 	<website>https://github.com/Happyfeet01/musiccurator</website>
+	<bugs>https://github.com/Happyfeet01/musiccurator/issues</bugs>
 	<repository type="git">https://github.com/Happyfeet01/musiccurator.git</repository>
 	<dependencies>
 		<nextcloud min-version="34" max-version="35"/>
