@@ -79,7 +79,7 @@ jobs:
       - name: Export existing analysis findings for baseline review
         if: failure()
         run: |
-          composer run psalm -- --threads=1 --monochrome --no-progress --set-baseline=/tmp/musiccurator-psalm-baseline.xml
+          composer run psalm -- --threads=1 --monochrome --no-progress --set-baseline=/tmp/musiccurator-psalm-baseline.xml || test -s /tmp/musiccurator-psalm-baseline.xml
           python3 -c 'import json,pathlib; print("PSALM_BASELINE_JSON=" + json.dumps(pathlib.Path("/tmp/musiccurator-psalm-baseline.xml").read_text()))'
 
   summary:
