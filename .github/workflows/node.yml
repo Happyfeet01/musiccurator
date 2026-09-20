@@ -86,6 +86,9 @@ jobs:
           npm ci
           npm run build --if-present
 
+      - name: Check npm dependencies for vulnerabilities
+        run: npm audit --audit-level=moderate
+
       - name: Check build changes
         run: |
           bash -c "[[ ! \"`git status --porcelain `\" ]] || (echo 'Please recompile and commit the assets, see the section \"Show changes on failure\" for details' && exit 1)"

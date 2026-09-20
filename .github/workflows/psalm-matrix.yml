@@ -73,14 +73,11 @@ jobs:
       - name: Install dependencies # zizmor: ignore[template-injection]
         run: composer require --dev 'nextcloud/ocp:${{ matrix.ocp-version }}' --ignore-platform-reqs --with-dependencies
 
-      - name: Run coding standards check
-        run: composer run psalm -- --threads=1 --monochrome --no-progress --output-format=github
+      - name: Check for new PHP analysis findings
+        env:
+          PSALM_BASELINE: psalm-baseline-${{ matrix.ocp-version }}.xml
+        run: composer run psalm -- --threads=1 --monochrome --no-progress --output-format=github --use-baseline="$PSALM_BASELINE"
 
-      - name: Export existing analysis findings for baseline review
-        if: failure()
-        run: |
-          composer run psalm -- --threads=1 --monochrome --no-progress --set-baseline=/tmp/musiccurator-psalm-baseline.xml || test -s /tmp/musiccurator-psalm-baseline.xml
-          python3 -c 'import json,pathlib; print("PSALM_BASELINE_JSON=" + json.dumps(pathlib.Path("/tmp/musiccurator-psalm-baseline.xml").read_text()))'
 
   summary:
     runs-on: ubuntu-latest
