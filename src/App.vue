@@ -7,8 +7,8 @@ import NcAppNavigationList from '@nextcloud/vue/components/NcAppNavigationList'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcContent from '@nextcloud/vue/components/NcContent'
-import BatchTrackList from './components/BatchTrackList.vue'
 import AiAdvisorPanel from './components/AiAdvisorPanel.vue'
+import BatchTrackList from './components/BatchTrackList.vue'
 
 declare global {
 	interface Window {
@@ -216,10 +216,18 @@ const scanPathMismatch = computed(() => hasScanned.value
 const selectedTrackIsPlaylistLike = computed(() => selectedTrack.value !== null && isPlaylistLikePath(selectedTrack.value.path))
 const activeProviderNames = computed(() => {
 	const providers: string[] = []
-	if (settings.value.musicBrainzEnabled) providers.push('MusicBrainz')
-	if (settings.value.discogsConfigured) providers.push('Discogs')
-	if (settings.value.lastFmConfigured) providers.push('Last.fm')
-	if (settings.value.acoustIdConfigured) providers.push('AcoustID')
+	if (settings.value.musicBrainzEnabled) {
+		providers.push('MusicBrainz')
+	}
+	if (settings.value.discogsConfigured) {
+		providers.push('Discogs')
+	}
+	if (settings.value.lastFmConfigured) {
+		providers.push('Last.fm')
+	}
+	if (settings.value.acoustIdConfigured) {
+		providers.push('AcoustID')
+	}
 	return providers
 })
 
@@ -400,10 +408,14 @@ function selectTrackFromBatch(reference: BatchTrackReference): void {
 
 function rememberMusicBrainzArtwork(path: string, results: MetadataSuggestion[]): void {
 	const match = results.find((candidate) => candidate.source === 'MusicBrainz' && candidate.releaseId)
-	if (!match) return
+	if (!match) {
+		return
+	}
 
 	const index = tracks.value.findIndex((track) => track.path === path)
-	if (index < 0) return
+	if (index < 0) {
+		return
+	}
 	const updated = {
 		...tracks.value[index],
 		musicBrainzRecordingId: match.id,
@@ -612,7 +624,7 @@ onMounted(async () => {
 </script>
 
 <template>
-	<NcContent app-name="musiccurator">
+	<NcContent appName="musiccurator">
 		<NcAppNavigation aria-label="MusicCurator navigation">
 			<template #list>
 				<NcAppNavigationList>
@@ -649,8 +661,12 @@ onMounted(async () => {
 					</div>
 				</nav>
 
-				<div v-if="message" class="notice notice-success">{{ message }}</div>
-				<div v-if="error" class="notice notice-error">{{ error }}</div>
+				<div v-if="message" class="notice notice-success">
+					{{ message }}
+				</div>
+				<div v-if="error" class="notice notice-error">
+					{{ error }}
+				</div>
 				<div v-if="scanPathMismatch" class="notice notice-warning">
 					The displayed results were indexed from <strong>{{ lastScannedPath }}</strong>, while your configured library is now <strong>{{ settings.libraryPath }}</strong>. Refresh the library index to update the view.
 				</div>
@@ -658,40 +674,60 @@ onMounted(async () => {
 				<section v-if="folderPickerOpen" class="folder-picker glass-panel global-picker">
 					<div class="section-heading compact-heading">
 						<div>
-							<p class="eyebrow">Nextcloud files</p>
+							<p class="eyebrow">
+								Nextcloud files
+							</p>
 							<h2>{{ folderPath }}</h2>
 						</div>
 						<div class="hero-actions">
-							<NcButton v-if="folderPath !== '/'" :disabled="loading" @click="browseFolder(folderParent)">Up</NcButton>
-							<NcButton :disabled="loading" @click="folderPickerOpen = false">Cancel</NcButton>
-							<NcButton type="primary" :disabled="loading" @click="selectCurrentFolder">Use this folder</NcButton>
+							<NcButton v-if="folderPath !== '/'" :disabled="loading" @click="browseFolder(folderParent)">
+								Up
+							</NcButton>
+							<NcButton :disabled="loading" @click="folderPickerOpen = false">
+								Cancel
+							</NcButton>
+							<NcButton variant="primary" :disabled="loading" @click="selectCurrentFolder">
+								Use this folder
+							</NcButton>
 						</div>
 					</div>
 					<div v-if="folderEntries.length" class="folder-grid">
-						<button v-for="folder in folderEntries" :key="folder.path" class="folder-row" type="button" @click="browseFolder(folder.path)">
+						<button v-for="folder in folderEntries"
+							:key="folder.path"
+							class="folder-row"
+							type="button"
+							@click="browseFolder(folder.path)">
 							<span aria-hidden="true">📁</span>
 							<strong>{{ folder.name }}</strong>
 						</button>
 					</div>
-					<p v-else class="muted">No subfolders here. You can still select this folder.</p>
+					<p v-else class="muted">
+						No subfolders here. You can still select this folder.
+					</p>
 				</section>
 
 				<section v-if="section === 'library'" class="page">
 					<header class="hero glass-panel">
 						<div>
-							<p class="eyebrow">Music library manager</p>
+							<p class="eyebrow">
+								Music library manager
+							</p>
 							<h1>Your real Nextcloud music library.</h1>
 							<p class="hero-copy">
 								MusicCurator now loads the last indexed library instantly from its database. Refresh the index only when files changed,
 								then compare and write metadata with your configured providers.
 							</p>
-							<p class="path-summary"><strong>Configured library:</strong> {{ settings.libraryPath || 'Not configured' }}</p>
+							<p class="path-summary">
+								<strong>Configured library:</strong> {{ settings.libraryPath || 'Not configured' }}
+							</p>
 						</div>
 						<div class="hero-actions">
-							<NcButton type="primary" :disabled="loading || !settings.libraryPath" @click="scanLibrary">
+							<NcButton variant="primary" :disabled="loading || !settings.libraryPath" @click="scanLibrary">
 								{{ loading ? 'Working…' : (hasScanned ? 'Refresh library index' : 'Scan library') }}
 							</NcButton>
-							<NcButton :disabled="loading" @click="openFolderPicker">Choose music folder</NcButton>
+							<NcButton :disabled="loading" @click="openFolderPicker">
+								Choose music folder
+							</NcButton>
 						</div>
 					</header>
 
@@ -718,16 +754,23 @@ onMounted(async () => {
 						</article>
 					</div>
 
-					<div v-if="truncated" class="notice">The index stopped after 5,000 audio files for this development build.</div>
+					<div v-if="truncated" class="notice">
+						The index stopped after 5,000 audio files for this development build.
+					</div>
 
 					<section class="glass-panel library-panel">
 						<div class="section-heading">
 							<div>
-								<p class="eyebrow">Library</p>
+								<p class="eyebrow">
+									Library
+								</p>
 								<h2>{{ hasScanned ? `${tracks.length} audio files` : 'Ready to index' }}</h2>
 								<small v-if="hasScanned && visibleTracks.length > renderedTracks.length" class="muted">Showing {{ renderedTracks.length }} of {{ visibleTracks.length }} for a faster interface.</small>
 							</div>
-							<NcCheckboxRadioSwitch v-model="onlyNeedsAttention" type="switch" :disabled="!hasScanned" @update:model-value="trackLimit = TRACK_PAGE_SIZE">
+							<NcCheckboxRadioSwitch v-model="onlyNeedsAttention"
+								type="switch"
+								:disabled="!hasScanned"
+								@update:modelValue="trackLimit = TRACK_PAGE_SIZE">
 								Only items needing attention
 							</NcCheckboxRadioSwitch>
 						</div>
@@ -741,14 +784,14 @@ onMounted(async () => {
 						</div>
 						<BatchTrackList
 							v-else
-							:shown-tracks="renderedTracks"
-							:all-tracks="visibleTracks"
-							:selected-path="selectedTrack?.path || ''"
-							:active-provider-names="activeProviderNames"
-							:has-more="renderedTracks.length < visibleTracks.length"
+							:shownTracks="renderedTracks"
+							:allTracks="visibleTracks"
+							:selectedPath="selectedTrack?.path || ''"
+							:activeProviderNames="activeProviderNames"
+							:hasMore="renderedTracks.length < visibleTracks.length"
 							:remaining="Math.max(0, visibleTracks.length - renderedTracks.length)"
-							@select-track="selectTrackFromBatch"
-							@load-more="trackLimit += TRACK_PAGE_SIZE" />
+							@selectTrack="selectTrackFromBatch"
+							@loadMore="trackLimit += TRACK_PAGE_SIZE" />
 					</section>
 
 					<section v-if="selectedTrack" :key="selectedTrack.path" class="glass-panel compare-panel">
@@ -770,7 +813,9 @@ onMounted(async () => {
 										@error="hideBrokenImage">
 								</span>
 								<div>
-									<p class="eyebrow">Selected track</p>
+									<p class="eyebrow">
+										Selected track
+									</p>
 									<h2>{{ selectedTrack.filename }}</h2>
 									<small class="muted selected-path">{{ selectedTrack.path }}</small>
 									<small class="provider-hint">Will search: {{ activeProviderNames.length ? activeProviderNames.join(', ') : 'no provider configured' }}</small>
@@ -785,7 +830,10 @@ onMounted(async () => {
 						</div>
 
 						<div v-if="providerStatuses.length" class="provider-status-grid">
-							<div v-for="provider in providerStatuses" :key="provider.name" class="provider-status" :data-ok="provider.ok ? 'yes' : 'no'">
+							<div v-for="provider in providerStatuses"
+								:key="provider.name"
+								class="provider-status"
+								:data-ok="provider.ok ? 'yes' : 'no'">
 								<strong>{{ provider.name }}</strong>
 								<small v-if="provider.ok">{{ provider.results }} result{{ provider.results === 1 ? '' : 's' }} · {{ provider.durationMs }} ms</small>
 								<small v-else>{{ provider.message || (provider.configured ? 'Provider unavailable' : 'Not configured') }}</small>
@@ -802,7 +850,11 @@ onMounted(async () => {
 								@click="chooseSuggestion(candidate)">
 								<span class="candidate-cover" aria-hidden="true">
 									<span>♫</span>
-									<img v-if="candidate.artworkUrl" :src="artworkProxy(candidate.artworkUrl)" alt="" loading="lazy" @error="hideBrokenImage">
+									<img v-if="candidate.artworkUrl"
+										:src="artworkProxy(candidate.artworkUrl)"
+										alt=""
+										loading="lazy"
+										@error="hideBrokenImage">
 								</span>
 								<span class="candidate-main">
 									<strong>{{ candidate.title || selectedTrack.title || selectedTrack.filename }}</strong>
@@ -816,10 +868,10 @@ onMounted(async () => {
 							<span>Field</span><span>Current file</span><span>Metadata suggestion</span><span>Use</span>
 						</div>
 						<div class="metadata-grid">
-							<strong>Title</strong><span>{{ currentValue('title') }}</span><span class="suggestion">{{ suggestedValue('title') }}</span><NcCheckboxRadioSwitch v-model="useTitle" :disabled="!selectedSuggestion" @update:model-value="previewMove" />
-							<strong>Artist</strong><span>{{ currentValue('artist') }}</span><span class="suggestion">{{ suggestedValue('artist') }}</span><NcCheckboxRadioSwitch v-model="useArtist" :disabled="!selectedSuggestion" @update:model-value="previewMove" />
-							<strong>Album</strong><span>{{ currentValue('album') }}</span><span class="suggestion">{{ suggestedValue('album') }}</span><NcCheckboxRadioSwitch v-model="useAlbum" :disabled="!selectedSuggestion" @update:model-value="previewMove" />
-							<strong>Track</strong><span>{{ currentValue('track') }}</span><span class="suggestion">{{ suggestedValue('track') }}</span><NcCheckboxRadioSwitch v-model="useTrack" :disabled="!selectedSuggestion" @update:model-value="previewMove" />
+							<strong>Title</strong><span>{{ currentValue('title') }}</span><span class="suggestion">{{ suggestedValue('title') }}</span><NcCheckboxRadioSwitch v-model="useTitle" :disabled="!selectedSuggestion" @update:modelValue="previewMove" />
+							<strong>Artist</strong><span>{{ currentValue('artist') }}</span><span class="suggestion">{{ suggestedValue('artist') }}</span><NcCheckboxRadioSwitch v-model="useArtist" :disabled="!selectedSuggestion" @update:modelValue="previewMove" />
+							<strong>Album</strong><span>{{ currentValue('album') }}</span><span class="suggestion">{{ suggestedValue('album') }}</span><NcCheckboxRadioSwitch v-model="useAlbum" :disabled="!selectedSuggestion" @update:modelValue="previewMove" />
+							<strong>Track</strong><span>{{ currentValue('track') }}</span><span class="suggestion">{{ suggestedValue('track') }}</span><NcCheckboxRadioSwitch v-model="useTrack" :disabled="!selectedSuggestion" @update:modelValue="previewMove" />
 							<strong>Year</strong><span>{{ currentValue('year') }}</span><span class="suggestion">{{ suggestedValue('year') }}</span><NcCheckboxRadioSwitch v-model="useYear" :disabled="!selectedSuggestion" />
 							<strong>Genre</strong><span>{{ selectedTrack.genre || '—' }}</span><span class="suggestion">{{ selectedSuggestion?.genre || '—' }}</span><span />
 						</div>
@@ -833,11 +885,19 @@ onMounted(async () => {
 							</div>
 							<div class="operation-mode-options">
 								<label class="operation-option" :class="{ selected: operationMode === 'metadata' }">
-									<input :checked="operationMode === 'metadata'" type="radio" name="operation-mode" value="metadata" @change="setOperationMode('metadata')">
+									<input :checked="operationMode === 'metadata'"
+										type="radio"
+										name="operation-mode"
+										value="metadata"
+										@change="setOperationMode('metadata')">
 									<span><strong>Metadata only</strong><small>Keep the file exactly where it is.</small></span>
 								</label>
 								<label class="operation-option" :class="{ selected: operationMode === 'organize' }">
-									<input :checked="operationMode === 'organize'" type="radio" name="operation-mode" value="organize" @change="setOperationMode('organize')">
+									<input :checked="operationMode === 'organize'"
+										type="radio"
+										name="operation-mode"
+										value="organize"
+										@change="setOperationMode('organize')">
 									<span><strong>Metadata + organize file</strong><small>Preview a move into an artist/album hierarchy.</small></span>
 								</label>
 							</div>
@@ -859,45 +919,74 @@ onMounted(async () => {
 							<div><span class="label">Proposed path</span><code>{{ proposedPath }}</code></div>
 						</div>
 						<div v-if="operationMode === 'organize'" class="review-actions">
-							<NcButton v-if="selectedSuggestion" @click="previewMove">Refresh preview</NcButton>
-							<NcButton v-if="proposedPath" type="primary" :disabled="loading" @click="moveSelectedTrack">Move file</NcButton>
+							<NcButton v-if="selectedSuggestion" @click="previewMove">
+								Refresh preview
+							</NcButton>
+							<NcButton v-if="proposedPath"
+								variant="primary"
+								:disabled="loading"
+								@click="moveSelectedTrack">
+								Move file
+							</NcButton>
 						</div>
 					</section>
 				</section>
 
 				<section v-else-if="section === 'albums'" class="page">
 					<header class="subhero glass-panel">
-						<p class="eyebrow">Albums</p>
+						<p class="eyebrow">
+							Albums
+						</p>
 						<h1>Albums found in your tags</h1>
-						<p class="muted">Album covers appear automatically when MusicCurator has a confident MusicBrainz release match. Provider lookups enrich the persistent index as you use the app.</p>
+						<p class="muted">
+							Album covers appear automatically when MusicCurator has a confident MusicBrainz release match. Provider lookups enrich the persistent index as you use the app.
+						</p>
 					</header>
-					<div v-if="!hasScanned" class="glass-panel empty-state spaced">Index your library first.</div>
+					<div v-if="!hasScanned" class="glass-panel empty-state spaced">
+						Index your library first.
+					</div>
 					<template v-else>
-						<div class="result-summary">Showing {{ renderedAlbums.length }} of {{ albumGroups.length }} albums.</div>
+						<div class="result-summary">
+							Showing {{ renderedAlbums.length }} of {{ albumGroups.length }} albums.
+						</div>
 						<div class="album-grid">
 							<article v-for="album in renderedAlbums" :key="`${album.artist}-${album.album}`" class="album-card glass-panel">
 								<span class="album-art" aria-hidden="true">
 									<span>♫</span>
-									<img v-if="album.releaseId" :src="artworkForRelease(album.releaseId)" alt="" loading="lazy" @error="hideBrokenImage">
+									<img v-if="album.releaseId"
+										:src="artworkForRelease(album.releaseId)"
+										alt=""
+										loading="lazy"
+										@error="hideBrokenImage">
 								</span>
 								<div><strong>{{ album.album }}</strong><small>{{ album.artist }}</small></div>
 								<b>{{ album.tracks.length }}</b>
 							</article>
 						</div>
 						<div v-if="renderedAlbums.length < albumGroups.length" class="load-more-row spaced">
-							<NcButton @click="albumLimit += ALBUM_PAGE_SIZE">Show {{ Math.min(ALBUM_PAGE_SIZE, albumGroups.length - renderedAlbums.length) }} more albums</NcButton>
+							<NcButton @click="albumLimit += ALBUM_PAGE_SIZE">
+								Show {{ Math.min(ALBUM_PAGE_SIZE, albumGroups.length - renderedAlbums.length) }} more albums
+							</NcButton>
 						</div>
 					</template>
 				</section>
 
 				<section v-else-if="section === 'playlists'" class="page">
 					<header class="subhero glass-panel">
-						<p class="eyebrow">Playlists</p>
+						<p class="eyebrow">
+							Playlists
+						</p>
 						<h1>Playlist files</h1>
-						<p class="muted">MusicCurator detects .m3u and .m3u8 files without altering them. If indexed playlist tracks already have MusicBrainz matches, their covers form a small playlist mosaic.</p>
+						<p class="muted">
+							MusicCurator detects .m3u and .m3u8 files without altering them. If indexed playlist tracks already have MusicBrainz matches, their covers form a small playlist mosaic.
+						</p>
 					</header>
-					<div v-if="!hasScanned" class="glass-panel empty-state spaced">Index your library first.</div>
-					<div v-else-if="playlists.length === 0" class="glass-panel empty-state spaced">No playlist files found in the selected library.</div>
+					<div v-if="!hasScanned" class="glass-panel empty-state spaced">
+						Index your library first.
+					</div>
+					<div v-else-if="playlists.length === 0" class="glass-panel empty-state spaced">
+						No playlist files found in the selected library.
+					</div>
 					<div v-else class="simple-list glass-panel playlist-list">
 						<div v-for="playlist in playlists" :key="playlist.path" class="simple-row playlist-row">
 							<span class="playlist-art" aria-hidden="true">
@@ -916,8 +1005,16 @@ onMounted(async () => {
 				</section>
 
 				<section v-else-if="section === 'changes'" class="page">
-					<header class="subhero glass-panel"><p class="eyebrow">Changes</p><h1>Recent file operations</h1><p class="muted">Only real file operations performed by MusicCurator are listed here. Batch previews never appear as changes.</p></header>
-					<div v-if="changes.length === 0" class="glass-panel empty-state spaced">No MusicCurator file moves yet.</div>
+					<header class="subhero glass-panel">
+						<p class="eyebrow">
+							Changes
+						</p><h1>Recent file operations</h1><p class="muted">
+							Only real file operations performed by MusicCurator are listed here. Batch previews never appear as changes.
+						</p>
+					</header>
+					<div v-if="changes.length === 0" class="glass-panel empty-state spaced">
+						No MusicCurator file moves yet.
+					</div>
 					<div v-else class="simple-list glass-panel">
 						<div v-for="change in changes" :key="`${change.timestamp}-${change.source}`" class="change-row">
 							<div><strong>{{ change.type }}</strong><small>{{ formatDate(change.timestamp) }}</small></div>
@@ -927,32 +1024,72 @@ onMounted(async () => {
 				</section>
 
 				<section v-else class="page settings-page">
-					<header class="subhero glass-panel"><p class="eyebrow">Personal settings</p><h1>Your library and providers</h1><p class="muted">These settings belong to the currently signed-in Nextcloud user.</p></header>
+					<header class="subhero glass-panel">
+						<p class="eyebrow">
+							Personal settings
+						</p><h1>Your library and providers</h1><p class="muted">
+							These settings belong to the currently signed-in Nextcloud user.
+						</p>
+					</header>
 					<section class="glass-panel settings-card">
 						<h2>Music library</h2>
-						<p class="path-summary"><strong>Configured path:</strong> {{ settings.libraryPath || 'Not configured' }}</p>
-						<p v-if="lastScannedPath" class="path-summary"><strong>Indexed path:</strong> {{ lastScannedPath }}</p>
-						<p v-if="lastScanAt" class="path-summary"><strong>Last index refresh:</strong> {{ formatDate(lastScanAt) }}</p>
+						<p class="path-summary">
+							<strong>Configured path:</strong> {{ settings.libraryPath || 'Not configured' }}
+						</p>
+						<p v-if="lastScannedPath" class="path-summary">
+							<strong>Indexed path:</strong> {{ lastScannedPath }}
+						</p>
+						<p v-if="lastScanAt" class="path-summary">
+							<strong>Last index refresh:</strong> {{ formatDate(lastScanAt) }}
+						</p>
 						<label class="field-label" for="library-path">Nextcloud music folder</label>
 						<div class="field-row">
-							<input id="library-path" v-model="settings.libraryPath" class="text-input" type="text" placeholder="/Musik">
-							<NcButton :disabled="loading" @click="openFolderPicker">Browse</NcButton>
-							<NcButton type="primary" :disabled="loading || !settings.libraryPath.trim()" @click="saveSettings()">Save folder</NcButton>
+							<input id="library-path"
+								v-model="settings.libraryPath"
+								class="text-input"
+								type="text"
+								placeholder="/Musik">
+							<NcButton :disabled="loading" @click="openFolderPicker">
+								Browse
+							</NcButton>
+							<NcButton variant="primary" :disabled="loading || !settings.libraryPath.trim()" @click="saveSettings()">
+								Save folder
+							</NcButton>
 						</div>
 					</section>
 					<section class="glass-panel settings-card">
 						<h2>Metadata providers</h2>
-						<NcCheckboxRadioSwitch v-model="settings.musicBrainzEnabled" type="switch">Use MusicBrainz</NcCheckboxRadioSwitch>
-						<p class="muted">MusicBrainz needs no personal API key. Discogs, Last.fm and AcoustID become active automatically after their credentials are saved. Provider failures do not block results from the others.</p>
+						<NcCheckboxRadioSwitch v-model="settings.musicBrainzEnabled" type="switch">
+							Use MusicBrainz
+						</NcCheckboxRadioSwitch>
+						<p class="muted">
+							MusicBrainz needs no personal API key. Discogs, Last.fm and AcoustID become active automatically after their credentials are saved. Provider failures do not block results from the others.
+						</p>
 						<div class="provider-grid">
-							<label><span>AcoustID client/API key</span><input v-model="acoustIdKey" class="text-input" type="password" :placeholder="settings.acoustIdConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Used for fingerprint lookup. Requires fpcalc/Chromaprint on the Nextcloud server.</small></label>
-							<label><span>AcoustID user key</span><input v-model="acoustIdUserKey" class="text-input" type="password" :placeholder="settings.acoustIdUserConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Reserved for future fingerprint submissions; not required for lookup.</small></label>
-							<label><span>Discogs personal token</span><input v-model="discogsToken" class="text-input" type="password" :placeholder="settings.discogsConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Adds release, compilation and track-list candidates plus cover artwork when available.</small></label>
-							<label><span>Last.fm API key</span><input v-model="lastFmKey" class="text-input" type="password" :placeholder="settings.lastFmConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Adds track, artist and genre fallbacks plus album artwork when available.</small></label>
+							<label><span>AcoustID client/API key</span><input v-model="acoustIdKey"
+								class="text-input"
+								type="password"
+								:placeholder="settings.acoustIdConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Used for fingerprint lookup. Requires fpcalc/Chromaprint on the Nextcloud server.</small></label>
+							<label><span>AcoustID user key</span><input v-model="acoustIdUserKey"
+								class="text-input"
+								type="password"
+								:placeholder="settings.acoustIdUserConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Reserved for future fingerprint submissions; not required for lookup.</small></label>
+							<label><span>Discogs personal token</span><input v-model="discogsToken"
+								class="text-input"
+								type="password"
+								:placeholder="settings.discogsConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Adds release, compilation and track-list candidates plus cover artwork when available.</small></label>
+							<label><span>Last.fm API key</span><input v-model="lastFmKey"
+								class="text-input"
+								type="password"
+								:placeholder="settings.lastFmConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Adds track, artist and genre fallbacks plus album artwork when available.</small></label>
 						</div>
-						<div class="review-actions"><NcButton type="primary" :disabled="loading" @click="saveSettings()">Save personal settings</NcButton></div>
+						<div class="review-actions">
+							<NcButton variant="primary" :disabled="loading" @click="saveSettings()">
+								Save personal settings
+							</NcButton>
+						</div>
 					</section>
-					<AiAdvisorPanel :library-path="settings.libraryPath" :selected-track-path="selectedTrack?.path || ''" />
+					<AiAdvisorPanel :libraryPath="settings.libraryPath" :selectedTrackPath="selectedTrack?.path || ''" />
 				</section>
 			</main>
 		</NcAppContent>

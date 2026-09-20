@@ -91,9 +91,15 @@ const automaticFolder = computed(() => {
 const testFolder = computed(() => selectedFolder.value || automaticFolder.value)
 
 const providerReady = computed(() => {
-	if (provider.value === 'openai') return openAiConfigured.value || openAiKey.value.trim() !== ''
-	if (provider.value === 'mistral') return mistralConfigured.value || mistralKey.value.trim() !== ''
-	if (provider.value === 'ollama') return ollamaModel.value.trim() !== ''
+	if (provider.value === 'openai') {
+		return openAiConfigured.value || openAiKey.value.trim() !== ''
+	}
+	if (provider.value === 'mistral') {
+		return mistralConfigured.value || mistralKey.value.trim() !== ''
+	}
+	if (provider.value === 'ollama') {
+		return ollamaModel.value.trim() !== ''
+	}
 	return false
 })
 
@@ -129,7 +135,9 @@ async function load(): Promise<void> {
 			credentials: 'same-origin',
 		})
 		const data = await response.json() as SettingsResponse & { message?: string }
-		if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`)
+		if (!response.ok) {
+			throw new Error(data.message || `HTTP ${response.status}`)
+		}
 		provider.value = data.aiProvider ?? 'off'
 		openAiConfigured.value = Boolean(data.openAiConfigured)
 		mistralConfigured.value = Boolean(data.mistralConfigured)
@@ -167,7 +175,9 @@ async function save(): Promise<boolean> {
 			body,
 		})
 		const data = await response.json() as SettingsResponse & { message?: string }
-		if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`)
+		if (!response.ok) {
+			throw new Error(data.message || `HTTP ${response.status}`)
+		}
 		provider.value = data.aiProvider ?? provider.value
 		openAiConfigured.value = Boolean(data.openAiConfigured)
 		mistralConfigured.value = Boolean(data.mistralConfigured)
@@ -216,7 +226,9 @@ async function browseFolder(path: string): Promise<void> {
 			credentials: 'same-origin',
 		})
 		const data = await response.json() as FolderResponse
-		if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`)
+		if (!response.ok) {
+			throw new Error(data.message || `HTTP ${response.status}`)
+		}
 		folderPath.value = data.path
 		folderParent.value = data.parent
 		folderEntries.value = data.folders ?? []
@@ -254,7 +266,9 @@ async function classify(): Promise<void> {
 		error.value = 'The selected AI provider is not fully configured.'
 		return
 	}
-	if (!(await save())) return
+	if (!(await save())) {
+		return
+	}
 
 	testing.value = true
 	message.value = ''
@@ -270,7 +284,9 @@ async function classify(): Promise<void> {
 			body: new URLSearchParams({ path: testFolder.value }),
 		})
 		const data = await response.json() as Classification & { message?: string }
-		if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`)
+		if (!response.ok) {
+			throw new Error(data.message || `HTTP ${response.status}`)
+		}
 		classification.value = data
 		message.value = 'AI classification completed. This is advice only; no files were changed.'
 	} catch (e) {
@@ -287,15 +303,23 @@ onMounted(load)
 	<section class="ai-panel glass-panel">
 		<div class="ai-heading">
 			<div>
-				<p class="eyebrow">Experimental AI advisor</p>
+				<p class="eyebrow">
+					Experimental AI advisor
+				</p>
 				<h2>Classify music folders with an optional LLM</h2>
-				<p class="muted">The first experiment sends filenames, existing tags and folder statistics only. Audio files are never uploaded to a cloud AI provider.</p>
+				<p class="muted">
+					The first experiment sends filenames, existing tags and folder statistics only. Audio files are never uploaded to a cloud AI provider.
+				</p>
 			</div>
 			<span class="preview-badge">Preview only</span>
 		</div>
 
-		<div v-if="message" class="ai-notice success">{{ message }}</div>
-		<div v-if="error" class="ai-notice error">{{ error }}</div>
+		<div v-if="message" class="ai-notice success">
+			{{ message }}
+		</div>
+		<div v-if="error" class="ai-notice error">
+			{{ error }}
+		</div>
 
 		<div class="ai-grid">
 			<label>
@@ -309,18 +333,36 @@ onMounted(load)
 			</label>
 
 			<template v-if="provider === 'openai'">
-				<label><span>OpenAI API key</span><input v-model="openAiKey" class="text-input" type="password" :placeholder="openAiConfigured ? 'Configured — enter a new key to replace' : 'sk-…'"></label>
-				<label><span>OpenAI model</span><input v-model="openAiModel" class="text-input" type="text" placeholder="gpt-5.6-luna"><small class="muted">The default favors lower-cost classification.</small></label>
+				<label><span>OpenAI API key</span><input v-model="openAiKey"
+					class="text-input"
+					type="password"
+					:placeholder="openAiConfigured ? 'Configured — enter a new key to replace' : 'sk-…'"></label>
+				<label><span>OpenAI model</span><input v-model="openAiModel"
+					class="text-input"
+					type="text"
+					placeholder="gpt-5.6-luna"><small class="muted">The default favors lower-cost classification.</small></label>
 			</template>
 
 			<template v-else-if="provider === 'mistral'">
-				<label><span>Mistral API key</span><input v-model="mistralKey" class="text-input" type="password" :placeholder="mistralConfigured ? 'Configured — enter a new key to replace' : 'API key'"></label>
-				<label><span>Mistral model</span><input v-model="mistralModel" class="text-input" type="text" placeholder="mistral-small-latest"></label>
+				<label><span>Mistral API key</span><input v-model="mistralKey"
+					class="text-input"
+					type="password"
+					:placeholder="mistralConfigured ? 'Configured — enter a new key to replace' : 'API key'"></label>
+				<label><span>Mistral model</span><input v-model="mistralModel"
+					class="text-input"
+					type="text"
+					placeholder="mistral-small-latest"></label>
 			</template>
 
 			<template v-else-if="provider === 'ollama'">
-				<label><span>Ollama model</span><input v-model="ollamaModel" class="text-input" type="text" placeholder="gemma4"><small class="muted">Use a model that is already installed in your local Ollama instance.</small></label>
-				<label><span>Ollama API base URL</span><input v-model="ollamaUrl" class="text-input" type="text" placeholder="http://127.0.0.1:11434/api"><small class="muted">Development build currently accepts localhost only.</small></label>
+				<label><span>Ollama model</span><input v-model="ollamaModel"
+					class="text-input"
+					type="text"
+					placeholder="gemma4"><small class="muted">Use a model that is already installed in your local Ollama instance.</small></label>
+				<label><span>Ollama API base URL</span><input v-model="ollamaUrl"
+					class="text-input"
+					type="text"
+					placeholder="http://127.0.0.1:11434/api"><small class="muted">Development build currently accepts localhost only.</small></label>
 			</template>
 		</div>
 
@@ -331,10 +373,18 @@ onMounted(load)
 				<small class="muted">Choose any folder inside your configured music library, or keep the automatic folder from the selected library track.</small>
 			</div>
 			<div class="actions">
-				<NcButton :disabled="folderLoading" @click="openFolderPicker">Choose folder</NcButton>
-				<NcButton v-if="selectedFolder" :disabled="folderLoading" @click="useAutomaticFolder">Use automatic folder</NcButton>
-				<NcButton :disabled="saving" @click="save">{{ saving ? 'Saving…' : 'Save AI settings' }}</NcButton>
-				<NcButton type="primary" :disabled="testing || saving || provider === 'off' || !providerReady" @click="classify">{{ testing ? 'Classifying…' : 'Classify folder' }}</NcButton>
+				<NcButton :disabled="folderLoading" @click="openFolderPicker">
+					Choose folder
+				</NcButton>
+				<NcButton v-if="selectedFolder" :disabled="folderLoading" @click="useAutomaticFolder">
+					Use automatic folder
+				</NcButton>
+				<NcButton :disabled="saving" @click="save">
+					{{ saving ? 'Saving…' : 'Save AI settings' }}
+				</NcButton>
+				<NcButton variant="primary" :disabled="testing || saving || provider === 'off' || !providerReady" @click="classify">
+					{{ testing ? 'Classifying…' : 'Classify folder' }}
+				</NcButton>
 			</div>
 		</div>
 
@@ -345,19 +395,32 @@ onMounted(load)
 					<code>{{ folderPath }}</code>
 				</div>
 				<div class="actions">
-					<NcButton v-if="canBrowseUp" :disabled="folderLoading" @click="browseFolder(folderParent)">Up</NcButton>
-					<NcButton :disabled="folderLoading" @click="folderPickerOpen = false">Cancel</NcButton>
-					<NcButton type="primary" :disabled="folderLoading" @click="chooseCurrentFolder">Use this folder</NcButton>
+					<NcButton v-if="canBrowseUp" :disabled="folderLoading" @click="browseFolder(folderParent)">
+						Up
+					</NcButton>
+					<NcButton :disabled="folderLoading" @click="folderPickerOpen = false">
+						Cancel
+					</NcButton>
+					<NcButton variant="primary" :disabled="folderLoading" @click="chooseCurrentFolder">
+						Use this folder
+					</NcButton>
 				</div>
 			</div>
-			<div v-if="folderLoading" class="folder-empty muted">Loading folders…</div>
+			<div v-if="folderLoading" class="folder-empty muted">
+				Loading folders…
+			</div>
 			<div v-else-if="folderEntries.length" class="folder-list">
-				<button v-for="folder in folderEntries" :key="folder.path" type="button" @click="browseFolder(folder.path)">
+				<button v-for="folder in folderEntries"
+					:key="folder.path"
+					type="button"
+					@click="browseFolder(folder.path)">
 					<span aria-hidden="true">📁</span>
 					<strong>{{ folder.name }}</strong>
 				</button>
 			</div>
-			<div v-else class="folder-empty muted">No subfolders here. You can still use this folder.</div>
+			<div v-else class="folder-empty muted">
+				No subfolders here. You can still use this folder.
+			</div>
 		</div>
 
 		<article v-if="classification" class="result-card">
