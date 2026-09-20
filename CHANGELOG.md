@@ -5,6 +5,21 @@ All notable changes to MusicCurator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-09-20
+
+### Changed
+
+- Prepare the 1.0.0 release from the validated main branch.
+- Update Vue, ESLint, Stylelint and the OpenAPI extractor together with their configuration.
+- Restore automated checks and add an npm security audit gate.
+- Document existing PHP analysis findings with version-specific regression baselines.
+- Provide a local signing and packaging command; signing keys remain on the release server.
+
+### Known limitations
+
+- MP3 tag writing remains experimental; use backed-up music when testing write operations.
+- Existing PHP analysis findings remain documented in docs/ci.md and are not resolved by this release.
+
 ## [0.2.15] - 2026-08-29
 
 ### First public beta

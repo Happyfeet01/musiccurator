@@ -3,9 +3,9 @@
 MusicCurator is a Nextcloud music-library management app designed to complement Nextcloud Music.
 It focuses on **curation rather than playback**: scan a real Nextcloud music library, inspect existing audio metadata, compare it with metadata providers, review changes, manage playlists and organize files without bypassing Nextcloud's file layer.
 
-> **Status: first public beta (0.2.15).** The `development` branch remains the active test branch; `master` contains release-ready beta snapshots. Back up important music before testing write features.
+> **Release: 1.0.0.** Releases are prepared from `main`. MP3 tag writing remains experimental; back up important music before testing write features.
 
-## Current beta features
+## Features
 
 - Native Nextcloud 34+ UI using `@nextcloud/vue`, including responsive mobile navigation and Nextcloud theming
 - Per-user music-folder selection
@@ -35,7 +35,7 @@ MusicCurator is not intended to replace Nextcloud Music or another player. It ma
 
 ## Safety principles
 
-MusicCurator should never silently rewrite a library. The beta therefore keeps destructive operations behind explicit user actions:
+MusicCurator should never silently rewrite a library. The app therefore keeps destructive operations behind explicit user actions:
 
 - file moves stay inside the configured music library
 - existing targets are never silently overwritten
@@ -47,7 +47,7 @@ MusicCurator should never silently rewrite a library. The beta therefore keeps d
 ## Branch model
 
 - `development` — active development and real-world testing
-- `master` — release-ready beta/stable snapshots
+- `main` — validated release snapshots
 - feature/fix branches — optional isolated work merged into `development`
 
 ## Development installation
@@ -69,7 +69,7 @@ cd /var/www/nextcloud
 sudo -u www-data php occ app:enable musiccurator
 ```
 
-GitHub beta releases include a built archive so testers do not need the Node toolchain for the packaged release.
+Packaged GitHub releases include a built archive so testers do not need the Node toolchain for the packaged release.
 
 ## Requirements
 
