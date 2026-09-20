@@ -1,13 +1,12 @@
 <script setup lang="ts">
+import type { BatchProviderStatus, BatchSearchResponse, BatchSuggestion } from '../composables/useBatchMetadata.ts'
+
 import { computed, ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import {
 	AUTO_ACCEPT_SCORE,
 	useBatchMetadata,
-	type BatchProviderStatus,
-	type BatchSearchResponse,
-	type BatchSuggestion,
-} from '../composables/useBatchMetadata'
+} from '../composables/useBatchMetadata.ts'
 
 declare global {
 	interface Window {
@@ -144,7 +143,9 @@ function selectCurrentFolder(): void {
 }
 
 async function createPlaylistFromCurrentFolder(): Promise<void> {
-	if (!currentTrack.value || !currentFolder.value || playlistCreating.value) return
+	if (!currentTrack.value || !currentFolder.value || playlistCreating.value) {
+		return
+	}
 	if (!window.confirm(`Create or refresh a MusicCurator-managed .m3u8 playlist in this folder?\n\n${currentFolder.value}\n\n${currentFolderTrackCount.value} indexed audio file${currentFolderTrackCount.value === 1 ? '' : 's'} in this folder will be listed. Existing playlists that are not managed by MusicCurator are never overwritten.`)) {
 		return
 	}
@@ -243,7 +244,9 @@ async function writeOne(track: Track, candidate: BatchSuggestion): Promise<void>
 
 async function writeAutoSelected(): Promise<void> {
 	const rows = autoWriteRows.value
-	if (rows.length === 0 || bulkWriting.value) return
+	if (rows.length === 0 || bulkWriting.value) {
+		return
+	}
 	const withGenre = rows.filter((row) => Boolean(row.item?.selected?.genre)).length
 	if (!window.confirm(`Write the ${rows.length} auto-selected high-confidence matches into their MP3 files?\n\nOnly matches above ${AUTO_ACCEPT_SCORE}% are included. Review items are NOT written. ${withGenre} of these matches also have a normalized genre suggestion. A rollback record is stored for every file.`)) {
 		return
@@ -255,7 +258,9 @@ async function writeAutoSelected(): Promise<void> {
 	let written = 0
 	try {
 		for (const row of rows) {
-			if (!row.item?.selected) continue
+			if (!row.item?.selected) {
+				continue
+			}
 			try {
 				await writeCandidate(row.track!, row.item.selected)
 				written += 1
@@ -288,7 +293,9 @@ function statusLabel(status: string): string {
 
 function providerSummary(providers: BatchProviderStatus[]): string {
 	const ok = providers.filter((provider) => provider.ok && provider.attempted)
-	if (ok.length === 0) return ''
+	if (ok.length === 0) {
+		return ''
+	}
 	return ok.map((provider) => `${provider.name}: ${provider.results}`).join(' · ')
 }
 
@@ -311,24 +318,38 @@ function candidateSummary(candidate: BatchSuggestion): string {
 			</div>
 
 			<div class="batch-actions">
-				<NcButton :disabled="batch.running.value || shownTracks.length === 0" @click="selectAllShown">Select all shown</NcButton>
-				<NcButton :disabled="batch.running.value || !canSelectAlbum" @click="selectCurrentAlbum">Select current album</NcButton>
-				<NcButton :disabled="batch.running.value || !currentTrack" @click="selectCurrentFolder">Select current folder</NcButton>
+				<NcButton :disabled="batch.running.value || shownTracks.length === 0" @click="selectAllShown">
+					Select all shown
+				</NcButton>
+				<NcButton :disabled="batch.running.value || !canSelectAlbum" @click="selectCurrentAlbum">
+					Select current album
+				</NcButton>
+				<NcButton :disabled="batch.running.value || !currentTrack" @click="selectCurrentFolder">
+					Select current folder
+				</NcButton>
 				<NcButton :disabled="batch.running.value || !currentTrack || playlistCreating" @click="createPlaylistFromCurrentFolder">
 					{{ playlistCreating ? 'Creating playlist…' : 'Create / refresh folder .m3u8' }}
 				</NcButton>
-				<NcButton :disabled="batch.running.value || batch.selectedCount.value === 0" @click="batch.clearSelection">Clear selection</NcButton>
+				<NcButton :disabled="batch.running.value || batch.selectedCount.value === 0" @click="batch.clearSelection">
+					Clear selection
+				</NcButton>
 				<NcButton
-					type="primary"
+					variant="primary"
 					:disabled="!canSearch"
 					@click="batch.run(allTracks)">
 					Search metadata for selected
 				</NcButton>
-				<NcButton v-if="batch.running.value" @click="batch.cancel">Stop after current track</NcButton>
+				<NcButton v-if="batch.running.value" @click="batch.cancel">
+					Stop after current track
+				</NcButton>
 			</div>
 
-			<div v-if="playlistMessage" class="playlist-notice success">{{ playlistMessage }}</div>
-			<div v-if="playlistError" class="playlist-notice error">{{ playlistError }}</div>
+			<div v-if="playlistMessage" class="playlist-notice success">
+				{{ playlistMessage }}
+			</div>
+			<div v-if="playlistError" class="playlist-notice error">
+				{{ playlistError }}
+			</div>
 
 			<div class="batch-hint">
 				<span>Providers: {{ activeProviderNames.length ? activeProviderNames.join(', ') : 'none configured' }}</span>
@@ -377,7 +398,9 @@ function candidateSummary(candidate: BatchSuggestion): string {
 			</div>
 
 			<div v-if="hasMore" class="load-more-row">
-				<NcButton @click="emit('loadMore')">Show {{ Math.min(100, remaining) }} more</NcButton>
+				<NcButton @click="emit('loadMore')">
+					Show {{ Math.min(100, remaining) }} more
+				</NcButton>
 			</div>
 		</div>
 
@@ -390,17 +413,23 @@ function candidateSummary(candidate: BatchSuggestion): string {
 				<div class="batch-write-actions">
 					<NcButton
 						v-if="autoWriteRows.length"
-						type="primary"
+						variant="primary"
 						:disabled="batch.running.value || bulkWriting || writingPath !== ''"
 						@click="writeAutoSelected">
 						{{ bulkWriting ? 'Writing MP3 tags…' : `Write ${autoWriteRows.length} auto-selected to MP3` }}
 					</NcButton>
-					<NcButton :disabled="batch.running.value || bulkWriting" @click="batch.clearResults">Clear preview</NcButton>
+					<NcButton :disabled="batch.running.value || bulkWriting" @click="batch.clearResults">
+						Clear preview
+					</NcButton>
 				</div>
 			</div>
 
-			<div v-if="writeMessage" class="write-notice success">{{ writeMessage }}</div>
-			<div v-if="writeError" class="write-notice error">{{ writeError }}</div>
+			<div v-if="writeMessage" class="write-notice success">
+				{{ writeMessage }}
+			</div>
+			<div v-if="writeError" class="write-notice error">
+				{{ writeError }}
+			</div>
 			<div class="write-warning">
 				<strong>Experimental write mode:</strong> currently MP3 only. Title, artist, album, album artist, track number, year and a normalized genre can be written. Audio is stream-copied by ffmpeg without re-encoding, and MusicCurator stores rollback values for every changed field.
 			</div>
@@ -527,7 +556,7 @@ function candidateSummary(candidate: BatchSuggestion): string {
 .genre-copy { font-weight: 650; color: var(--color-main-text) !important; }
 .muted-genre { font-weight: 400; color: var(--color-text-maxcontrast) !important; }
 .row-write-action { margin-top: 8px; }
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
 @media (max-width: 900px) {
 	.batch-result { grid-template-columns: minmax(0, 1fr) 130px; }

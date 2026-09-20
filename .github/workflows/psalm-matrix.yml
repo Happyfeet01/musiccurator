@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   matrix:
-    runs-on: ubuntu-latest-low
+    runs-on: ubuntu-latest
     outputs:
       ocp-matrix: ${{ steps.versions.outputs.ocp-matrix }}
     steps:
@@ -73,11 +73,14 @@ jobs:
       - name: Install dependencies # zizmor: ignore[template-injection]
         run: composer require --dev 'nextcloud/ocp:${{ matrix.ocp-version }}' --ignore-platform-reqs --with-dependencies
 
-      - name: Run coding standards check
-        run: composer run psalm -- --threads=1 --monochrome --no-progress --output-format=github
+      - name: Check for new PHP analysis findings
+        env:
+          PSALM_BASELINE: psalm-baseline-${{ matrix.ocp-version }}.xml
+        run: composer run psalm -- --threads=1 --monochrome --no-progress --output-format=github --use-baseline="$PSALM_BASELINE"
+
 
   summary:
-    runs-on: ubuntu-latest-low
+    runs-on: ubuntu-latest
     needs: static-analysis
 
     if: always()

@@ -66,7 +66,9 @@ function sleep(ms: number): Promise<void> {
 }
 
 function bestCandidate(results: BatchSuggestion[]): BatchSuggestion | null {
-	if (results.length === 0) return null
+	if (results.length === 0) {
+		return null
+	}
 	return [...results].sort((a, b) => b.score - a.score)[0] ?? null
 }
 
@@ -77,8 +79,12 @@ function isAutoAccepted(best: BatchSuggestion | null): boolean {
 }
 
 function resultStatus(best: BatchSuggestion | null): BatchPreviewItem['status'] {
-	if (!best) return 'unmatched'
-	if (isAutoAccepted(best)) return 'matched'
+	if (!best) {
+		return 'unmatched'
+	}
+	if (isAutoAccepted(best)) {
+		return 'matched'
+	}
 	return 'review'
 }
 
@@ -127,7 +133,9 @@ export function useBatchMetadata(searchTrack: SearchTrack) {
 	}
 
 	function selectAlbum(track: BatchTrack, tracks: BatchTrack[]): void {
-		if (!track.album) return
+		if (!track.album) {
+			return
+		}
 		const albumArtist = track.albumArtist || track.artist
 		addSelection(tracks
 			.filter((candidate) => candidate.album === track.album && (candidate.albumArtist || candidate.artist) === albumArtist)
@@ -151,7 +159,9 @@ export function useBatchMetadata(searchTrack: SearchTrack) {
 	}
 
 	async function run(tracks: BatchTrack[]): Promise<void> {
-		if (running.value || selectedPaths.value.length === 0) return
+		if (running.value || selectedPaths.value.length === 0) {
+			return
+		}
 
 		const queue = selectedPaths.value
 			.map((path) => tracks.find((track) => track.path === path))
@@ -178,7 +188,9 @@ export function useBatchMetadata(searchTrack: SearchTrack) {
 
 		try {
 			for (let index = 0; index < queue.length; index += 1) {
-				if (cancelRequested.value) break
+				if (cancelRequested.value) {
+					break
+				}
 				const track = queue[index]
 				items.value = {
 					...items.value,

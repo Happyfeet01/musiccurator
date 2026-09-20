@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="5.26.1@d747f6500b38ac4f7dfc5edbcae6e4b637d7add0">
+  <file src="lib/Controller/AiController.php">
+    <DeprecatedMethod>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+    </DeprecatedMethod>
+    <UnusedClass>
+      <code><![CDATA[AiController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/ArtworkController.php">
+    <RedundantCast>
+      <code><![CDATA[(string)$response->getHeader('Content-Type')]]></code>
+      <code><![CDATA[(string)($parts['host'] ?? '')]]></code>
+      <code><![CDATA[(string)($parts['scheme'] ?? '')]]></code>
+    </RedundantCast>
+    <UnusedClass>
+      <code><![CDATA[ArtworkController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/ClientLogController.php">
+    <UnusedClass>
+      <code><![CDATA[ClientLogController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/FolderController.php">
+    <UnusedClass>
+      <code><![CDATA[FolderController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/LibraryController.php">
+    <DeprecatedMethod>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+    </DeprecatedMethod>
+    <MixedAssignment>
+      <code><![CDATA[$changes]]></code>
+      <code><![CDATA[$changes]]></code>
+    </MixedAssignment>
+    <MixedOperand>
+      <code><![CDATA[$track['album']]]></code>
+      <code><![CDATA[$track['artist']]]></code>
+    </MixedOperand>
+    <UnusedClass>
+      <code><![CDATA[LibraryController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/PlaylistController.php">
+    <UnusedClass>
+      <code><![CDATA[PlaylistController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/ReadController.php">
+    <DeprecatedMethod>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+    </DeprecatedMethod>
+    <MixedAssignment>
+      <code><![CDATA[$changes]]></code>
+    </MixedAssignment>
+    <UnusedClass>
+      <code><![CDATA[ReadController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/ScanController.php">
+    <DeprecatedMethod>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+    </DeprecatedMethod>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$playlists]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedAssignment>
+      <code><![CDATA[$decoded]]></code>
+      <code><![CDATA[$entries]]></code>
+      <code><![CDATA[$entry]]></code>
+    </MixedAssignment>
+    <PossiblyInvalidArrayOffset>
+      <code><![CDATA[$releaseByPath[(string)$entry]]]></code>
+    </PossiblyInvalidArrayOffset>
+    <PossiblyNullArgument>
+      <code><![CDATA[$existingRow]]></code>
+    </PossiblyNullArgument>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string)$line]]></code>
+    </RedundantCastGivenDocblockType>
+    <RiskyTruthyFalsyComparison>
+      <code><![CDATA[!($track['tagged'] ?? false)]]></code>
+    </RiskyTruthyFalsyComparison>
+    <UnusedClass>
+      <code><![CDATA[ScanController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/SettingsController.php">
+    <DeprecatedMethod>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+    </DeprecatedMethod>
+    <UnusedClass>
+      <code><![CDATA[SettingsController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/TagController.php">
+    <DeprecatedMethod>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+    </DeprecatedMethod>
+    <MixedArgument>
+      <code><![CDATA[$before]]></code>
+    </MixedArgument>
+    <MixedAssignment>
+      <code><![CDATA[$backups]]></code>
+      <code><![CDATA[$before]]></code>
+      <code><![CDATA[$changes]]></code>
+    </MixedAssignment>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[is_array($backups) ? array_values(array_filter($backups, 'is_array')) : []]]></code>
+      <code><![CDATA[list<array<string, mixed>>]]></code>
+    </MixedReturnTypeCoercion>
+    <PossiblyUndefinedArrayOffset>
+      <code><![CDATA[$flags[$field]]]></code>
+    </PossiblyUndefinedArrayOffset>
+    <UnusedClass>
+      <code><![CDATA[TagController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version0201Date20260826164500.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version0201Date20260826164500]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Service/AcoustIdService.php">
+    <MixedArgument>
+      <code><![CDATA[$artists]]></code>
+      <code><![CDATA[$recordings]]></code>
+      <code><![CDATA[$releaseArtists]]></code>
+      <code><![CDATA[$rows]]></code>
+    </MixedArgument>
+    <MixedArrayAccess>
+      <code><![CDATA[$releaseGroup['id']]]></code>
+      <code><![CDATA[$releaseGroups[0]]]></code>
+      <code><![CDATA[$releaseGroups[0]]]></code>
+      <code><![CDATA[$release['artists']]]></code>
+      <code><![CDATA[$release['artists']]]></code>
+      <code><![CDATA[$release['date']]]></code>
+      <code><![CDATA[$release['id']]]></code>
+      <code><![CDATA[$release['title']]]></code>
+      <code><![CDATA[$releases[0]]]></code>
+      <code><![CDATA[$releases[0]]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$artist]]></code>
+      <code><![CDATA[$artists]]></code>
+      <code><![CDATA[$recording]]></code>
+      <code><![CDATA[$recordings]]></code>
+      <code><![CDATA[$release]]></code>
+      <code><![CDATA[$releaseArtists]]></code>
+      <code><![CDATA[$releaseGroup]]></code>
+      <code><![CDATA[$releaseGroups]]></code>
+      <code><![CDATA[$releases]]></code>
+      <code><![CDATA[$rows]]></code>
+    </MixedAssignment>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$data]]></code>
+      <code><![CDATA[array<string, mixed>]]></code>
+    </MixedReturnTypeCoercion>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Service/AiAdvisorService.php">
+    <DeprecatedMethod>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+    </DeprecatedMethod>
+    <MixedArrayAccess>
+      <code><![CDATA[$data['choices'][0]['message']['content']]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$content]]></code>
+      <code><![CDATA[$data]]></code>
+      <code><![CDATA[$result['stats']]]></code>
+    </MixedAssignment>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$result]]></code>
+      <code><![CDATA[$result]]></code>
+      <code><![CDATA[$result]]></code>
+      <code><![CDATA[$result]]></code>
+      <code><![CDATA[array<string, mixed>]]></code>
+      <code><![CDATA[array<string, mixed>]]></code>
+      <code><![CDATA[array<string, mixed>]]></code>
+      <code><![CDATA[array<string, mixed>]]></code>
+      <code><![CDATA[array<string, mixed>]]></code>
+      <code><![CDATA[is_array($data) ? $data : []]]></code>
+    </MixedReturnTypeCoercion>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCast>
+      <code><![CDATA[(string)($parts['host'] ?? '')]]></code>
+      <code><![CDATA[(string)($parts['scheme'] ?? '')]]></code>
+    </RedundantCast>
+  </file>
+  <file src="lib/Service/AudioTagWriter.php">
+    <RedundantFunctionCallGivenDocblockType>
+      <code><![CDATA[array_values]]></code>
+    </RedundantFunctionCallGivenDocblockType>
+  </file>
+  <file src="lib/Service/DiscogsService.php">
+    <InvalidOperand>
+      <code><![CDATA[$index]]></code>
+      <code><![CDATA[is_array($details['genres'] ?? null) ? $details['genres'] : []]]></code>
+      <code><![CDATA[is_array($details['styles'] ?? null) ? $details['styles'] : []]]></code>
+      <code><![CDATA[is_array($row['genre'] ?? null) ? $row['genre'] : []]]></code>
+      <code><![CDATA[is_array($row['style'] ?? null) ? $row['style'] : []]]></code>
+    </InvalidOperand>
+    <MixedArgument>
+      <code><![CDATA[$rows]]></code>
+      <code><![CDATA[is_array($details['artists'] ?? null) ? $details['artists'] : []]]></code>
+      <code><![CDATA[is_array($details['images'] ?? null) ? $details['images'] : []]]></code>
+      <code><![CDATA[is_array($details['tracklist'] ?? null) ? $details['tracklist'] : []]]></code>
+    </MixedArgument>
+    <MixedAssignment>
+      <code><![CDATA[$artist]]></code>
+      <code><![CDATA[$data]]></code>
+      <code><![CDATA[$rows]]></code>
+    </MixedAssignment>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[array<string, mixed>]]></code>
+      <code><![CDATA[is_array($data) ? $data : []]]></code>
+    </MixedReturnTypeCoercion>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string)$parts[0]]]></code>
+      <code><![CDATA[(string)$parts[1]]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
+  <file src="lib/Service/GenreNormalizer.php">
+    <MixedAssignment>
+      <code><![CDATA[$value]]></code>
+    </MixedAssignment>
+  </file>
+  <file src="lib/Service/LastFmService.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$index]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedArrayAccess>
+      <code><![CDATA[$albumInfo['image']]]></code>
+      <code><![CDATA[$albumInfo['title']]]></code>
+      <code><![CDATA[$data['results']['trackmatches']['track']]]></code>
+      <code><![CDATA[$track['album']]]></code>
+      <code><![CDATA[$track['album']]]></code>
+      <code><![CDATA[$track['toptags']]]></code>
+      <code><![CDATA[$track['toptags']['tag']]]></code>
+      <code><![CDATA[$track['url']]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$albumInfo]]></code>
+      <code><![CDATA[$data]]></code>
+      <code><![CDATA[$tag]]></code>
+      <code><![CDATA[$track]]></code>
+    </MixedAssignment>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[array<string, mixed>]]></code>
+      <code><![CDATA[is_array($data) ? $data : []]]></code>
+    </MixedReturnTypeCoercion>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Service/MetadataSearchService.php">
+    <DeprecatedMethod>
+      <code><![CDATA[getUserValue]]></code>
+    </DeprecatedMethod>
+    <MixedAssignment>
+      <code><![CDATA[$row]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string)$row['id']]]></code>
+    </RedundantCastGivenDocblockType>
+    <ReferenceConstraintViolation>
+      <code><![CDATA[$results]]></code>
+    </ReferenceConstraintViolation>
+  </file>
+  <file src="lib/Service/MusicBrainzService.php">
+    <MixedArgument>
+      <code><![CDATA[$artistCredit]]></code>
+      <code><![CDATA[$releaseArtistCredit]]></code>
+      <code><![CDATA[is_array($recording['releases'] ?? null) ? $recording['releases'] : []]]></code>
+    </MixedArgument>
+    <MixedArrayAccess>
+      <code><![CDATA[$releaseGroup['id']]]></code>
+      <code><![CDATA[$releaseGroup['primary-type']]]></code>
+      <code><![CDATA[$releaseGroup['secondary-types']]]></code>
+      <code><![CDATA[$releaseGroup['secondary-types']]]></code>
+      <code><![CDATA[$releaseGroup['title']]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$artistCredit]]></code>
+      <code><![CDATA[$data]]></code>
+      <code><![CDATA[$genres]]></code>
+      <code><![CDATA[$media]]></code>
+      <code><![CDATA[$recordings]]></code>
+      <code><![CDATA[$releaseArtistCredit]]></code>
+      <code><![CDATA[$releaseGroup]]></code>
+      <code><![CDATA[$releaseGroup]]></code>
+      <code><![CDATA[$secondaryType]]></code>
+      <code><![CDATA[$secondaryTypes]]></code>
+      <code><![CDATA[$track]]></code>
+      <code><![CDATA[$tracks]]></code>
+    </MixedAssignment>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$best]]></code>
+      <code><![CDATA[array<string, mixed>]]></code>
+      <code><![CDATA[array<string, mixed>]]></code>
+      <code><![CDATA[is_array($data) ? $data : []]]></code>
+    </MixedReturnTypeCoercion>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCast>
+      <code><![CDATA[(string)($results[0]['releaseGroupId'] ?? '')]]></code>
+    </RedundantCast>
+  </file>
+  <file src="lib/Service/PlaylistService.php">
+    <DeprecatedMethod>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+      <code><![CDATA[setUserValue]]></code>
+    </DeprecatedMethod>
+    <MixedArgument>
+      <code><![CDATA[$a['file']->getName()]]></code>
+      <code><![CDATA[$b['file']->getName()]]></code>
+    </MixedArgument>
+    <MixedAssignment>
+      <code><![CDATA[$aTrack]]></code>
+      <code><![CDATA[$bTrack]]></code>
+      <code><![CDATA[$playlists]]></code>
+    </MixedAssignment>
+    <MixedMethodCall>
+      <code><![CDATA[getName]]></code>
+      <code><![CDATA[getName]]></code>
+    </MixedMethodCall>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+      <code><![CDATA[refreshManagedForFolders]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string)($tags['album'] ?? '')]]></code>
+      <code><![CDATA[(string)($tags['albumArtist'] ?? '')]]></code>
+      <code><![CDATA[(string)($tags['artist'] ?? '')]]></code>
+      <code><![CDATA[(string)($tags['track'] ?? '')]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
+  <file src="lib/Service/ProviderCredentialsService.php">
+    <DeprecatedMethod>
+      <code><![CDATA[deleteUserValue]]></code>
+      <code><![CDATA[deleteUserValue]]></code>
+      <code><![CDATA[getUserValue]]></code>
+    </DeprecatedMethod>
+    <MixedAssignment>
+      <code><![CDATA[$value]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Service/ScanIndexService.php">
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$metadata]]></code>
+      <code><![CDATA[array<string, mixed>|null]]></code>
+    </MixedReturnTypeCoercion>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+</files>
