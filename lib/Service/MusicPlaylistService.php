@@ -71,7 +71,8 @@ class MusicPlaylistService {
 				'message' => 'Scan the listed files in Nextcloud Music, then publish again. The server playlist was left unchanged.'];
 		}
 
-		$key = 'music_playlist:' . hash('sha256', $path);
+		// User setting keys are limited to 64 characters (15 + 48 = 63).
+		$key = 'music_playlist:' . substr(hash('sha256', $path), 0, 48);
 		$marker = 'MusicCurator:' . hash('sha256', $path);
 		$id = (int)$this->config->getUserValue($userId, 'musiccurator', $key, '0');
 		$this->db->beginTransaction();
