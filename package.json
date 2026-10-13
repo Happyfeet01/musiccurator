@@ -7,6 +7,7 @@
     "build": "vite build",
     "dev": "vite --mode development build",
     "lint": "eslint src",
+    "test:frontend": "node --test tests/frontend/*.test.mjs",
     "stylelint": "stylelint \"src/**/*.{vue,scss,css}\"",
     "watch": "vite --mode development build --watch"
   },

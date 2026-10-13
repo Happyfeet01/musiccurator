@@ -103,7 +103,15 @@ class ReadController extends Controller {
 			]);
 
 			$data = $this->metadataSearch->search($userId, $node, $tags, $title);
-			$this->rememberBestMusicBrainzMatch($userId, $node, $data['results']);
+			try {
+				$this->rememberBestMusicBrainzMatch($userId, $node, $data['results']);
+			} catch (Throwable $e) {
+				// Index persistence must not discard successful provider results.
+				$this->logger->warning('MusicCurator could not persist metadata match', [
+					'app' => 'musiccurator',
+					'exception' => $e,
+				]);
+			}
 
 			$this->logger->info('MusicCurator metadata lookup completed', [
 				'app' => 'musiccurator',
