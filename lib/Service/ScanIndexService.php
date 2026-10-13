@@ -6,6 +6,7 @@ namespace OCA\MusicCurator\Service;
 
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
+use OCP\Files\File;
 
 class ScanIndexService {
 	private const TABLE = 'musiccurator_tracks';
@@ -13,6 +14,23 @@ class ScanIndexService {
 	public function __construct(
 		private IDBConnection $db,
 	) {
+	}
+
+	/** @param array<string, mixed> $tags */
+	public function refreshTags(string $userId, File $file, string $path, array $tags): void {
+		$row = $this->findRow($userId, $file->getId());
+		$track = $row !== null ? ($this->snapshotTrack($row) ?? []) : [];
+		$track = array_merge($track, $tags, [
+			'path' => $path,
+			'fileId' => $file->getId(),
+			'filename' => $file->getName(),
+			'extension' => strtolower(pathinfo($file->getName(), PATHINFO_EXTENSION)),
+			'mime' => $file->getMimeType(),
+			'size' => (int)$file->getSize(),
+			'mtime' => (int)$file->getMtime(),
+			'status' => ($tags['title'] ?? '') !== '' && ($tags['artist'] ?? '') !== '' ? 'Metadata' : 'Needs tags',
+		]);
+		$this->storeTrack($userId, $file->getId(), $path, $file->getEtag(), (int)$file->getSize(), (int)$file->getMtime(), $track, $row);
 	}
 
 	/**

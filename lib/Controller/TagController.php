@@ -6,6 +6,7 @@ namespace OCA\MusicCurator\Controller;
 
 use OCA\MusicCurator\Service\AudioTagReader;
 use OCA\MusicCurator\Service\AudioTagWriter;
+use OCA\MusicCurator\Service\ScanIndexService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -32,6 +33,7 @@ class TagController extends Controller {
 		private AudioTagReader $tagReader,
 		private AudioTagWriter $tagWriter,
 		private LoggerInterface $logger,
+		private ScanIndexService $scanIndex,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -127,6 +129,7 @@ class TagController extends Controller {
 			$backupId = bin2hex(random_bytes(8));
 			$this->storeBackup($userId, $backupId, $path, $backup, $updates);
 			$this->appendChange($userId, $path, array_keys($updates), $backupId);
+			$this->refreshIndex($userId, $node, $path, $after);
 
 			$this->logger->info('MusicCurator MP3 metadata write completed', [
 				'app' => 'musiccurator',
@@ -188,6 +191,7 @@ class TagController extends Controller {
 			array_shift($backups);
 			$this->config->setUserValue($userId, 'musiccurator', 'tag_backups', (string)json_encode($backups, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 			$this->appendChange($userId, $path, array_keys($restore), '', 'metadata_undo');
+			$this->refreshIndex($userId, $node, $path, $this->tagReader->read($node));
 
 			return new DataResponse([
 				'undone' => true,
@@ -196,6 +200,18 @@ class TagController extends Controller {
 			]);
 		} catch (Throwable $e) {
 			return new DataResponse(['message' => 'Undo failed: ' . $e->getMessage()], Http::STATUS_BAD_GATEWAY);
+		}
+	}
+
+	/** @param array<string, mixed> $tags */
+	private function refreshIndex(string $userId, File $file, string $path, array $tags): void {
+		try {
+			$this->scanIndex->refreshTags($userId, $file, $path, $tags);
+		} catch (Throwable $e) {
+			$this->logger->warning('MusicCurator could not refresh tags in scan index', [
+				'app' => 'musiccurator',
+				'exception' => $e,
+			]);
 		}
 	}
 

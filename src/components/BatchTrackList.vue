@@ -57,6 +57,7 @@ const props = defineProps<{
 const emit = defineEmits<{
 	selectTrack: [track: Track]
 	loadMore: []
+	libraryChanged: []
 }>()
 
 const bulkWriting = ref(false)
@@ -171,7 +172,8 @@ async function createPlaylistFromCurrentFolder(): Promise<void> {
 		if (!response.ok) {
 			throw new Error(data.message || `Playlist creation failed with HTTP ${response.status}`)
 		}
-		playlistMessage.value = `${data.name || 'Playlist'} saved with ${data.entries ?? currentFolderTrackCount.value} track${(data.entries ?? currentFolderTrackCount.value) === 1 ? '' : 's'}. It is marked as MusicCurator-managed and will show in Playlists after reopening the app or refreshing the library index.`
+		emit('libraryChanged')
+		playlistMessage.value = `${data.name || 'Playlist'} saved with ${data.entries ?? currentFolderTrackCount.value} track${(data.entries ?? currentFolderTrackCount.value) === 1 ? '' : 's'}. It is marked as MusicCurator-managed and is now available in Playlists.`
 	} catch (error) {
 		playlistError.value = error instanceof Error ? error.message : String(error)
 	} finally {
@@ -218,6 +220,7 @@ async function writeCandidate(track: Track, candidate: BatchSuggestion): Promise
 		if (!response.ok) {
 			throw new Error(data.message || `Metadata write failed with HTTP ${response.status}`)
 		}
+		emit('libraryChanged')
 		writtenPaths.value = { ...writtenPaths.value, [track.path]: true }
 	} finally {
 		writingPath.value = ''
