@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\MusicCurator\Controller;
 
 use OCA\MusicCurator\Service\PlaylistService;
+use OCA\MusicCurator\Service\MusicPlaylistService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -20,6 +21,7 @@ class PlaylistController extends Controller {
 		IRequest $request,
 		private IUserSession $userSession,
 		private PlaylistService $playlists,
+		private MusicPlaylistService $musicPlaylists,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -33,6 +35,16 @@ class PlaylistController extends Controller {
 			return new DataResponse($playlist);
 		} catch (Throwable $e) {
 			return new DataResponse(['message' => 'Playlist creation failed: ' . $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}
+
+	#[NoAdminRequired]
+	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
+	public function publish(string $path): DataResponse {
+		try {
+			return new DataResponse($this->musicPlaylists->publish($this->userId(), $path));
+		} catch (Throwable $e) {
+			return new DataResponse(['message' => 'Music playlist publication failed: ' . $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}
 
