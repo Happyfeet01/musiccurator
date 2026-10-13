@@ -92,9 +92,12 @@ async function searchTrack(path: string): Promise<BatchSearchResponse> {
 		headers: { Accept: 'application/json' },
 		credentials: 'same-origin',
 	})
-	const data = await response.json().catch(() => ({})) as Partial<BatchSearchResponse> & { message?: string }
+	const data = await response.json() as Partial<BatchSearchResponse> & { message?: string }
 	if (!response.ok) {
 		throw new Error(data.message || `Metadata lookup failed with HTTP ${response.status}`)
+	}
+	if (!Array.isArray(data.results) || !Array.isArray(data.providers)) {
+		throw new Error('Metadata lookup returned an invalid response. Reload the app and check the server logs.')
 	}
 	return {
 		results: Array.isArray(data.results) ? data.results : [],
@@ -292,11 +295,14 @@ function statusLabel(status: string): string {
 }
 
 function providerSummary(providers: BatchProviderStatus[]): string {
-	const ok = providers.filter((provider) => provider.ok && provider.attempted)
-	if (ok.length === 0) {
-		return ''
-	}
-	return ok.map((provider) => `${provider.name}: ${provider.results}`).join(' · ')
+	return providers.map((provider) => {
+		if (!provider.attempted) {
+			return `${provider.name}: ${provider.message || 'Not configured'}`
+		}
+		return provider.ok
+			? `${provider.name}: ${provider.results}`
+			: `${provider.name}: ${provider.message || 'Provider unavailable'}`
+	}).join(' · ')
 }
 
 function candidateSummary(candidate: BatchSuggestion): string {
