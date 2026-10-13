@@ -73,14 +73,10 @@ class ScanController extends Controller {
 		}
 		usort($tracks, static fn (array $a, array $b): int => strcasecmp((string)($a['path'] ?? ''), (string)($b['path'] ?? '')));
 
-		$lastScanPath = trim($this->config->getUserValue($userId, 'musiccurator', 'last_scan_path', ''));
-		$playlists = [];
-		if ($lastScanPath !== '' && $this->normalizePath($lastScanPath) === $libraryPath) {
-			$decoded = json_decode($this->config->getUserValue($userId, 'musiccurator', 'last_scan_playlists', '[]'), true);
-			if (is_array($decoded)) {
-				$playlists = array_values(array_filter($decoded, static fn (mixed $playlist): bool => is_array($playlist)));
-			}
-		}
+		$decoded = json_decode($this->config->getUserValue($userId, 'musiccurator', 'last_scan_playlists', '[]'), true);
+		$playlists = is_array($decoded) ? array_values(array_filter($decoded, fn (mixed $playlist): bool =>
+			is_array($playlist) && $this->isInsideLibraryPath((string)($playlist['path'] ?? ''), $libraryPath)
+		)) : [];
 
 		return new DataResponse([
 			'libraryPath' => $libraryPath,
