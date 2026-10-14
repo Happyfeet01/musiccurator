@@ -5,6 +5,32 @@ All notable changes to MusicCurator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - Unreleased
+
+### Added
+
+- Publish MusicCurator-managed M3U8 playlists to Nextcloud Music for use through its Subsonic interface.
+- Update the linked server playlist on subsequent publication and report missing or unindexed tracks without replacing an existing playlist with incomplete contents.
+
+### Fixed
+
+- Show failed and unconfigured metadata providers in batch results instead of reporting them as successful searches without matches.
+- Reject invalid metadata responses and preserve successful provider results when optional scan-index persistence fails.
+- Refresh playlist lists after creation and refresh persisted album metadata after tag writes and undo.
+- Restore the complete Vue source and keep Music playlist mapping keys within Nextcloud's 64-character setting limit.
+
+### Changed
+
+- Require PHP 8.2 or newer, consistent with the minimum supported Nextcloud version.
+- Run OCP static analysis on PHP 8.4 with matching Composer platform settings.
+- Explain empty album views and the MP3/FLAC tag-reading scope.
+
+### Known limitations
+
+- Metadata-provider availability and credentials must still be checked on the hosting server.
+- Existing source-analysis and formatting findings remain open before release validation is complete.
+- Playlist publication requires the optional Nextcloud Music app and its index to include every referenced track.
+
 ## [1.0.0] - 2026-09-20
 
 ### Changed
