@@ -3,8 +3,8 @@
 Pull requests run the frontend build, ESLint, Stylelint, PHP syntax checks,
 PHP coding standards, the app metadata schema check, OpenAPI generation and
 Psalm against the supported Nextcloud 34 and 35 APIs. Jobs use GitHub's
-standard `ubuntu-latest` runner. The Node workflow also fails on moderate,
-high or critical npm audit findings.
+standard `ubuntu-latest` runner. The Node workflow and signing helper run
+the same dependency policy against full and production-only npm audits.
 
 ## Release 1.5.0 audit snapshot (2026-10-14)
 
@@ -17,7 +17,29 @@ The remaining advisory roots are braces, elliptic and sprintf-js; upstream
 has no patched versions at this snapshot. `npm audit --omit=dev` reports
 zero findings, which limits the remaining reported dependency paths to
 development tooling; this is not a blanket proof of application security.
-The full `npm audit --audit-level=moderate` gate remains enabled and failing.
+The raw `npm audit --audit-level=moderate` command still exits nonzero.
+The release gate uses `node scripts/audit-dependencies.mjs` after building.
+It does not discard development dependencies: it evaluates the full report
+and a separate production-only report, then verifies browser source maps.
+
+### Temporary reviewed development-tool exceptions
+
+`scripts/audit-policy.json` accepts only three exact advisories and the
+reviewed package versions until 2026-11-14:
+
+- braces 3.0.3: GHSA-vfj7-8cjw-p6xm. Build patterns originate from source/configuration; no runtime HTTP/music input reaches these Node tools.
+- elliptic 6.6.1: GHSA-848j-6mx2-7j84. Installed by Vite's polyfill tooling, absent from compiled application source maps.
+- sprintf-js 1.0.3: GHSA-hp3w-g68c-fv3c. Declaration/API-extractor dependency, absent from compiled application source maps.
+
+These are acknowledged upstream vulnerabilities, not patched packages.
+Every affected dependency node must remain marked dev-only in the lockfile.
+Runtime vulnerabilities, new advisories, changed exception versions, available
+fixes, expiry, unavailable registry reports, and missing bundle-map coverage
+all fail the gate. Propagated findings are traced to their advisory roots.
+The helper also fails if an excepted package appears in a generated browser
+module. The signing helper's runtime allowlist excludes node_modules and
+build tools. Ten policy regression tests verify rejection cases. Extending
+an exception requires a fresh review; expiry is never renewed automatically.
 
 Psalm 5.26.1 crashes on PHP 8.4 while reflecting RoundingMode enum constants.
 Its analysis job uses PHP 8.3 with the matching Composer platform until an
@@ -57,7 +79,7 @@ of the underlying diagnostic and an explanation of why it remains unfixed.
 ## Dependency updates
 
 Run `npm ci`, `npm run lint`, `npm run stylelint`, `npm run build`, and
-`npm audit --audit-level=moderate` before merging frontend dependency updates.
+`node scripts/audit-dependencies.mjs` before merging frontend dependency updates.
 The refreshed lockfile resolves js-yaml 4.3.2. At the time of this repair,
 npm audit reports seven low-severity findings in the build-tool dependency
 chain, with no moderate, high or critical findings. This is an audit snapshot,

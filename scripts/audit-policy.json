@@ -1,0 +1,20 @@
+{
+  "expires": "2026-11-14",
+  "advisories": {
+    "GHSA-vfj7-8cjw-p6xm": {
+      "package": "braces",
+      "versions": ["3.0.3"],
+      "reason": "Build-tool glob patterns come from the checked-in source/configuration, not uploaded music or HTTP input. No patched upstream version is available. Not included in compiled browser assets."
+    },
+    "GHSA-848j-6mx2-7j84": {
+      "package": "elliptic",
+      "versions": ["6.6.1"],
+      "reason": "Installed through the Vite Node polyfill tooling; not included in MusicCurator's compiled browser assets or release runtime directories. No patched upstream version is available."
+    },
+    "GHSA-hp3w-g68c-fv3c": {
+      "package": "sprintf-js",
+      "versions": ["1.0.3"],
+      "reason": "Installed through the declaration/API-extractor tooling; not included in compiled browser assets. Format strings are not supplied by music files or HTTP requests. No patched upstream version is available."
+    }
+  }
+}
