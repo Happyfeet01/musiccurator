@@ -45,8 +45,9 @@ archive="$release_source/dist/musiccurator-$version.tar.gz"
 npm ci
 npm run lint
 npm run stylelint
-npm audit --audit-level=moderate
 npm run build
+node --test tests/frontend/audit-policy.test.mjs
+node scripts/audit-dependencies.mjs
 [[ -s js/musiccurator-main.mjs && -s css/musiccurator-main.css ]] || fail 'Compiled frontend assets are missing.'
 
 signing_dir=$(mktemp -d /tmp/musiccurator-sign.XXXXXXXX)

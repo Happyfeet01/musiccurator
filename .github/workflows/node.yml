@@ -37,6 +37,7 @@ jobs:
               - '.github/workflows/**'
               - 'src/**'
               - 'scripts/**'
+              - 'tests/frontend/**'
               - 'appinfo/info.xml'
               - 'package.json'
               - 'package-lock.json'
@@ -91,7 +92,9 @@ jobs:
         run: bash -n scripts/sign-release.sh
 
       - name: Check npm dependencies for vulnerabilities
-        run: npm audit --audit-level=moderate
+        run: |
+          node --test tests/frontend/audit-policy.test.mjs
+          node scripts/audit-dependencies.mjs
 
       - name: Check build changes
         run: |
