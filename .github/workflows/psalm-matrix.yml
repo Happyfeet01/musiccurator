@@ -71,7 +71,9 @@ jobs:
         run: composer require --dev roave/security-advisories:dev-latest
 
       - name: Install dependencies # zizmor: ignore[template-injection]
-        run: composer require --dev 'nextcloud/ocp:${{ matrix.ocp-version }}' --ignore-platform-reqs --with-dependencies
+        run: |
+          composer config platform.php '${{ matrix.php-min }}'
+          composer require --dev 'nextcloud/ocp:${{ matrix.ocp-version }}' --with-dependencies
 
       - name: Check for new PHP analysis findings
         env:
