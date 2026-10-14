@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace OCA\MusicCurator\Service;
 
 use OCP\DB\QueryBuilder\IQueryBuilder;
-use OCP\IDBConnection;
 use OCP\Files\File;
+use OCP\IDBConnection;
 
 class ScanIndexService {
 	private const TABLE = 'musiccurator_tracks';

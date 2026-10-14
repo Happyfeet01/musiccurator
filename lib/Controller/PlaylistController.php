@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace OCA\MusicCurator\Controller;
 
-use OCA\MusicCurator\Service\PlaylistService;
 use OCA\MusicCurator\Service\MusicPlaylistService;
+use OCA\MusicCurator\Service\PlaylistService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
