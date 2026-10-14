@@ -22,7 +22,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 ### Changed
 
 - Require PHP 8.2 or newer, consistent with the minimum supported Nextcloud version.
-- Run OCP static analysis on PHP 8.4 with matching Composer platform settings.
+- Keep PHP 8.4 app syntax checks; run the existing Psalm 5 analyzer on PHP 8.3 to avoid its PHP 8.4 crash.
+- Update DOMPurify, pbkdf2 and source-map-js to their patched versions; keep the full audit gate enabled for remaining development-tool advisories.
 - Explain empty album views and the MP3/FLAC tag-reading scope.
 
 ### Known limitations

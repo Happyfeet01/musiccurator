@@ -6,6 +6,25 @@ Psalm against the supported Nextcloud 34 and 35 APIs. Jobs use GitHub's
 standard `ubuntu-latest` runner. The Node workflow also fails on moderate,
 high or critical npm audit findings.
 
+## Release 1.5.0 audit snapshot (2026-10-14)
+
+The release lockfile updates DOMPurify to 3.4.17, pbkdf2 to 3.1.7 and
+source-map-js to 1.2.2 using compatible npm audit fixes. ESLint, Stylelint,
+the five frontend regression tests and the production build pass afterward.
+
+The complete audit still reports 24 findings (6 low, 6 moderate, 12 high).
+The remaining advisory roots are braces, elliptic and sprintf-js; upstream
+has no patched versions at this snapshot. `npm audit --omit=dev` reports
+zero findings, which limits the remaining reported dependency paths to
+development tooling; this is not a blanket proof of application security.
+The full `npm audit --audit-level=moderate` gate remains enabled and failing.
+
+Psalm 5.26.1 crashes on PHP 8.4 while reflecting RoundingMode enum constants.
+Its analysis job uses PHP 8.3 with the matching Composer platform until an
+upgrade to Psalm 6 and its baseline implications has been validated. The
+separate PHP lint matrix continues checking the app on PHP 8.4. Existing
+source-analysis findings remain actionable and are not suppressed.
+
 ## Existing PHP analysis findings
 
 Restoring the previously stalled Psalm jobs exposed existing findings in the
