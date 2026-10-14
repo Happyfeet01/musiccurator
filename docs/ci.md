@@ -91,3 +91,17 @@ upstream compatibility before upgrading; do not use `--force` or
 `--legacy-peer-deps` to bypass those requirements.
 
 These checks do not replace a functional test in a running Nextcloud instance.
+
+## App Store archive signature
+
+The release helper produces three files: `musiccurator-VERSION.tar.gz`,
+its `.sha256` checksum and a `.tar.gz.sig` file containing a single-line
+Base64 SHA-512/RSA signature of the exact compressed archive. It verifies
+that signature with the public certificate before reporting success.
+
+For the App Store release form, use the direct download URL of that exact
+archive and paste the complete contents of `.tar.gz.sig` into Signature,
+including any final `=` characters. Do not use the app-registration signature,
+SHA-256 checksum, or the archive's internal `appinfo/signature.json` there.
+Repackaging or replacing the archive requires generating a new archive
+signature. Official guide: https://nextcloudappstore.readthedocs.io/en/latest/developer.html

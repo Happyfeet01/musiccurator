@@ -73,5 +73,12 @@ sudo -u "#$nextcloud_uid" php "$nextcloud_root/occ" integrity:sign-app \
 [[ -s "$signing_dir/musiccurator/appinfo/signature.json" ]] || fail 'No signature was generated.'
 chmod 644 "$signing_dir/musiccurator/appinfo/signature.json"
 tar --owner=0 --group=0 -C "$signing_dir" -czf "$archive" musiccurator
+# The App Store requires a separate signature of the exact compressed archive.
+# signature.json inside the archive only covers its application files.
+openssl dgst -sha512 -sign "$private_key" "$archive" | openssl base64 -A > "$archive.sig"
+openssl x509 -in "$certificate" -pubkey -noout > "$signing_dir/archive-public.pem"
+openssl base64 -d -A -in "$archive.sig" -out "$signing_dir/archive-signature.bin"
+openssl dgst -sha512 -verify "$signing_dir/archive-public.pem" \
+    -signature "$signing_dir/archive-signature.bin" "$archive"
 (cd -- "$release_source/dist" && sha256sum "musiccurator-$version.tar.gz") > "$archive.sha256"
-printf 'Signed archive: %s\nChecksum: %s.sha256\n' "$archive" "$archive"
+printf 'Signed archive: %s\nChecksum: %s.sha256\nApp Store signature: %s.sig\n' "$archive" "$archive" "$archive"
