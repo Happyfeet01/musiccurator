@@ -29,6 +29,9 @@ It focuses on **curation rather than playback**: scan a real Nextcloud music lib
 - Extended M3U labels with visible playlist sequence numbers
 - Optional AI Advisor using OpenAI, Mistral or local Ollama; AI remains advisory and never automatically writes tags or moves files
 
+  <img width="1916" height="913" alt="musiccurator" src="https://github.com/user-attachments/assets/99be884e-f92f-43db-a054-9f07663c6c15" />
+
+
 ## What MusicCurator is not
 
 MusicCurator is not intended to replace Nextcloud Music or another player. It manages and cleans the files and metadata; playback remains the job of Nextcloud Music, Amplify or another compatible client.
