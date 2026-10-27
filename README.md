@@ -92,3 +92,13 @@ Packaged GitHub releases include a built archive so testers do not need the Node
 ## License
 
 AGPL-3.0-or-later.
+
+
+## Support my open-source work
+
+I maintain this project and other open-source tools in my spare time. If my work is useful to you, you can support further development voluntarily:
+
+- [Buy Me a Coffee](https://buymeacoffee.com/sly5ir9ov)
+- [PayPal](https://paypal.me/LarsM1980)
+
+Bug reports, documentation improvements and contributions are just as welcome. Support is entirely optional.
