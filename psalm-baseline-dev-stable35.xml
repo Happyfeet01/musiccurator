@@ -36,19 +36,6 @@
       <code><![CDATA[DEFAULT_OPENAI_MODEL = 'gpt-5.6-luna']]></code>
       <code><![CDATA[MAX_TRACKS = 100]]></code>
     </MissingClassConstType>
-    <MissingDependency>
-      <code><![CDATA[$this->rootFolder]]></code>
-      <code><![CDATA[private]]></code>
-    </MissingDependency>
-    <MixedAssignment>
-      <code><![CDATA[$userFolder]]></code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code><![CDATA[get]]></code>
-    </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$relative === '' ? $userFolder : $userFolder->get($relative)]]></code>
-    </MixedReturnStatement>
     <UnusedClass>
       <code><![CDATA[AiController]]></code>
     </UnusedClass>
@@ -83,19 +70,6 @@
     <ClassMustBeFinal>
       <code><![CDATA[FolderController]]></code>
     </ClassMustBeFinal>
-    <MissingDependency>
-      <code><![CDATA[$this->rootFolder]]></code>
-      <code><![CDATA[private]]></code>
-    </MissingDependency>
-    <MixedAssignment>
-      <code><![CDATA[$userFolder]]></code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code><![CDATA[get]]></code>
-    </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$relative === '' ? $userFolder : $userFolder->get($relative)]]></code>
-    </MixedReturnStatement>
     <UnusedClass>
       <code><![CDATA[FolderController]]></code>
     </UnusedClass>
@@ -124,31 +98,14 @@
       <code><![CDATA[MAX_TRACKS = 5000]]></code>
       <code><![CDATA[PLAYLIST_EXTENSIONS = ['m3u', 'm3u8']]]></code>
     </MissingClassConstType>
-    <MissingDependency>
-      <code><![CDATA[$this->rootFolder]]></code>
-      <code><![CDATA[$this->rootFolder]]></code>
-      <code><![CDATA[private]]></code>
-    </MissingDependency>
-    <MixedArgument>
-      <code><![CDATA[$userFolder]]></code>
-    </MixedArgument>
     <MixedAssignment>
       <code><![CDATA[$changes]]></code>
       <code><![CDATA[$changes]]></code>
-      <code><![CDATA[$userFolder]]></code>
-      <code><![CDATA[$userFolder]]></code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code><![CDATA[get]]></code>
-      <code><![CDATA[nodeExists]]></code>
-    </MixedMethodCall>
+      </MixedAssignment>
     <MixedOperand>
       <code><![CDATA[$track['album']]]></code>
       <code><![CDATA[$track['artist']]]></code>
     </MixedOperand>
-    <MixedReturnStatement>
-      <code><![CDATA[$relative === '' ? $userFolder : $userFolder->get($relative)]]></code>
-    </MixedReturnStatement>
     <UnusedClass>
       <code><![CDATA[LibraryController]]></code>
     </UnusedClass>
@@ -180,20 +137,9 @@
       <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
     </DeprecatedMethod>
-    <MissingDependency>
-      <code><![CDATA[$this->rootFolder]]></code>
-      <code><![CDATA[private]]></code>
-    </MissingDependency>
     <MixedAssignment>
       <code><![CDATA[$changes]]></code>
-      <code><![CDATA[$userFolder]]></code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code><![CDATA[get]]></code>
-    </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$relative === '' ? $userFolder : $userFolder->get($relative)]]></code>
-    </MixedReturnStatement>
+      </MixedAssignment>
     <UnusedClass>
       <code><![CDATA[ReadController]]></code>
     </UnusedClass>
@@ -222,10 +168,6 @@
       <code><![CDATA[MAX_TRACKS = 5000]]></code>
       <code><![CDATA[PLAYLIST_EXTENSIONS = ['m3u', 'm3u8']]]></code>
     </MissingClassConstType>
-    <MissingDependency>
-      <code><![CDATA[$this->rootFolder]]></code>
-      <code><![CDATA[private]]></code>
-    </MissingDependency>
     <MixedArgumentTypeCoercion>
       <code><![CDATA[$playlists]]></code>
     </MixedArgumentTypeCoercion>
@@ -233,14 +175,7 @@
       <code><![CDATA[$decoded]]></code>
       <code><![CDATA[$entries]]></code>
       <code><![CDATA[$entry]]></code>
-      <code><![CDATA[$userFolder]]></code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code><![CDATA[get]]></code>
-    </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$relative === '' ? $userFolder : $userFolder->get($relative)]]></code>
-    </MixedReturnStatement>
+      </MixedAssignment>
     <PossiblyInvalidArrayOffset>
       <code><![CDATA[$releaseByPath[(string)$entry]]]></code>
     </PossiblyInvalidArrayOffset>
@@ -280,19 +215,6 @@
       <code><![CDATA[DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434/api']]></code>
       <code><![CDATA[DEFAULT_OPENAI_MODEL = 'gpt-5.6-luna']]></code>
     </MissingClassConstType>
-    <MissingDependency>
-      <code><![CDATA[$this->rootFolder]]></code>
-      <code><![CDATA[private]]></code>
-    </MissingDependency>
-    <MixedAssignment>
-      <code><![CDATA[$userFolder]]></code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code><![CDATA[get]]></code>
-    </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$relative === '' ? $userFolder : $userFolder->get($relative)]]></code>
-    </MixedReturnStatement>
     <UnusedClass>
       <code><![CDATA[SettingsController]]></code>
     </UnusedClass>
@@ -312,10 +234,6 @@
     <MissingClassConstType>
       <code><![CDATA[TAG_FIELDS = ['title', 'artist', 'album', 'albumArtist', 'track', 'year', 'genre']]]></code>
     </MissingClassConstType>
-    <MissingDependency>
-      <code><![CDATA[$this->rootFolder]]></code>
-      <code><![CDATA[private]]></code>
-    </MissingDependency>
     <MixedArgument>
       <code><![CDATA[$before]]></code>
     </MixedArgument>
@@ -323,14 +241,7 @@
       <code><![CDATA[$backups]]></code>
       <code><![CDATA[$before]]></code>
       <code><![CDATA[$changes]]></code>
-      <code><![CDATA[$userFolder]]></code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code><![CDATA[get]]></code>
-    </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$relative === '' ? $userFolder : $userFolder->get($relative)]]></code>
-    </MixedReturnStatement>
+      </MixedAssignment>
     <MixedReturnTypeCoercion>
       <code><![CDATA[is_array($backups) ? array_values(array_filter($backups, 'is_array')) : []]]></code>
       <code><![CDATA[list<array<string, mixed>>]]></code>
@@ -349,25 +260,6 @@
     <MissingOverrideAttribute>
       <code><![CDATA[public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper {]]></code>
     </MissingOverrideAttribute>
-    <UndefinedDocblockClass>
-      <code><![CDATA[$schema->createTable('musiccurator_tracks')]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-      <code><![CDATA[$table]]></code>
-    </UndefinedDocblockClass>
     <UnnecessaryVarAnnotation>
       <code><![CDATA[ISchemaWrapper]]></code>
     </UnnecessaryVarAnnotation>
@@ -638,16 +530,6 @@
     <DeprecatedMethod>
       <code><![CDATA[getUserValue]]></code>
     </DeprecatedMethod>
-    <MissingDependency>
-      <code><![CDATA[$this->rootFolder]]></code>
-      <code><![CDATA[private]]></code>
-    </MissingDependency>
-    <MixedAssignment>
-      <code><![CDATA[$folder]]></code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code><![CDATA[get]]></code>
-    </MixedMethodCall>
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
     </PossiblyUnusedMethod>
@@ -677,10 +559,6 @@
       <code><![CDATA[AUDIO_EXTENSIONS = ['mp3', 'flac', 'm4a', 'm4b', 'aac', 'ogg', 'opus', 'wav']]]></code>
       <code><![CDATA[MANAGED_MARKER = '# MusicCurator managed playlist']]></code>
     </MissingClassConstType>
-    <MissingDependency>
-      <code><![CDATA[$this->rootFolder]]></code>
-      <code><![CDATA[private]]></code>
-    </MissingDependency>
     <MixedArgument>
       <code><![CDATA[$a['file']->getName()]]></code>
       <code><![CDATA[$b['file']->getName()]]></code>
@@ -689,16 +567,11 @@
       <code><![CDATA[$aTrack]]></code>
       <code><![CDATA[$bTrack]]></code>
       <code><![CDATA[$playlists]]></code>
-      <code><![CDATA[$userFolder]]></code>
-    </MixedAssignment>
+      </MixedAssignment>
     <MixedMethodCall>
-      <code><![CDATA[get]]></code>
       <code><![CDATA[getName]]></code>
       <code><![CDATA[getName]]></code>
     </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$relative === '' ? $userFolder : $userFolder->get($relative)]]></code>
-    </MixedReturnStatement>
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
       <code><![CDATA[refreshManagedForFolders]]></code>
