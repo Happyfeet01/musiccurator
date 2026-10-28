@@ -82,7 +82,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       for (const error of result.errors) console.error(error)
       process.exitCode = 1
     } else {
-      console.log('Dependency policy passed; known dev-tool findings remain reported above.')
+      console.log('Dependency policy passed.')
     }
   } catch (error) {
     console.error(error.message)
