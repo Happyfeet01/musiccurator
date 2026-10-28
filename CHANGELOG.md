@@ -5,6 +5,24 @@ All notable changes to MusicCurator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - Unreleased
+
+### Added
+
+- Add an App Store screenshot with labelled sample data and a permanent image URL.
+- Add voluntary support links and the GitHub funding button.
+- Audit the application and all isolated PHP development-tool lockfiles in CI.
+
+### Fixed
+
+- Resolve npm dependency security advisories and remove the unused Node crypto polyfill dependency tree and previous advisory exceptions.
+- Fix PHP security checks by aligning Composer, app requirements and CI with PHP 8.4; keep syntax checks for PHP 8.4 and 8.5.
+
+### Changed
+
+- Upgrade static analysis to Psalm 6.20.3 and migrate the existing Nextcloud 34/35 baselines; existing baseline findings remain documented technical debt.
+- Prepare version 1.5.1 for the Nextcloud App Store.
+
 ## [1.5.0] - Unreleased
 
 ### Added
