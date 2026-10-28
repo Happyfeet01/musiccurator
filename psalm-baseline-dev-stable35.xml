@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files psalm-version="5.26.1@d747f6500b38ac4f7dfc5edbcae6e4b637d7add0">
+<files psalm-version="6.20.3@23d217da099cc4a9a3bd03b644c1adf520022375">
+  <file src="lib/AppInfo/Application.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[Application]]></code>
+    </ClassMustBeFinal>
+    <MissingClassConstType>
+      <code><![CDATA[APP_ID = 'musiccurator']]></code>
+    </MissingClassConstType>
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function boot(IBootContext $context): void {]]></code>
+      <code><![CDATA[public function register(IRegistrationContext $context): void {]]></code>
+    </MissingOverrideAttribute>
+  </file>
   <file src="lib/Controller/AiController.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[AiController]]></code>
+    </ClassMustBeFinal>
     <DeprecatedMethod>
       <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
@@ -14,11 +29,26 @@
       <code><![CDATA[setUserValue]]></code>
       <code><![CDATA[setUserValue]]></code>
     </DeprecatedMethod>
+    <MissingClassConstType>
+      <code><![CDATA[AUDIO_EXTENSIONS = ['mp3', 'flac', 'm4a', 'm4b', 'aac', 'ogg', 'opus', 'wav']]]></code>
+      <code><![CDATA[DEFAULT_MISTRAL_MODEL = 'mistral-small-latest']]></code>
+      <code><![CDATA[DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434/api']]></code>
+      <code><![CDATA[DEFAULT_OPENAI_MODEL = 'gpt-5.6-luna']]></code>
+      <code><![CDATA[MAX_TRACKS = 100]]></code>
+    </MissingClassConstType>
     <UnusedClass>
       <code><![CDATA[AiController]]></code>
     </UnusedClass>
   </file>
+  <file src="lib/Controller/ApiController.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[ApiController]]></code>
+    </ClassMustBeFinal>
+  </file>
   <file src="lib/Controller/ArtworkController.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[ArtworkController]]></code>
+    </ClassMustBeFinal>
     <RedundantCast>
       <code><![CDATA[(string)$response->getHeader('Content-Type')]]></code>
       <code><![CDATA[(string)($parts['host'] ?? '')]]></code>
@@ -29,16 +59,25 @@
     </UnusedClass>
   </file>
   <file src="lib/Controller/ClientLogController.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[ClientLogController]]></code>
+    </ClassMustBeFinal>
     <UnusedClass>
       <code><![CDATA[ClientLogController]]></code>
     </UnusedClass>
   </file>
   <file src="lib/Controller/FolderController.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[FolderController]]></code>
+    </ClassMustBeFinal>
     <UnusedClass>
       <code><![CDATA[FolderController]]></code>
     </UnusedClass>
   </file>
   <file src="lib/Controller/LibraryController.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[LibraryController]]></code>
+    </ClassMustBeFinal>
     <DeprecatedMethod>
       <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
@@ -54,10 +93,15 @@
       <code><![CDATA[setUserValue]]></code>
       <code><![CDATA[setUserValue]]></code>
     </DeprecatedMethod>
+    <MissingClassConstType>
+      <code><![CDATA[AUDIO_EXTENSIONS = ['mp3', 'flac', 'm4a', 'm4b', 'aac', 'ogg', 'opus', 'wav']]]></code>
+      <code><![CDATA[MAX_TRACKS = 5000]]></code>
+      <code><![CDATA[PLAYLIST_EXTENSIONS = ['m3u', 'm3u8']]]></code>
+    </MissingClassConstType>
     <MixedAssignment>
       <code><![CDATA[$changes]]></code>
       <code><![CDATA[$changes]]></code>
-    </MixedAssignment>
+      </MixedAssignment>
     <MixedOperand>
       <code><![CDATA[$track['album']]]></code>
       <code><![CDATA[$track['artist']]]></code>
@@ -66,12 +110,23 @@
       <code><![CDATA[LibraryController]]></code>
     </UnusedClass>
   </file>
+  <file src="lib/Controller/PageController.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[PageController]]></code>
+    </ClassMustBeFinal>
+  </file>
   <file src="lib/Controller/PlaylistController.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[PlaylistController]]></code>
+    </ClassMustBeFinal>
     <UnusedClass>
       <code><![CDATA[PlaylistController]]></code>
     </UnusedClass>
   </file>
   <file src="lib/Controller/ReadController.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[ReadController]]></code>
+    </ClassMustBeFinal>
     <DeprecatedMethod>
       <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
@@ -84,14 +139,16 @@
     </DeprecatedMethod>
     <MixedAssignment>
       <code><![CDATA[$changes]]></code>
-    </MixedAssignment>
+      </MixedAssignment>
     <UnusedClass>
       <code><![CDATA[ReadController]]></code>
     </UnusedClass>
   </file>
   <file src="lib/Controller/ScanController.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[ScanController]]></code>
+    </ClassMustBeFinal>
     <DeprecatedMethod>
-      <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
@@ -103,6 +160,14 @@
       <code><![CDATA[setUserValue]]></code>
       <code><![CDATA[setUserValue]]></code>
     </DeprecatedMethod>
+    <InvalidOperand>
+      <code><![CDATA[(microtime(true) - $startedAt) * 1000]]></code>
+    </InvalidOperand>
+    <MissingClassConstType>
+      <code><![CDATA[AUDIO_EXTENSIONS = ['mp3', 'flac', 'm4a', 'm4b', 'aac', 'ogg', 'opus', 'wav']]]></code>
+      <code><![CDATA[MAX_TRACKS = 5000]]></code>
+      <code><![CDATA[PLAYLIST_EXTENSIONS = ['m3u', 'm3u8']]]></code>
+    </MissingClassConstType>
     <MixedArgumentTypeCoercion>
       <code><![CDATA[$playlists]]></code>
     </MixedArgumentTypeCoercion>
@@ -110,7 +175,7 @@
       <code><![CDATA[$decoded]]></code>
       <code><![CDATA[$entries]]></code>
       <code><![CDATA[$entry]]></code>
-    </MixedAssignment>
+      </MixedAssignment>
     <PossiblyInvalidArrayOffset>
       <code><![CDATA[$releaseByPath[(string)$entry]]]></code>
     </PossiblyInvalidArrayOffset>
@@ -128,6 +193,9 @@
     </UnusedClass>
   </file>
   <file src="lib/Controller/SettingsController.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[SettingsController]]></code>
+    </ClassMustBeFinal>
     <DeprecatedMethod>
       <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
@@ -142,11 +210,19 @@
       <code><![CDATA[setUserValue]]></code>
       <code><![CDATA[setUserValue]]></code>
     </DeprecatedMethod>
+    <MissingClassConstType>
+      <code><![CDATA[DEFAULT_MISTRAL_MODEL = 'mistral-small-latest']]></code>
+      <code><![CDATA[DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434/api']]></code>
+      <code><![CDATA[DEFAULT_OPENAI_MODEL = 'gpt-5.6-luna']]></code>
+    </MissingClassConstType>
     <UnusedClass>
       <code><![CDATA[SettingsController]]></code>
     </UnusedClass>
   </file>
   <file src="lib/Controller/TagController.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[TagController]]></code>
+    </ClassMustBeFinal>
     <DeprecatedMethod>
       <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
@@ -155,6 +231,9 @@
       <code><![CDATA[setUserValue]]></code>
       <code><![CDATA[setUserValue]]></code>
     </DeprecatedMethod>
+    <MissingClassConstType>
+      <code><![CDATA[TAG_FIELDS = ['title', 'artist', 'album', 'albumArtist', 'track', 'year', 'genre']]]></code>
+    </MissingClassConstType>
     <MixedArgument>
       <code><![CDATA[$before]]></code>
     </MixedArgument>
@@ -162,7 +241,7 @@
       <code><![CDATA[$backups]]></code>
       <code><![CDATA[$before]]></code>
       <code><![CDATA[$changes]]></code>
-    </MixedAssignment>
+      </MixedAssignment>
     <MixedReturnTypeCoercion>
       <code><![CDATA[is_array($backups) ? array_values(array_filter($backups, 'is_array')) : []]]></code>
       <code><![CDATA[list<array<string, mixed>>]]></code>
@@ -175,6 +254,12 @@
     </UnusedClass>
   </file>
   <file src="lib/Migration/Version0201Date20260826164500.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[Version0201Date20260826164500]]></code>
+    </ClassMustBeFinal>
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper {]]></code>
+    </MissingOverrideAttribute>
     <UnnecessaryVarAnnotation>
       <code><![CDATA[ISchemaWrapper]]></code>
     </UnnecessaryVarAnnotation>
@@ -183,6 +268,12 @@
     </UnusedClass>
   </file>
   <file src="lib/Service/AcoustIdService.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[AcoustIdService]]></code>
+    </ClassMustBeFinal>
+    <InvalidOperand>
+      <code><![CDATA[((float)($row['score'] ?? 0)) * 100]]></code>
+    </InvalidOperand>
     <MixedArgument>
       <code><![CDATA[$artists]]></code>
       <code><![CDATA[$recordings]]></code>
@@ -222,6 +313,9 @@
     </PossiblyUnusedMethod>
   </file>
   <file src="lib/Service/AiAdvisorService.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[AiAdvisorService]]></code>
+    </ClassMustBeFinal>
     <DeprecatedMethod>
       <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
@@ -229,6 +323,14 @@
       <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
     </DeprecatedMethod>
+    <InvalidOperand>
+      <code><![CDATA[(microtime(true) - $started) * 1000]]></code>
+    </InvalidOperand>
+    <MissingClassConstType>
+      <code><![CDATA[DEFAULT_MISTRAL_MODEL = 'mistral-small-latest']]></code>
+      <code><![CDATA[DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434/api']]></code>
+      <code><![CDATA[DEFAULT_OPENAI_MODEL = 'gpt-5.6-luna']]></code>
+    </MissingClassConstType>
     <MixedArrayAccess>
       <code><![CDATA[$data['choices'][0]['message']['content']]]></code>
     </MixedArrayAccess>
@@ -257,19 +359,42 @@
       <code><![CDATA[(string)($parts['scheme'] ?? '')]]></code>
     </RedundantCast>
   </file>
+  <file src="lib/Service/AudioTagReader.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[AudioTagReader]]></code>
+    </ClassMustBeFinal>
+    <PossiblyFalseArgument>
+      <code><![CDATA[$value]]></code>
+      <code><![CDATA[mb_convert_encoding($value, 'UTF-8', 'ISO-8859-1')]]></code>
+    </PossiblyFalseArgument>
+  </file>
   <file src="lib/Service/AudioTagWriter.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[AudioTagWriter]]></code>
+    </ClassMustBeFinal>
     <RedundantFunctionCallGivenDocblockType>
       <code><![CDATA[array_values]]></code>
     </RedundantFunctionCallGivenDocblockType>
   </file>
   <file src="lib/Service/DiscogsService.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[DiscogsService]]></code>
+    </ClassMustBeFinal>
     <InvalidOperand>
       <code><![CDATA[$index]]></code>
+      <code><![CDATA[$score += $this->similarityBonus($album, $albumTitle, 2)]]></code>
+      <code><![CDATA[$score += $this->similarityBonus($artist, $releaseArtist, 5)]]></code>
+      <code><![CDATA[$score / 100]]></code>
+      <code><![CDATA[($score / 100) * $maximum]]></code>
+      <code><![CDATA[92 - ($index * 5)]]></code>
       <code><![CDATA[is_array($details['genres'] ?? null) ? $details['genres'] : []]]></code>
       <code><![CDATA[is_array($details['styles'] ?? null) ? $details['styles'] : []]]></code>
       <code><![CDATA[is_array($row['genre'] ?? null) ? $row['genre'] : []]]></code>
       <code><![CDATA[is_array($row['style'] ?? null) ? $row['style'] : []]]></code>
     </InvalidOperand>
+    <MissingClassConstType>
+      <code><![CDATA[RETRYABLE_STATUS_CODES = [429, 500, 502, 503, 504]]]></code>
+    </MissingClassConstType>
     <MixedArgument>
       <code><![CDATA[$rows]]></code>
       <code><![CDATA[is_array($details['artists'] ?? null) ? $details['artists'] : []]]></code>
@@ -299,6 +424,9 @@
     </MixedAssignment>
   </file>
   <file src="lib/Service/LastFmService.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[LastFmService]]></code>
+    </ClassMustBeFinal>
     <MixedArgumentTypeCoercion>
       <code><![CDATA[$index]]></code>
     </MixedArgumentTypeCoercion>
@@ -327,9 +455,15 @@
     </PossiblyUnusedMethod>
   </file>
   <file src="lib/Service/MetadataSearchService.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[MetadataSearchService]]></code>
+    </ClassMustBeFinal>
     <DeprecatedMethod>
       <code><![CDATA[getUserValue]]></code>
     </DeprecatedMethod>
+    <InvalidOperand>
+      <code><![CDATA[(microtime(true) - $started) * 1000]]></code>
+    </InvalidOperand>
     <MixedAssignment>
       <code><![CDATA[$row]]></code>
     </MixedAssignment>
@@ -344,6 +478,12 @@
     </ReferenceConstraintViolation>
   </file>
   <file src="lib/Service/MusicBrainzService.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[MusicBrainzService]]></code>
+    </ClassMustBeFinal>
+    <MissingClassConstType>
+      <code><![CDATA[RETRYABLE_STATUS_CODES = [429, 502, 503, 504]]]></code>
+    </MissingClassConstType>
     <MixedArgument>
       <code><![CDATA[$artistCredit]]></code>
       <code><![CDATA[$releaseArtistCredit]]></code>
@@ -383,12 +523,42 @@
       <code><![CDATA[(string)($results[0]['releaseGroupId'] ?? '')]]></code>
     </RedundantCast>
   </file>
+  <file src="lib/Service/MusicPlaylistService.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[MusicPlaylistService]]></code>
+    </ClassMustBeFinal>
+    <DeprecatedMethod>
+      <code><![CDATA[getUserValue]]></code>
+    </DeprecatedMethod>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string)$file->getContent()]]></code>
+    </RedundantCastGivenDocblockType>
+    <UndefinedClass>
+      <code><![CDATA[\OC_App]]></code>
+    </UndefinedClass>
+    <UnusedProperty>
+      <code><![CDATA[$db]]></code>
+    </UnusedProperty>
+  </file>
   <file src="lib/Service/PlaylistService.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[PlaylistService]]></code>
+    </ClassMustBeFinal>
     <DeprecatedMethod>
       <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
       <code><![CDATA[setUserValue]]></code>
     </DeprecatedMethod>
+    <InvalidOperand>
+      <code><![CDATA[count($entries) * 0.75]]></code>
+    </InvalidOperand>
+    <MissingClassConstType>
+      <code><![CDATA[AUDIO_EXTENSIONS = ['mp3', 'flac', 'm4a', 'm4b', 'aac', 'ogg', 'opus', 'wav']]]></code>
+      <code><![CDATA[MANAGED_MARKER = '# MusicCurator managed playlist']]></code>
+    </MissingClassConstType>
     <MixedArgument>
       <code><![CDATA[$a['file']->getName()]]></code>
       <code><![CDATA[$b['file']->getName()]]></code>
@@ -397,7 +567,7 @@
       <code><![CDATA[$aTrack]]></code>
       <code><![CDATA[$bTrack]]></code>
       <code><![CDATA[$playlists]]></code>
-    </MixedAssignment>
+      </MixedAssignment>
     <MixedMethodCall>
       <code><![CDATA[getName]]></code>
       <code><![CDATA[getName]]></code>
@@ -414,11 +584,17 @@
     </RedundantCastGivenDocblockType>
   </file>
   <file src="lib/Service/ProviderCredentialsService.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[ProviderCredentialsService]]></code>
+    </ClassMustBeFinal>
     <DeprecatedMethod>
       <code><![CDATA[deleteUserValue]]></code>
       <code><![CDATA[deleteUserValue]]></code>
       <code><![CDATA[getUserValue]]></code>
     </DeprecatedMethod>
+    <MissingClassConstType>
+      <code><![CDATA[PREFIX = 'musiccurator:']]></code>
+    </MissingClassConstType>
     <MixedAssignment>
       <code><![CDATA[$value]]></code>
     </MixedAssignment>
@@ -427,6 +603,12 @@
     </PossiblyUnusedMethod>
   </file>
   <file src="lib/Service/ScanIndexService.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[ScanIndexService]]></code>
+    </ClassMustBeFinal>
+    <MissingClassConstType>
+      <code><![CDATA[TABLE = 'musiccurator_tracks']]></code>
+    </MissingClassConstType>
     <MixedReturnTypeCoercion>
       <code><![CDATA[$metadata]]></code>
       <code><![CDATA[array<string, mixed>|null]]></code>
@@ -434,5 +616,9 @@
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
     </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$file->getMtime()]]></code>
+      <code><![CDATA[(int)$file->getMtime()]]></code>
+    </RedundantCastGivenDocblockType>
   </file>
 </files>

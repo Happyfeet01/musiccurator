@@ -89,6 +89,22 @@ Packaged GitHub releases include a built archive so testers do not need the Node
 - **AcoustID** — optional client/API key plus `fpcalc`
 - **AI Advisor** — optional OpenAI, Mistral or local Ollama configuration
 
+## PHP requirements
+
+PHP 8.4 or 8.5 is required. Use the latest security patch release of your chosen PHP branch.
+
+Static analysis uses Psalm 6 on PHP 8.4 against Nextcloud 34 and 35. The version-specific baselines record existing findings, including additional findings reported by the Psalm 6 migration; CI rejects new findings.
+
 ## License
 
 AGPL-3.0-or-later.
+
+
+## Support my open-source work
+
+I maintain this project and other open-source tools in my spare time. If my work is useful to you, you can support further development voluntarily:
+
+- [Buy Me a Coffee](https://buymeacoffee.com/sly5ir9ov)
+- [PayPal](https://paypal.me/LarsM1980)
+
+Bug reports, documentation improvements and contributions are just as welcome. Support is entirely optional.

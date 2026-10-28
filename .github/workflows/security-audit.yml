@@ -1,0 +1,32 @@
+name: PHP dependency security audit
+
+on: pull_request
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-audit-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  composer-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Set up PHP 8.4 and Composer
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2.36.0
+        with:
+          php-version: '8.4'
+          tools: composer
+          coverage: none
+      - name: Audit application and every development-tool lockfile
+        shell: bash
+        run: |
+          composer audit --locked --no-interaction
+          for directory in vendor-bin/*/; do
+            composer audit --locked --no-interaction --working-dir="$directory"
+          done

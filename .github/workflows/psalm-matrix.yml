@@ -32,8 +32,8 @@ jobs:
         id: versions
         uses: icewind1991/nextcloud-version-matrix@8a7bac6300b2f0f3100088b297995a229558ddba # v1.3.2
 
-      - name: Check enforcement of minimum PHP version ${{ steps.versions.outputs.php-min }} in psalm.xml
-        run: grep 'phpVersion="${{ steps.versions.outputs.php-min }}' psalm.xml
+      - name: Check enforcement of minimum PHP version 8.4 in psalm.xml
+        run: grep 'phpVersion="8.4"' psalm.xml
 
   static-analysis:
     runs-on: ubuntu-latest
@@ -50,16 +50,13 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up PHP 8.3 for Psalm 5
+      - name: Set up PHP 8.4 for Psalm 6
         uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2.36.0
         with:
-          # Psalm 5 crashes on PHP 8.4 RoundingMode enum constants.
-          # PHP 8.4 app syntax is checked separately in lint-php.yml.
-          php-version: 8.3
+          php-version: 8.4
           extensions: bz2, ctype, curl, dom, fileinfo, gd, iconv, intl, json, libxml, mbstring, openssl, pcntl, posix, session, simplexml, xmlreader, xmlwriter, zip, zlib, sqlite, pdo_sqlite
           coverage: none
           ini-file: development
-          # Temporary workaround for missing pcntl_* in PHP 8.3
           ini-values: disable_functions=
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -74,7 +71,6 @@ jobs:
 
       - name: Install dependencies # zizmor: ignore[template-injection]
         run: |
-          composer config platform.php 8.3
           composer require --dev 'nextcloud/ocp:${{ matrix.ocp-version }}' --with-dependencies
 
       - name: Check for new PHP analysis findings
