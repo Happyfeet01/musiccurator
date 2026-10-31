@@ -11,6 +11,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 - Upgrade Vite from 7.3.7 to 8.3.5 and update the build dependency lockfile.
 - Run the complete frontend test suite in the Node CI workflow.
+- Upgrade @nextcloud/vue from 9.13.0 to 9.14.0, including its updated Vue runtime and UI fixes (#49).
+- Upgrade the isolated Rector development tool from 2.6.7 to 2.8.1 and its PHPStan dependency from 2.2.14 to 2.3.4 (#48).
 
 ### Fixed
 
