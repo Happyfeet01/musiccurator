@@ -93,7 +93,7 @@ jobs:
 
       - name: Check npm dependencies for vulnerabilities
         run: |
-          node --test tests/frontend/audit-policy.test.mjs
+          npm run test:frontend
           node scripts/audit-dependencies.mjs
 
       - name: Check build changes
