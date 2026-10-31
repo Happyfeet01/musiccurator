@@ -5,6 +5,17 @@ All notable changes to MusicCurator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - Unreleased
+
+### Changed
+
+- Upgrade Vite from 7.3.7 to 8.3.5 and update the build dependency lockfile.
+- Run the complete frontend test suite in the Node CI workflow.
+
+### Fixed
+
+- Pin minimatch to patched version 11.0.1 across the dependency tree and verify WebDAV glob-filter compatibility.
+
 ## [1.5.1] - Unreleased
 
 ### Added
