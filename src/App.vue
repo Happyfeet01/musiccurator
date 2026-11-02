@@ -9,6 +9,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcContent from '@nextcloud/vue/components/NcContent'
 import AiAdvisorPanel from './components/AiAdvisorPanel.vue'
 import BatchTrackList from './components/BatchTrackList.vue'
+import CredentialField from './components/CredentialField.vue'
 
 declare global {
 	interface Window {
@@ -1098,25 +1099,41 @@ onMounted(async () => {
 							Use MusicBrainz
 						</NcCheckboxRadioSwitch>
 						<p class="muted">
-							MusicBrainz needs no personal API key. Discogs, Last.fm and AcoustID become active automatically after their credentials are saved. Provider failures do not block results from the others.
+							MusicBrainz needs no personal API key. Discogs, Last.fm and AcoustID become active automatically after their credentials are saved. Provider failures do not block results from the others. Empty fields keep saved credentials; use the delete button to remove one. Deletion removes the saved copy from MusicCurator; revoke it at the provider to invalidate it everywhere.
 						</p>
 						<div class="provider-grid">
-							<label><span>AcoustID client/API key</span><input v-model="acoustIdKey"
-								class="text-input"
-								type="password"
-								:placeholder="settings.acoustIdConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Used for fingerprint lookup. Requires fpcalc/Chromaprint on the Nextcloud server.</small></label>
-							<label><span>AcoustID user key</span><input v-model="acoustIdUserKey"
-								class="text-input"
-								type="password"
-								:placeholder="settings.acoustIdUserConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Reserved for future fingerprint submissions; not required for lookup.</small></label>
-							<label><span>Discogs personal token</span><input v-model="discogsToken"
-								class="text-input"
-								type="password"
-								:placeholder="settings.discogsConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Adds release, compilation and track-list candidates plus cover artwork when available.</small></label>
-							<label><span>Last.fm API key</span><input v-model="lastFmKey"
-								class="text-input"
-								type="password"
-								:placeholder="settings.lastFmConfigured ? 'Configured — enter a new value to replace' : 'Optional'"><small class="muted">Adds track, artist and genre fallbacks plus album artwork when available.</small></label>
+							<CredentialField v-model="acoustIdKey"
+								credential="acoustid_key"
+								label="AcoustID client/API key"
+								:configured="settings.acoustIdConfigured"
+								:disabled="loading"
+								hint="Used for fingerprint lookup. Requires fpcalc/Chromaprint on the Nextcloud server."
+								@busy="loading = $event"
+								@deleted="settings.acoustIdConfigured = false" />
+							<CredentialField v-model="acoustIdUserKey"
+								credential="acoustid_user_key"
+								label="AcoustID user key"
+								:configured="settings.acoustIdUserConfigured"
+								:disabled="loading"
+								hint="Reserved for future fingerprint submissions; not required for lookup."
+								@busy="loading = $event"
+								@deleted="settings.acoustIdUserConfigured = false" />
+							<CredentialField v-model="discogsToken"
+								credential="discogs_token"
+								label="Discogs personal token"
+								:configured="settings.discogsConfigured"
+								:disabled="loading"
+								hint="Adds release, compilation and track-list candidates plus cover artwork when available."
+								@busy="loading = $event"
+								@deleted="settings.discogsConfigured = false" />
+							<CredentialField v-model="lastFmKey"
+								credential="lastfm_key"
+								label="Last.fm API key"
+								:configured="settings.lastFmConfigured"
+								:disabled="loading"
+								hint="Adds track, artist and genre fallbacks plus album artwork when available."
+								@busy="loading = $event"
+								@deleted="settings.lastFmConfigured = false" />
 						</div>
 						<div class="review-actions">
 							<NcButton variant="primary" :disabled="loading" @click="saveSettings()">

@@ -7,6 +7,10 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [1.5.2] - Unreleased
 
+### Added
+
+- Allow users to delete saved Last.fm, Discogs, AcoustID, OpenAI and Mistral credentials individually, including legacy stored copies, without changing other settings.
+
 ### Changed
 
 - Upgrade Vite from 7.3.7 to 8.3.5 and update the build dependency lockfile.

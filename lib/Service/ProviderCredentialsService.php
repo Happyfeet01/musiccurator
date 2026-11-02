@@ -47,6 +47,12 @@ class ProviderCredentialsService {
 		return $this->get($userId, $key) !== '';
 	}
 
+	public function delete(string $userId, string $key): void {
+		// Remove the fallback first so a deleted secret cannot be migrated back.
+		$this->config->deleteUserValue($userId, 'musiccurator', $key);
+		$this->credentialsManager->delete($userId, self::PREFIX . $key);
+	}
+
 	public function storeIfProvided(string $userId, string $key, string $value): void {
 		$value = trim($value);
 		if ($value === '') {
