@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getCanonicalLocale } from '@nextcloud/l10n'
 import { computed, onMounted, ref } from 'vue'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcAppNavigation from '@nextcloud/vue/components/NcAppNavigation'
@@ -10,6 +11,7 @@ import NcContent from '@nextcloud/vue/components/NcContent'
 import AiAdvisorPanel from './components/AiAdvisorPanel.vue'
 import BatchTrackList from './components/BatchTrackList.vue'
 import CredentialField from './components/CredentialField.vue'
+import { n, t } from './l10n.ts'
 
 declare global {
 	interface Window {
@@ -170,14 +172,14 @@ const useTrack = ref(true)
 const useYear = ref(true)
 
 const navigation: Array<{ id: Section, label: string }> = [
-	{ id: 'library', label: 'Library' },
-	{ id: 'albums', label: 'Albums' },
-	{ id: 'playlists', label: 'Playlists' },
-	{ id: 'changes', label: 'Changes' },
-	{ id: 'settings', label: 'Settings' },
+	{ id: 'library', label: t('musiccurator', 'Library') },
+	{ id: 'albums', label: t('musiccurator', 'Albums') },
+	{ id: 'playlists', label: t('musiccurator', 'Playlists') },
+	{ id: 'changes', label: t('musiccurator', 'Changes') },
+	{ id: 'settings', label: t('musiccurator', 'Settings') },
 ]
 
-const activeSectionLabel = computed(() => navigation.find((item) => item.id === section.value)?.label ?? 'Library')
+const activeSectionLabel = computed(() => navigation.find((item) => item.id === section.value)?.label ?? t('musiccurator', 'Library'))
 
 const visibleTracks = computed(() => onlyNeedsAttention.value
 	? tracks.value.filter((track) => track.status === 'Needs tags')
@@ -191,7 +193,7 @@ const albumGroups = computed(() => {
 		if (!track.album) {
 			continue
 		}
-		const artist = track.albumArtist || track.artist || 'Unknown Artist'
+		const artist = track.albumArtist || track.artist || t('musiccurator', 'Unknown Artist')
 		const key = `${artist}\u0000${track.album}`
 		if (!groups.has(key)) {
 			groups.set(key, {
@@ -264,7 +266,7 @@ async function apiRequest<T>(path: string, options: RequestInit = {}, query?: Re
 	const response = await fetch(apiUrl(path, query), { ...options, headers })
 	const data = await response.json().catch(() => ({}))
 	if (!response.ok) {
-		throw new Error(data.message || `Request failed with HTTP ${response.status}`)
+		throw new Error(data.message || t('musiccurator', 'Request failed with HTTP {status}', { status: response.status }))
 	}
 	return data as T
 }
@@ -301,7 +303,7 @@ async function publishPlaylist(path: string): Promise<void> {
 			headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
 			body: formBody({ path }),
 		})
-		playlistPublication.value = data.message + (data.missing.length ? ` Missing: ${data.missing.join(', ')}` : '')
+		playlistPublication.value = data.message + (data.missing.length ? t('musiccurator', ' Missing: {files}', { files: data.missing.join(', ') }) : '')
 	} catch (e) {
 		playlistPublication.value = e instanceof Error ? e.message : String(e)
 	} finally {
@@ -358,7 +360,7 @@ async function saveSettings(showSuccessMessage = true): Promise<boolean> {
 		discogsToken.value = ''
 		lastFmKey.value = ''
 		if (showSuccessMessage) {
-			message.value = 'Personal MusicCurator settings saved.'
+			message.value = t('musiccurator', 'Personal MusicCurator settings saved.')
 		}
 		return true
 	} catch (e) {
@@ -371,10 +373,10 @@ async function saveSettings(showSuccessMessage = true): Promise<boolean> {
 
 async function scanLibrary(): Promise<void> {
 	if (!settings.value.libraryPath.trim()) {
-		error.value = 'Choose a music folder first.'
+		error.value = t('musiccurator', 'Choose a music folder first.')
 		return
 	}
-	if (settings.value.libraryPath === '/' && !window.confirm('The selected folder is your Nextcloud root. This may scan thousands of files and take a while. Continue?')) {
+	if (settings.value.libraryPath === '/' && !window.confirm(t('musiccurator', 'The selected folder is your Nextcloud root. This may scan thousands of files and take a while. Continue?'))) {
 		return
 	}
 
@@ -402,8 +404,8 @@ async function scanLibrary(): Promise<void> {
 		firstTrack = tracks.value[0] ?? null
 		selectedTrack.value = null
 		resetMatch()
-		const duration = scanDurationMs.value !== null ? ` in ${(scanDurationMs.value / 1000).toFixed(1)} s` : ''
-		message.value = `${data.tracks.length} audio files indexed from ${data.libraryPath}${duration}.`
+		const duration = scanDurationMs.value !== null ? t('musiccurator', ' in {seconds} s', { seconds: (scanDurationMs.value / 1000).toFixed(1) }) : ''
+		message.value = n('musiccurator', '%n audio file indexed from {path}{duration}.', '%n audio files indexed from {path}{duration}.', data.tracks.length, { path: data.libraryPath, duration })
 	} catch (e) {
 		setError(e)
 	} finally {
@@ -472,9 +474,9 @@ async function searchMetadata(): Promise<void> {
 		rememberMusicBrainzArtwork(track.path, data.results)
 		if (selectedSuggestion.value) {
 			await previewMove()
-			message.value = `${data.results.length} metadata candidate${data.results.length === 1 ? '' : 's'} found for ${track.title || track.filename}.`
+			message.value = n('musiccurator', '%n metadata candidate found for {track}.', '%n metadata candidates found for {track}.', data.results.length, { track: track.title || track.filename })
 		} else {
-			message.value = `No metadata candidates were found for ${track.title || track.filename}. Check the provider status below.`
+			message.value = t('musiccurator', 'No metadata candidates were found for {track}. Check the provider status below.', { track: track.title || track.filename })
 		}
 	} catch (e) {
 		setError(e)
@@ -527,7 +529,7 @@ async function moveSelectedTrack(): Promise<void> {
 	if (operationMode.value !== 'organize' || !selectedTrack.value || !proposedPath.value) {
 		return
 	}
-	if (!window.confirm(`Move this file?\n\n${selectedTrack.value.path}\n→\n${proposedPath.value}`)) {
+	if (!window.confirm(t('musiccurator', 'Move this file?\n\n{source}\n→\n{target}', { source: selectedTrack.value.path, target: proposedPath.value }))) {
 		return
 	}
 	loading.value = true
@@ -538,7 +540,7 @@ async function moveSelectedTrack(): Promise<void> {
 			headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
 			body: formBody({ source: selectedTrack.value.path, target: proposedPath.value }),
 		})
-		message.value = 'File moved through the Nextcloud Files API.'
+		message.value = t('musiccurator', 'File moved through the Nextcloud Files API.')
 		await loadChanges()
 		await scanLibrary()
 	} catch (e) {
@@ -599,7 +601,7 @@ async function selectCurrentFolder(): Promise<void> {
 	playlists.value = []
 	selectedTrack.value = null
 	stats.value = { tracks: 0, needsReview: 0, albums: 0, playlists: 0 }
-	message.value = `Music folder set to ${settings.value.libraryPath}. Scan once to create its persistent index.`
+	message.value = t('musiccurator', 'Music folder set to {path}. Scan once to create its persistent index.', { path: settings.value.libraryPath })
 }
 
 function resetMatch(clearSuggestions = true): void {
@@ -638,7 +640,7 @@ function suggestedValue(field: keyof Pick<MetadataSuggestion, 'title' | 'artist'
 }
 
 function formatDate(timestamp: number): string {
-	return new Date(timestamp * 1000).toLocaleString()
+	return new Date(timestamp * 1000).toLocaleString(getCanonicalLocale())
 }
 
 onMounted(async () => {
@@ -649,7 +651,7 @@ onMounted(async () => {
 
 <template>
 	<NcContent appName="musiccurator">
-		<NcAppNavigation aria-label="MusicCurator navigation">
+		<NcAppNavigation :aria-label="t('musiccurator', 'MusicCurator navigation')">
 			<template #list>
 				<NcAppNavigationList>
 					<NcAppNavigationItem
@@ -664,7 +666,7 @@ onMounted(async () => {
 
 		<NcAppContent>
 			<main class="musiccurator-shell">
-				<nav class="mobile-section-navigation" aria-label="MusicCurator mobile navigation">
+				<nav class="mobile-section-navigation" :aria-label="t('musiccurator', 'MusicCurator mobile navigation')">
 					<button
 						class="mobile-menu-trigger"
 						type="button"
@@ -692,26 +694,26 @@ onMounted(async () => {
 					{{ error }}
 				</div>
 				<div v-if="scanPathMismatch" class="notice notice-warning">
-					The displayed results were indexed from <strong>{{ lastScannedPath }}</strong>, while your configured library is now <strong>{{ settings.libraryPath }}</strong>. Refresh the library index to update the view.
+					{{ t('musiccurator', 'The displayed results were indexed from {indexedPath}, while your configured library is now {configuredPath}. Refresh the library index to update the view.', { indexedPath: lastScannedPath, configuredPath: settings.libraryPath }) }}
 				</div>
 
 				<section v-if="folderPickerOpen" class="folder-picker glass-panel global-picker">
 					<div class="section-heading compact-heading">
 						<div>
 							<p class="eyebrow">
-								Nextcloud files
+								{{ t('musiccurator', 'Nextcloud files') }}
 							</p>
 							<h2>{{ folderPath }}</h2>
 						</div>
 						<div class="hero-actions">
 							<NcButton v-if="folderPath !== '/'" :disabled="loading" @click="browseFolder(folderParent)">
-								Up
+								{{ t('musiccurator', 'Up') }}
 							</NcButton>
 							<NcButton :disabled="loading" @click="folderPickerOpen = false">
-								Cancel
+								{{ t('musiccurator', 'Cancel') }}
 							</NcButton>
 							<NcButton variant="primary" :disabled="loading" @click="selectCurrentFolder">
-								Use this folder
+								{{ t('musiccurator', 'Use this folder') }}
 							</NcButton>
 						</div>
 					</div>
@@ -726,7 +728,7 @@ onMounted(async () => {
 						</button>
 					</div>
 					<p v-else class="muted">
-						No subfolders here. You can still select this folder.
+						{{ t('musiccurator', 'No subfolders here. You can still select this folder.') }}
 					</p>
 				</section>
 
@@ -734,77 +736,76 @@ onMounted(async () => {
 					<header class="hero glass-panel">
 						<div>
 							<p class="eyebrow">
-								Music library manager
+								{{ t('musiccurator', 'Music library manager') }}
 							</p>
-							<h1>Your real Nextcloud music library.</h1>
+							<h1>{{ t('musiccurator', 'Your real Nextcloud music library.') }}</h1>
 							<p class="hero-copy">
-								MusicCurator now loads the last indexed library instantly from its database. Refresh the index only when files changed,
-								then compare and write metadata with your configured providers.
+								{{ t('musiccurator', 'MusicCurator now loads the last indexed library instantly from its database. Refresh the index only when files changed, then compare and write metadata with your configured providers.') }}
 							</p>
 							<p class="path-summary">
-								<strong>Configured library:</strong> {{ settings.libraryPath || 'Not configured' }}
+								<strong>{{ t('musiccurator', 'Configured library:') }}</strong> {{ settings.libraryPath || t('musiccurator', 'Not configured') }}
 							</p>
 						</div>
 						<div class="hero-actions">
 							<NcButton variant="primary" :disabled="loading || !settings.libraryPath" @click="scanLibrary">
-								{{ loading ? 'Working…' : (hasScanned ? 'Refresh library index' : 'Scan library') }}
+								{{ loading ? t('musiccurator', 'Working…') : (hasScanned ? t('musiccurator', 'Refresh library index') : t('musiccurator', 'Scan library')) }}
 							</NcButton>
 							<NcButton :disabled="loading" @click="openFolderPicker">
-								Choose music folder
+								{{ t('musiccurator', 'Choose music folder') }}
 							</NcButton>
 						</div>
 					</header>
 
 					<div class="stats-grid">
 						<article class="stat-card glass-panel">
-							<span>Tracks</span>
+							<span>{{ t('musiccurator', 'Tracks') }}</span>
 							<strong>{{ hasScanned ? stats.tracks : '—' }}</strong>
-							<small>{{ lastScanAt ? `indexed ${formatDate(lastScanAt)}` : `configured: ${settings.libraryPath || 'none'}` }}</small>
+							<small>{{ lastScanAt ? t('musiccurator', 'indexed {date}', { date: formatDate(lastScanAt) }) : t('musiccurator', 'configured: {path}', { path: settings.libraryPath || t('musiccurator', 'none') }) }}</small>
 						</article>
 						<article class="stat-card glass-panel">
-							<span>Needs tags</span>
+							<span>{{ t('musiccurator', 'Needs tags') }}</span>
 							<strong>{{ hasScanned ? stats.needsReview : '—' }}</strong>
-							<small>missing title or artist</small>
+							<small>{{ t('musiccurator', 'missing title or artist') }}</small>
 						</article>
 						<article class="stat-card glass-panel">
-							<span>Albums</span>
+							<span>{{ t('musiccurator', 'Albums') }}</span>
 							<strong>{{ hasScanned ? stats.albums : '—' }}</strong>
-							<small>from indexed tags</small>
+							<small>{{ t('musiccurator', 'from indexed tags') }}</small>
 						</article>
 						<article class="stat-card glass-panel">
-							<span>Playlists</span>
+							<span>{{ t('musiccurator', 'Playlists') }}</span>
 							<strong>{{ hasScanned ? stats.playlists : '—' }}</strong>
-							<small>.m3u / .m3u8 found</small>
+							<small>{{ t('musiccurator', '.m3u / .m3u8 found') }}</small>
 						</article>
 					</div>
 
 					<div v-if="truncated" class="notice">
-						The index stopped after 5,000 audio files for this development build.
+						{{ t('musiccurator', 'The index stopped after 5,000 audio files for this development build.') }}
 					</div>
 
 					<section class="glass-panel library-panel">
 						<div class="section-heading">
 							<div>
 								<p class="eyebrow">
-									Library
+									{{ t('musiccurator', 'Library') }}
 								</p>
-								<h2>{{ hasScanned ? `${tracks.length} audio files` : 'Ready to index' }}</h2>
-								<small v-if="hasScanned && visibleTracks.length > renderedTracks.length" class="muted">Showing {{ renderedTracks.length }} of {{ visibleTracks.length }} for a faster interface.</small>
+								<h2>{{ hasScanned ? n('musiccurator', '%n audio file', '%n audio files', tracks.length) : t('musiccurator', 'Ready to index') }}</h2>
+								<small v-if="hasScanned && visibleTracks.length > renderedTracks.length" class="muted">{{ t('musiccurator', 'Showing {shown} of {total} for a faster interface.', { shown: renderedTracks.length, total: visibleTracks.length }) }}</small>
 							</div>
 							<NcCheckboxRadioSwitch v-model="onlyNeedsAttention"
 								type="switch"
 								:disabled="!hasScanned"
 								@update:modelValue="trackLimit = TRACK_PAGE_SIZE">
-								Only items needing attention
+								{{ t('musiccurator', 'Only items needing attention') }}
 							</NcCheckboxRadioSwitch>
 						</div>
 
 						<div v-if="!hasScanned" class="empty-state">
-							<span>Choose your music folder and scan it once. After that MusicCurator loads the persistent index automatically whenever you open the app.</span>
+							<span>{{ t('musiccurator', 'Choose your music folder and scan it once. After that MusicCurator loads the persistent index automatically whenever you open the app.') }}</span>
 						</div>
 						<div v-else-if="visibleTracks.length === 0" class="empty-state">
-							<strong>Nothing to review.</strong>
-							<span>No files match the current filter.</span>
+							<strong>{{ t('musiccurator', 'Nothing to review.') }}</strong>
+							<span>{{ t('musiccurator', 'No files match the current filter.') }}</span>
 						</div>
 						<BatchTrackList
 							v-else
@@ -839,17 +840,17 @@ onMounted(async () => {
 								</span>
 								<div>
 									<p class="eyebrow">
-										Selected track
+										{{ t('musiccurator', 'Selected track') }}
 									</p>
 									<h2>{{ selectedTrack.filename }}</h2>
 									<small class="muted selected-path">{{ selectedTrack.path }}</small>
-									<small class="provider-hint">Will search: {{ activeProviderNames.length ? activeProviderNames.join(', ') : 'no provider configured' }}</small>
+									<small class="provider-hint">{{ t('musiccurator', 'Will search: {providers}', { providers: activeProviderNames.length ? activeProviderNames.join(', ') : t('musiccurator', 'no provider configured') }) }}</small>
 								</div>
 							</div>
 							<div class="hero-actions">
-								<span v-if="selectedSuggestion" class="match-badge">{{ selectedSuggestion.score }}% · {{ selectedSuggestion.source || 'Metadata' }}</span>
+								<span v-if="selectedSuggestion" class="match-badge">{{ selectedSuggestion.score }}% · {{ selectedSuggestion.source || t('musiccurator', 'Metadata') }}</span>
 								<NcButton :disabled="metadataLoading || activeProviderNames.length === 0" @click="searchMetadata">
-									{{ metadataLoading ? 'Searching…' : 'Search metadata' }}
+									{{ metadataLoading ? t('musiccurator', 'Searching…') : t('musiccurator', 'Search metadata') }}
 								</NcButton>
 							</div>
 						</div>
@@ -860,8 +861,8 @@ onMounted(async () => {
 								class="provider-status"
 								:data-ok="provider.ok ? 'yes' : 'no'">
 								<strong>{{ provider.name }}</strong>
-								<small v-if="provider.ok">{{ provider.results }} result{{ provider.results === 1 ? '' : 's' }} · {{ provider.durationMs }} ms</small>
-								<small v-else>{{ provider.message || (provider.configured ? 'Provider unavailable' : 'Not configured') }}</small>
+								<small v-if="provider.ok">{{ n('musiccurator', '%n result · {duration} ms', '%n results · {duration} ms', provider.results, { duration: provider.durationMs }) }}</small>
+								<small v-else>{{ provider.message || (provider.configured ? t('musiccurator', 'Provider unavailable') : t('musiccurator', 'Not configured')) }}</small>
 							</div>
 						</div>
 
@@ -883,29 +884,29 @@ onMounted(async () => {
 								</span>
 								<span class="candidate-main">
 									<strong>{{ candidate.title || selectedTrack.title || selectedTrack.filename }}</strong>
-									<span>{{ candidate.artist || 'Unknown artist' }} · {{ candidate.album || 'Unknown release' }}</span>
+									<span>{{ candidate.artist || t('musiccurator', 'Unknown artist') }} · {{ candidate.album || t('musiccurator', 'Unknown release') }}</span>
 								</span>
-								<small>{{ candidate.source || 'Metadata' }} · {{ candidate.score }}%</small>
+								<small>{{ candidate.source || t('musiccurator', 'Metadata') }} · {{ candidate.score }}%</small>
 							</button>
 						</div>
 
 						<div class="metadata-grid metadata-header" aria-hidden="true">
-							<span>Field</span><span>Current file</span><span>Metadata suggestion</span><span>Use</span>
+							<span>{{ t('musiccurator', 'Field') }}</span><span>{{ t('musiccurator', 'Current file') }}</span><span>{{ t('musiccurator', 'Metadata suggestion') }}</span><span>{{ t('musiccurator', 'Use') }}</span>
 						</div>
 						<div class="metadata-grid">
-							<strong>Title</strong><span>{{ currentValue('title') }}</span><span class="suggestion">{{ suggestedValue('title') }}</span><NcCheckboxRadioSwitch v-model="useTitle" :disabled="!selectedSuggestion" @update:modelValue="previewMove" />
-							<strong>Artist</strong><span>{{ currentValue('artist') }}</span><span class="suggestion">{{ suggestedValue('artist') }}</span><NcCheckboxRadioSwitch v-model="useArtist" :disabled="!selectedSuggestion" @update:modelValue="previewMove" />
-							<strong>Album</strong><span>{{ currentValue('album') }}</span><span class="suggestion">{{ suggestedValue('album') }}</span><NcCheckboxRadioSwitch v-model="useAlbum" :disabled="!selectedSuggestion" @update:modelValue="previewMove" />
-							<strong>Track</strong><span>{{ currentValue('track') }}</span><span class="suggestion">{{ suggestedValue('track') }}</span><NcCheckboxRadioSwitch v-model="useTrack" :disabled="!selectedSuggestion" @update:modelValue="previewMove" />
-							<strong>Year</strong><span>{{ currentValue('year') }}</span><span class="suggestion">{{ suggestedValue('year') }}</span><NcCheckboxRadioSwitch v-model="useYear" :disabled="!selectedSuggestion" />
-							<strong>Genre</strong><span>{{ selectedTrack.genre || '—' }}</span><span class="suggestion">{{ selectedSuggestion?.genre || '—' }}</span><span />
+							<strong>{{ t('musiccurator', 'Title') }}</strong><span>{{ currentValue('title') }}</span><span class="suggestion">{{ suggestedValue('title') }}</span><NcCheckboxRadioSwitch v-model="useTitle" :disabled="!selectedSuggestion" @update:modelValue="previewMove" />
+							<strong>{{ t('musiccurator', 'Artist') }}</strong><span>{{ currentValue('artist') }}</span><span class="suggestion">{{ suggestedValue('artist') }}</span><NcCheckboxRadioSwitch v-model="useArtist" :disabled="!selectedSuggestion" @update:modelValue="previewMove" />
+							<strong>{{ t('musiccurator', 'Album') }}</strong><span>{{ currentValue('album') }}</span><span class="suggestion">{{ suggestedValue('album') }}</span><NcCheckboxRadioSwitch v-model="useAlbum" :disabled="!selectedSuggestion" @update:modelValue="previewMove" />
+							<strong>{{ t('musiccurator', 'Track') }}</strong><span>{{ currentValue('track') }}</span><span class="suggestion">{{ suggestedValue('track') }}</span><NcCheckboxRadioSwitch v-model="useTrack" :disabled="!selectedSuggestion" @update:modelValue="previewMove" />
+							<strong>{{ t('musiccurator', 'Year') }}</strong><span>{{ currentValue('year') }}</span><span class="suggestion">{{ suggestedValue('year') }}</span><NcCheckboxRadioSwitch v-model="useYear" :disabled="!selectedSuggestion" />
+							<strong>{{ t('musiccurator', 'Genre') }}</strong><span>{{ selectedTrack.genre || '—' }}</span><span class="suggestion">{{ selectedSuggestion?.genre || '—' }}</span><span />
 						</div>
 
 						<div v-if="selectedSuggestion" class="operation-mode-panel">
 							<div class="operation-mode-heading">
 								<div>
-									<strong>What should MusicCurator do?</strong>
-									<small v-if="selectedTrackIsPlaylistLike" class="muted">Playlist-like folder detected — keeping the file in place is the safe default.</small>
+									<strong>{{ t('musiccurator', 'What should MusicCurator do?') }}</strong>
+									<small v-if="selectedTrackIsPlaylistLike" class="muted">{{ t('musiccurator', 'Playlist-like folder detected — keeping the file in place is the safe default.') }}</small>
 								</div>
 							</div>
 							<div class="operation-mode-options">
@@ -915,7 +916,7 @@ onMounted(async () => {
 										name="operation-mode"
 										value="metadata"
 										@change="setOperationMode('metadata')">
-									<span><strong>Metadata only</strong><small>Keep the file exactly where it is.</small></span>
+									<span><strong>{{ t('musiccurator', 'Metadata only') }}</strong><small>{{ t('musiccurator', 'Keep the file exactly where it is.') }}</small></span>
 								</label>
 								<label class="operation-option" :class="{ selected: operationMode === 'organize' }">
 									<input :checked="operationMode === 'organize'"
@@ -923,35 +924,35 @@ onMounted(async () => {
 										name="operation-mode"
 										value="organize"
 										@change="setOperationMode('organize')">
-									<span><strong>Metadata + organize file</strong><small>Preview a move into an artist/album hierarchy.</small></span>
+									<span><strong>{{ t('musiccurator', 'Metadata + organize file') }}</strong><small>{{ t('musiccurator', 'Preview a move into an artist/album hierarchy.') }}</small></span>
 								</label>
 							</div>
 						</div>
 
 						<div class="read-only-note">
-							<strong>Safe workflow:</strong> metadata lookup and file moves stay behind a preview. MP3 tag writing, including genre, is available in the Batch review with confirmation and rollback values.
+							<strong>{{ t('musiccurator', 'Safe workflow:') }}</strong> {{ t('musiccurator', 'Metadata lookup and file moves stay behind a preview. MP3 tag writing, including genre, is available in the Batch review with confirmation and rollback values.') }}
 						</div>
 
 						<div v-if="selectedSuggestion && operationMode === 'metadata'" class="location-preserved-note">
-							<strong>File location will be preserved.</strong>
+							<strong>{{ t('musiccurator', 'File location will be preserved.') }}</strong>
 							<span>{{ selectedTrack.path }}</span>
-							<small>Use the Batch review to write approved MP3 metadata without moving the file.</small>
+							<small>{{ t('musiccurator', 'Use the Batch review to write approved MP3 metadata without moving the file.') }}</small>
 						</div>
 
 						<div v-if="proposedPath && operationMode === 'organize'" class="move-preview">
-							<div><span class="label">Current path</span><code>{{ selectedTrack.path }}</code></div>
+							<div><span class="label">{{ t('musiccurator', 'Current path') }}</span><code>{{ selectedTrack.path }}</code></div>
 							<span class="arrow" aria-hidden="true">→</span>
-							<div><span class="label">Proposed path</span><code>{{ proposedPath }}</code></div>
+							<div><span class="label">{{ t('musiccurator', 'Proposed path') }}</span><code>{{ proposedPath }}</code></div>
 						</div>
 						<div v-if="operationMode === 'organize'" class="review-actions">
 							<NcButton v-if="selectedSuggestion" @click="previewMove">
-								Refresh preview
+								{{ t('musiccurator', 'Refresh preview') }}
 							</NcButton>
 							<NcButton v-if="proposedPath"
 								variant="primary"
 								:disabled="loading"
 								@click="moveSelectedTrack">
-								Move file
+								{{ t('musiccurator', 'Move file') }}
 							</NcButton>
 						</div>
 					</section>
@@ -960,22 +961,22 @@ onMounted(async () => {
 				<section v-else-if="section === 'albums'" class="page">
 					<header class="subhero glass-panel">
 						<p class="eyebrow">
-							Albums
+							{{ t('musiccurator', 'Albums') }}
 						</p>
-						<h1>Albums found in your tags</h1>
+						<h1>{{ t('musiccurator', 'Albums found in your tags') }}</h1>
 						<p class="muted">
-							Album covers appear automatically when MusicCurator has a confident MusicBrainz release match. Provider lookups enrich the persistent index as you use the app.
+							{{ t('musiccurator', 'Album covers appear automatically when MusicCurator has a confident MusicBrainz release match. Provider lookups enrich the persistent index as you use the app.') }}
 						</p>
 					</header>
 					<div v-if="!hasScanned" class="glass-panel empty-state spaced">
-						Index your library first.
+						{{ t('musiccurator', 'Index your library first.') }}
 					</div>
 					<div v-else-if="albumGroups.length === 0" class="glass-panel empty-state spaced">
-						No album tags found in the indexed tracks. Albums are grouped from saved album tags, not folder names. Review and save album metadata, or scan the library after changing tags outside MusicCurator. Tag reading currently supports MP3 and FLAC.
+						{{ t('musiccurator', 'No album tags found in the indexed tracks. Albums are grouped from saved album tags, not folder names. Review and save album metadata, or scan the library after changing tags outside MusicCurator. Tag reading currently supports MP3 and FLAC.') }}
 					</div>
 					<template v-else>
 						<div class="result-summary">
-							Showing {{ renderedAlbums.length }} of {{ albumGroups.length }} albums.
+							{{ t('musiccurator', 'Showing {shown} of {total} albums.', { shown: renderedAlbums.length, total: albumGroups.length }) }}
 						</div>
 						<div class="album-grid">
 							<article v-for="album in renderedAlbums" :key="`${album.artist}-${album.album}`" class="album-card glass-panel">
@@ -993,7 +994,7 @@ onMounted(async () => {
 						</div>
 						<div v-if="renderedAlbums.length < albumGroups.length" class="load-more-row spaced">
 							<NcButton @click="albumLimit += ALBUM_PAGE_SIZE">
-								Show {{ Math.min(ALBUM_PAGE_SIZE, albumGroups.length - renderedAlbums.length) }} more albums
+								{{ t('musiccurator', 'Show {count} more albums', { count: Math.min(ALBUM_PAGE_SIZE, albumGroups.length - renderedAlbums.length) }) }}
 							</NcButton>
 						</div>
 					</template>
@@ -1002,18 +1003,18 @@ onMounted(async () => {
 				<section v-else-if="section === 'playlists'" class="page">
 					<header class="subhero glass-panel">
 						<p class="eyebrow">
-							Playlists
+							{{ t('musiccurator', 'Playlists') }}
 						</p>
-						<h1>Playlist files</h1>
+						<h1>{{ t('musiccurator', 'Playlist files') }}</h1>
 						<p class="muted">
-							MusicCurator detects .m3u and .m3u8 files without altering them. If indexed playlist tracks already have MusicBrainz matches, their covers form a small playlist mosaic.
+							{{ t('musiccurator', 'MusicCurator detects .m3u and .m3u8 files without altering them. If indexed playlist tracks already have MusicBrainz matches, their covers form a small playlist mosaic.') }}
 						</p>
 					</header>
 					<div v-if="!hasScanned" class="glass-panel empty-state spaced">
-						Index your library first.
+						{{ t('musiccurator', 'Index your library first.') }}
 					</div>
 					<div v-else-if="playlists.length === 0" class="glass-panel empty-state spaced">
-						No playlist files found in the selected library.
+						{{ t('musiccurator', 'No playlist files found in the selected library.') }}
 					</div>
 					<div v-else class="simple-list glass-panel playlist-list">
 						<p v-if="playlistPublication" role="status">
@@ -1033,7 +1034,7 @@ onMounted(async () => {
 							<div>
 								<strong>{{ playlist.name }}</strong><small>{{ playlist.path }}</small>
 								<NcButton v-if="playlist.path.toLowerCase().endsWith('.m3u8')" :disabled="Boolean(publishingPlaylist)" @click="publishPlaylist(playlist.path)">
-									{{ publishingPlaylist === playlist.path ? 'Publishing…' : 'In Nextcloud Music bereitstellen' }}
+									{{ publishingPlaylist === playlist.path ? t('musiccurator', 'Publishing…') : t('musiccurator', 'Publish in Nextcloud Music') }}
 								</NcButton>
 							</div>
 						</div>
@@ -1043,17 +1044,17 @@ onMounted(async () => {
 				<section v-else-if="section === 'changes'" class="page">
 					<header class="subhero glass-panel">
 						<p class="eyebrow">
-							Changes
-						</p><h1>Recent file operations</h1><p class="muted">
-							Only real file operations performed by MusicCurator are listed here. Batch previews never appear as changes.
+							{{ t('musiccurator', 'Changes') }}
+						</p><h1>{{ t('musiccurator', 'Recent file operations') }}</h1><p class="muted">
+							{{ t('musiccurator', 'Only real file operations performed by MusicCurator are listed here. Batch previews never appear as changes.') }}
 						</p>
 					</header>
 					<div v-if="changes.length === 0" class="glass-panel empty-state spaced">
-						No MusicCurator file moves yet.
+						{{ t('musiccurator', 'No MusicCurator file moves yet.') }}
 					</div>
 					<div v-else class="simple-list glass-panel">
 						<div v-for="change in changes" :key="`${change.timestamp}-${change.source}`" class="change-row">
-							<div><strong>{{ change.type }}</strong><small>{{ formatDate(change.timestamp) }}</small></div>
+							<div><strong>{{ change.type === 'move' ? t('musiccurator', 'File moved') : change.type }}</strong><small>{{ formatDate(change.timestamp) }}</small></div>
 							<code>{{ change.source }}</code><span>→</span><code>{{ change.target }}</code>
 						</div>
 					</div>
@@ -1062,23 +1063,23 @@ onMounted(async () => {
 				<section v-else class="page settings-page">
 					<header class="subhero glass-panel">
 						<p class="eyebrow">
-							Personal settings
-						</p><h1>Your library and providers</h1><p class="muted">
-							These settings belong to the currently signed-in Nextcloud user.
+							{{ t('musiccurator', 'Personal settings') }}
+						</p><h1>{{ t('musiccurator', 'Your library and providers') }}</h1><p class="muted">
+							{{ t('musiccurator', 'These settings belong to the currently signed-in Nextcloud user.') }}
 						</p>
 					</header>
 					<section class="glass-panel settings-card">
-						<h2>Music library</h2>
+						<h2>{{ t('musiccurator', 'Music library') }}</h2>
 						<p class="path-summary">
-							<strong>Configured path:</strong> {{ settings.libraryPath || 'Not configured' }}
+							<strong>{{ t('musiccurator', 'Configured path:') }}</strong> {{ settings.libraryPath || t('musiccurator', 'Not configured') }}
 						</p>
 						<p v-if="lastScannedPath" class="path-summary">
-							<strong>Indexed path:</strong> {{ lastScannedPath }}
+							<strong>{{ t('musiccurator', 'Indexed path:') }}</strong> {{ lastScannedPath }}
 						</p>
 						<p v-if="lastScanAt" class="path-summary">
-							<strong>Last index refresh:</strong> {{ formatDate(lastScanAt) }}
+							<strong>{{ t('musiccurator', 'Last index refresh:') }}</strong> {{ formatDate(lastScanAt) }}
 						</p>
-						<label class="field-label" for="library-path">Nextcloud music folder</label>
+						<label class="field-label" for="library-path">{{ t('musiccurator', 'Nextcloud music folder') }}</label>
 						<div class="field-row">
 							<input id="library-path"
 								v-model="settings.libraryPath"
@@ -1086,58 +1087,58 @@ onMounted(async () => {
 								type="text"
 								placeholder="/Musik">
 							<NcButton :disabled="loading" @click="openFolderPicker">
-								Browse
+								{{ t('musiccurator', 'Browse') }}
 							</NcButton>
 							<NcButton variant="primary" :disabled="loading || !settings.libraryPath.trim()" @click="saveSettings()">
-								Save folder
+								{{ t('musiccurator', 'Save folder') }}
 							</NcButton>
 						</div>
 					</section>
 					<section class="glass-panel settings-card">
-						<h2>Metadata providers</h2>
+						<h2>{{ t('musiccurator', 'Metadata providers') }}</h2>
 						<NcCheckboxRadioSwitch v-model="settings.musicBrainzEnabled" type="switch">
-							Use MusicBrainz
+							{{ t('musiccurator', 'Use MusicBrainz') }}
 						</NcCheckboxRadioSwitch>
 						<p class="muted">
-							MusicBrainz needs no personal API key. Discogs, Last.fm and AcoustID become active automatically after their credentials are saved. Provider failures do not block results from the others. Empty fields keep saved credentials; use the delete button to remove one. Deletion removes the saved copy from MusicCurator; revoke it at the provider to invalidate it everywhere.
+							{{ t('musiccurator', 'MusicBrainz needs no personal API key. Discogs, Last.fm and AcoustID become active automatically after their credentials are saved. Provider failures do not block results from the others. Empty fields keep saved credentials; use the delete button to remove one. Deletion removes the saved copy from MusicCurator; revoke it at the provider to invalidate it everywhere.') }}
 						</p>
 						<div class="provider-grid">
 							<CredentialField v-model="acoustIdKey"
 								credential="acoustid_key"
-								label="AcoustID client/API key"
+								:label="t('musiccurator', 'AcoustID client/API key')"
 								:configured="settings.acoustIdConfigured"
 								:disabled="loading"
-								hint="Used for fingerprint lookup. Requires fpcalc/Chromaprint on the Nextcloud server."
+								:hint="t('musiccurator', 'Used for fingerprint lookup. Requires fpcalc/Chromaprint on the Nextcloud server.')"
 								@busy="loading = $event"
 								@deleted="settings.acoustIdConfigured = false" />
 							<CredentialField v-model="acoustIdUserKey"
 								credential="acoustid_user_key"
-								label="AcoustID user key"
+								:label="t('musiccurator', 'AcoustID user key')"
 								:configured="settings.acoustIdUserConfigured"
 								:disabled="loading"
-								hint="Reserved for future fingerprint submissions; not required for lookup."
+								:hint="t('musiccurator', 'Reserved for future fingerprint submissions; not required for lookup.')"
 								@busy="loading = $event"
 								@deleted="settings.acoustIdUserConfigured = false" />
 							<CredentialField v-model="discogsToken"
 								credential="discogs_token"
-								label="Discogs personal token"
+								:label="t('musiccurator', 'Discogs personal token')"
 								:configured="settings.discogsConfigured"
 								:disabled="loading"
-								hint="Adds release, compilation and track-list candidates plus cover artwork when available."
+								:hint="t('musiccurator', 'Adds release, compilation and track-list candidates plus cover artwork when available.')"
 								@busy="loading = $event"
 								@deleted="settings.discogsConfigured = false" />
 							<CredentialField v-model="lastFmKey"
 								credential="lastfm_key"
-								label="Last.fm API key"
+								:label="t('musiccurator', 'Last.fm API key')"
 								:configured="settings.lastFmConfigured"
 								:disabled="loading"
-								hint="Adds track, artist and genre fallbacks plus album artwork when available."
+								:hint="t('musiccurator', 'Adds track, artist and genre fallbacks plus album artwork when available.')"
 								@busy="loading = $event"
 								@deleted="settings.lastFmConfigured = false" />
 						</div>
 						<div class="review-actions">
 							<NcButton variant="primary" :disabled="loading" @click="saveSettings()">
-								Save personal settings
+								{{ t('musiccurator', 'Save personal settings') }}
 							</NcButton>
 						</div>
 					</section>

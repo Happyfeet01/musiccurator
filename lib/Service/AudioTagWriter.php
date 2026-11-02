@@ -5,10 +5,16 @@ declare(strict_types=1);
 namespace OCA\MusicCurator\Service;
 
 use OCP\Files\File;
+use OCP\IL10N;
 use RuntimeException;
 use Throwable;
 
 class AudioTagWriter {
+	public function __construct(
+		private IL10N $l10n,
+	) {
+	}
+
 	/**
 	 * Rewrite selected MP3 metadata fields with ffmpeg while copying the audio
 	 * stream losslessly. Existing metadata that is not explicitly overridden is
@@ -20,13 +26,13 @@ class AudioTagWriter {
 	public function writeMp3(File $file, array $metadata): array {
 		$extension = strtolower(pathinfo($file->getName(), PATHINFO_EXTENSION));
 		if ($extension !== 'mp3') {
-			throw new RuntimeException('Experimental tag writing currently supports MP3 files only.');
+			throw new RuntimeException($this->l10n->t('Experimental tag writing currently supports MP3 files only.'));
 		}
 		if ($metadata === []) {
-			throw new RuntimeException('No metadata fields were selected for writing.');
+			throw new RuntimeException($this->l10n->t('No metadata fields were selected for writing.'));
 		}
 		if (!function_exists('proc_open')) {
-			throw new RuntimeException('PHP proc_open is unavailable, so ffmpeg cannot be started.');
+			throw new RuntimeException($this->l10n->t('PHP proc_open is unavailable, so ffmpeg cannot be started.'));
 		}
 
 		$inputPath = $this->temporaryPath('musiccurator-in-', '.mp3');
@@ -38,7 +44,7 @@ class AudioTagWriter {
 
 			$bytes = is_file($outputPath) ? (int)filesize($outputPath) : 0;
 			if ($bytes <= 0) {
-				throw new RuntimeException('ffmpeg produced an empty output file.');
+				throw new RuntimeException($this->l10n->t('ffmpeg produced an empty output file.'));
 			}
 
 			try {
@@ -49,7 +55,7 @@ class AudioTagWriter {
 				try {
 					$this->replaceNextcloudFileFromPath($file, $inputPath);
 				} catch (Throwable) {
-					throw new RuntimeException('Metadata write failed and restoring the original file also failed: ' . $writeError->getMessage(), 0, $writeError);
+					throw new RuntimeException($this->l10n->t('Metadata write failed and restoring the original file also failed: %s', [$writeError->getMessage()]), 0, $writeError);
 				}
 				throw $writeError;
 			}
@@ -102,7 +108,7 @@ class AudioTagWriter {
 		];
 		$process = @proc_open($command, $descriptors, $pipes);
 		if (!is_resource($process)) {
-			throw new RuntimeException('Could not start ffmpeg. Make sure ffmpeg is installed and available in the PHP-FPM PATH.');
+			throw new RuntimeException($this->l10n->t('Could not start ffmpeg. Make sure ffmpeg is installed and available in the PHP-FPM PATH.'));
 		}
 
 		fclose($pipes[0]);
@@ -117,24 +123,24 @@ class AudioTagWriter {
 			if ($detail === '') {
 				$detail = trim((string)$stdout);
 			}
-			throw new RuntimeException('ffmpeg metadata write failed' . ($detail !== '' ? ': ' . mb_substr($detail, 0, 800) : '.'));
+			throw new RuntimeException($this->l10n->t('ffmpeg metadata write failed%s', [$detail !== '' ? ': ' . mb_substr($detail, 0, 800) : '.']));
 		}
 	}
 
 	private function copyNextcloudFileToPath(File $file, string $targetPath): void {
 		$source = $file->fopen('r');
 		if (!is_resource($source)) {
-			throw new RuntimeException('Could not open the Nextcloud file for reading.');
+			throw new RuntimeException($this->l10n->t('Could not open the Nextcloud file for reading.'));
 		}
 		$target = fopen($targetPath, 'wb');
 		if (!is_resource($target)) {
 			fclose($source);
-			throw new RuntimeException('Could not create a temporary input file.');
+			throw new RuntimeException($this->l10n->t('Could not create a temporary input file.'));
 		}
 
 		try {
 			if (stream_copy_to_stream($source, $target) === false) {
-				throw new RuntimeException('Could not copy the audio file to temporary storage.');
+				throw new RuntimeException($this->l10n->t('Could not copy the audio file to temporary storage.'));
 			}
 		} finally {
 			fclose($source);
@@ -145,17 +151,17 @@ class AudioTagWriter {
 	private function replaceNextcloudFileFromPath(File $file, string $sourcePath): void {
 		$source = fopen($sourcePath, 'rb');
 		if (!is_resource($source)) {
-			throw new RuntimeException('Could not open the generated audio file.');
+			throw new RuntimeException($this->l10n->t('Could not open the generated audio file.'));
 		}
 		$target = $file->fopen('w');
 		if (!is_resource($target)) {
 			fclose($source);
-			throw new RuntimeException('Could not open the Nextcloud file for writing.');
+			throw new RuntimeException($this->l10n->t('Could not open the Nextcloud file for writing.'));
 		}
 
 		try {
 			if (stream_copy_to_stream($source, $target) === false) {
-				throw new RuntimeException('Could not write the generated audio file back to Nextcloud.');
+				throw new RuntimeException($this->l10n->t('Could not write the generated audio file back to Nextcloud.'));
 			}
 		} finally {
 			fclose($source);
@@ -166,13 +172,13 @@ class AudioTagWriter {
 	private function temporaryPath(string $prefix, string $suffix, bool $create = true): string {
 		$base = tempnam(sys_get_temp_dir(), $prefix);
 		if ($base === false) {
-			throw new RuntimeException('Could not allocate temporary storage.');
+			throw new RuntimeException($this->l10n->t('Could not allocate temporary storage.'));
 		}
 		$path = $base . $suffix;
 		if ($create) {
 			if (!@rename($base, $path)) {
 				@unlink($base);
-				throw new RuntimeException('Could not prepare temporary storage.');
+				throw new RuntimeException($this->l10n->t('Could not prepare temporary storage.'));
 			}
 		} else {
 			@unlink($base);

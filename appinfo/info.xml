@@ -4,6 +4,7 @@
 	<id>musiccurator</id>
 	<name>MusicCurator</name>
 	<summary>Curate, tag and organize your Nextcloud music library</summary>
+	<summary lang="de">Deine Nextcloud-Musikbibliothek pflegen, taggen und sortieren</summary>
 	<description><![CDATA[
 MusicCurator helps you review and improve the metadata of audio files stored in Nextcloud.
 Compare existing tags with metadata-provider suggestions, choose changes field by field,
@@ -11,6 +12,12 @@ organize files into album or playlist folders, and keep every destructive action
 
 The project is designed as a companion for Nextcloud Music. MusicCurator manages the library;
 Nextcloud Music remains responsible for playback.
+	]]></description>
+	<description lang="de"><![CDATA[
+MusicCurator hilft dir, die Metadaten deiner Audiodateien in Nextcloud zu prüfen und zu verbessern.
+Vergleiche vorhandene Tags mit Anbietervorschlägen, wähle Änderungen feldweise aus und sortiere Dateien in Album- oder Playlist-Ordner. Änderungen werden zunächst als Vorschau angezeigt.
+
+Die App ergänzt Nextcloud Music. MusicCurator verwaltet deine Bibliothek; die Wiedergabe übernimmt weiterhin Nextcloud Music.
 	]]></description>
 	<version>1.5.2</version>
 	<licence>AGPL-3.0-or-later</licence>

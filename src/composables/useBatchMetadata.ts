@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { t } from '../l10n.ts'
 
 export type BatchSuggestion = {
 	id: string
@@ -204,7 +205,7 @@ export function useBatchMetadata(searchTrack: SearchTrack) {
 					const providers = response.providers ?? []
 					const failures = providers.filter((provider) => provider.attempted && !provider.ok)
 					const unavailable = providers.length > 0 && !providers.some((provider) => provider.attempted)
-					const providerError = failures.map((provider) => `${provider.name}: ${provider.message || 'Provider unavailable'}`).join(' · ')
+					const providerError = failures.map((provider) => `${provider.name}: ${provider.message || t('musiccurator', 'Provider unavailable')}`).join(' · ')
 					items.value = {
 						...items.value,
 						[track.path]: {
@@ -214,7 +215,7 @@ export function useBatchMetadata(searchTrack: SearchTrack) {
 							selected: autoSelected ? best : null,
 							autoSelected,
 							providers,
-							error: providerError || (unavailable ? 'No metadata provider is enabled and configured.' : ''),
+							error: providerError || (unavailable ? t('musiccurator', 'No metadata provider is enabled and configured.') : ''),
 						},
 					}
 				} catch (error) {

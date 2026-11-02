@@ -108,3 +108,7 @@ I maintain this project and other open-source tools in my spare time. If my work
 - [PayPal](https://paypal.me/LarsM1980)
 
 Bug reports, documentation improvements and contributions are just as welcome. Support is entirely optional.
+
+## Interface language and translations
+
+MusicCurator uses your Nextcloud interface language automatically. German and English are included; unavailable languages fall back to English. Translation contributions are welcome through the gettext files described in [docs/TRANSLATING.md](docs/TRANSLATING.md). Transifex community synchronization is prepared and requires separate onboarding.

@@ -9,6 +9,7 @@ use OCA\MusicCurator\Service\ProviderCredentialsService;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\Config\IUserConfig;
 use OCP\IConfig;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -116,12 +117,24 @@ final class CredentialsTest extends TestCase {
 		self::assertSame('DELETE', $routes[0]['verb']);
 	}
 
-	private function controller(ProviderCredentialsService $credentials, bool $authenticated = true): CredentialController {
+	public function testGermanErrorUsesTheInjectedNextcloudLanguage(): void {
+		$service = $this->createMock(ProviderCredentialsService::class);
+		$service->expects(self::never())->method('delete');
+		$response = $this->controller($service, true, 'de')->delete('library_path');
+		self::assertSame(400, $response->getStatus());
+		self::assertSame(['message' => 'Unbekannter Anbieterschlüssel.'], $response->getData());
+	}
+
+	private function controller(ProviderCredentialsService $credentials, bool $authenticated = true, string $language = 'en'): CredentialController {
 		$session = $this->createMock(IUserSession::class);
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn('alice');
 		$session->method('getUser')->willReturn($authenticated ? $user : null);
 
-		return new CredentialController('musiccurator', $this->createMock(IRequest::class), $session, $credentials);
+		$l10n = $this->createMock(IL10N::class);
+
+		$catalog = json_decode(file_get_contents(__DIR__ . '/../../l10n/' . $language . '.json'), true, 512, JSON_THROW_ON_ERROR);
+		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $catalog['translations'][$text] ?? $text);
+		return new CredentialController('musiccurator', $this->createMock(IRequest::class), $session, $credentials, $l10n);
 	}
 }

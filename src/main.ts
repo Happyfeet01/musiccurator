@@ -1,3 +1,4 @@
+import { loadTranslations } from '@nextcloud/l10n'
 import { createApp } from 'vue'
 import App from './App.vue'
 
@@ -82,5 +83,8 @@ async function musicCuratorFetch(input: RequestInfo | URL, init: RequestInit = {
 
 window.fetch = musicCuratorFetch
 
-const app = createApp(App)
-app.mount('#musiccurator')
+// Nextcloud selects the signed-in user's language, including regional fallbacks.
+// A missing catalog must not prevent the app from starting with English source text.
+loadTranslations('musiccurator')
+	.catch(() => undefined)
+	.finally(() => createApp(App).mount('#musiccurator'))

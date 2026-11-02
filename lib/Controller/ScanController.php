@@ -17,6 +17,7 @@ use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\IConfig;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -36,6 +37,7 @@ class ScanController extends Controller {
 		private AudioTagReader $tagReader,
 		private ScanIndexService $scanIndex,
 		private LoggerInterface $logger,
+		private IL10N $l10n,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -109,7 +111,7 @@ class ScanController extends Controller {
 			]);
 
 			return new DataResponse([
-				'message' => 'No music folder is configured. Choose a music folder first.',
+				'message' => $this->l10n->t('No music folder is configured. Choose a music folder first.'),
 			], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -123,7 +125,7 @@ class ScanController extends Controller {
 					'path' => $libraryPath,
 				]);
 
-				return new DataResponse(['message' => 'The selected library path is not a folder.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('The selected library path is not a folder.')], Http::STATUS_BAD_REQUEST);
 			}
 
 			$this->config->setUserValue($userId, 'musiccurator', 'library_path', $libraryPath);
@@ -194,7 +196,7 @@ class ScanController extends Controller {
 			]);
 
 			return new DataResponse([
-				'message' => sprintf('The configured music folder "%s" does not exist or cannot be accessed. Choose the folder again.', $libraryPath),
+				'message' => $this->l10n->t('The configured music folder "%s" does not exist or cannot be accessed. Choose the folder again.', [$libraryPath]),
 			], Http::STATUS_NOT_FOUND);
 		}
 	}
@@ -406,7 +408,7 @@ class ScanController extends Controller {
 	private function userId(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			throw new \RuntimeException('No authenticated Nextcloud user.');
+			throw new \RuntimeException($this->l10n->t('No authenticated Nextcloud user.'));
 		}
 
 		return $user->getUID();
@@ -436,7 +438,7 @@ class ScanController extends Controller {
 				continue;
 			}
 			if ($segment === '..') {
-				throw new \InvalidArgumentException('Parent path segments are not allowed.');
+				throw new \InvalidArgumentException($this->l10n->t('Parent path segments are not allowed.'));
 			}
 			$segments[] = $segment;
 		}

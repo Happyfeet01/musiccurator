@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\MusicCurator\Service;
 
 use OCP\Http\Client\IClientService;
+use OCP\IL10N;
 use RuntimeException;
 
 class DiscogsService {
@@ -12,6 +13,7 @@ class DiscogsService {
 
 	public function __construct(
 		private IClientService $clientService,
+		private IL10N $l10n,
 	) {
 	}
 
@@ -141,7 +143,7 @@ class DiscogsService {
 			break;
 		}
 
-		throw new RuntimeException(sprintf('Discogs returned HTTP %d', $lastStatus));
+		throw new RuntimeException($this->l10n->t('Discogs returned HTTP %d', [$lastStatus]));
 	}
 
 	/** @return array{0: string, 1: string} */

@@ -13,6 +13,7 @@ use OCP\Files\FileInfo;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Throwable;
@@ -23,6 +24,7 @@ class FolderController extends Controller {
 		IRequest $request,
 		private IRootFolder $rootFolder,
 		private IUserSession $userSession,
+		private IL10N $l10n,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -37,11 +39,11 @@ class FolderController extends Controller {
 			$path = $this->normalizePath($path);
 			$node = $this->nodeForUserPath($userId, $path);
 			if (!$node instanceof Folder) {
-				return new DataResponse(['message' => 'Path is not a folder.'], 400);
+				return new DataResponse(['message' => $this->l10n->t('Path is not a folder.')], 400);
 			}
 		} catch (Throwable $e) {
 			return new DataResponse([
-				'message' => 'Folder not found: ' . $e->getMessage(),
+				'message' => $this->l10n->t('Folder not found: %s', [$e->getMessage()]),
 			], 404);
 		}
 
@@ -69,7 +71,7 @@ class FolderController extends Controller {
 	private function userId(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			throw new \RuntimeException('No authenticated Nextcloud user.');
+			throw new \RuntimeException($this->l10n->t('No authenticated Nextcloud user.'));
 		}
 
 		return $user->getUID();
@@ -99,7 +101,7 @@ class FolderController extends Controller {
 				continue;
 			}
 			if ($segment === '..') {
-				throw new \InvalidArgumentException('Parent path segments are not allowed.');
+				throw new \InvalidArgumentException($this->l10n->t('Parent path segments are not allowed.'));
 			}
 			$segments[] = $segment;
 		}

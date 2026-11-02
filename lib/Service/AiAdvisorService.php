@@ -6,6 +6,7 @@ namespace OCA\MusicCurator\Service;
 
 use OCP\Http\Client\IClientService;
 use OCP\IConfig;
+use OCP\IL10N;
 use RuntimeException;
 
 class AiAdvisorService {
@@ -17,6 +18,7 @@ class AiAdvisorService {
 		private IClientService $clientService,
 		private IConfig $config,
 		private ProviderCredentialsService $credentials,
+		private IL10N $l10n,
 	) {
 	}
 
@@ -27,7 +29,7 @@ class AiAdvisorService {
 	public function classifyFolder(string $userId, string $path, array $tracks): array {
 		$provider = strtolower(trim($this->config->getUserValue($userId, 'musiccurator', 'ai_provider', 'off')));
 		if (!in_array($provider, ['openai', 'mistral', 'ollama'], true)) {
-			throw new RuntimeException('No AI advisor provider is enabled in your personal settings.');
+			throw new RuntimeException($this->l10n->t('No AI advisor provider is enabled in your personal settings.'));
 		}
 
 		$summary = $this->folderSummary($path, $tracks);
@@ -53,7 +55,7 @@ class AiAdvisorService {
 	private function classifyWithOpenAi(string $userId, string $prompt): array {
 		$apiKey = $this->credentials->get($userId, 'openai_key');
 		if ($apiKey === '') {
-			throw new RuntimeException('OpenAI is selected but no API key is configured.');
+			throw new RuntimeException($this->l10n->t('OpenAI is selected but no API key is configured.'));
 		}
 		$model = trim($this->config->getUserValue($userId, 'musiccurator', 'openai_model', self::DEFAULT_OPENAI_MODEL));
 		if ($model === '') {
@@ -98,12 +100,12 @@ class AiAdvisorService {
 			}
 		}
 		if ($text === '') {
-			throw new RuntimeException('OpenAI returned no structured classification text.');
+			throw new RuntimeException($this->l10n->t('OpenAI returned no structured classification text.'));
 		}
 
 		$result = json_decode($text, true, 512, JSON_THROW_ON_ERROR);
 		if (!is_array($result)) {
-			throw new RuntimeException('OpenAI returned an invalid classification.');
+			throw new RuntimeException($this->l10n->t('OpenAI returned an invalid classification.'));
 		}
 		$result['model'] = $model;
 
@@ -114,7 +116,7 @@ class AiAdvisorService {
 	private function classifyWithMistral(string $userId, string $prompt): array {
 		$apiKey = $this->credentials->get($userId, 'mistral_key');
 		if ($apiKey === '') {
-			throw new RuntimeException('Mistral is selected but no API key is configured.');
+			throw new RuntimeException($this->l10n->t('Mistral is selected but no API key is configured.'));
 		}
 		$model = trim($this->config->getUserValue($userId, 'musiccurator', 'mistral_model', self::DEFAULT_MISTRAL_MODEL));
 		if ($model === '') {
@@ -137,12 +139,12 @@ class AiAdvisorService {
 		]);
 		$text = trim((string)($data['choices'][0]['message']['content'] ?? ''));
 		if ($text === '') {
-			throw new RuntimeException('Mistral returned no classification text.');
+			throw new RuntimeException($this->l10n->t('Mistral returned no classification text.'));
 		}
 
 		$result = json_decode($text, true, 512, JSON_THROW_ON_ERROR);
 		if (!is_array($result)) {
-			throw new RuntimeException('Mistral returned an invalid classification.');
+			throw new RuntimeException($this->l10n->t('Mistral returned an invalid classification.'));
 		}
 		$result['model'] = $model;
 
@@ -153,7 +155,7 @@ class AiAdvisorService {
 	private function classifyWithOllama(string $userId, string $prompt): array {
 		$model = trim($this->config->getUserValue($userId, 'musiccurator', 'ollama_model', ''));
 		if ($model === '') {
-			throw new RuntimeException('Ollama is selected but no model name is configured.');
+			throw new RuntimeException($this->l10n->t('Ollama is selected but no model name is configured.'));
 		}
 		$baseUrl = rtrim(trim($this->config->getUserValue($userId, 'musiccurator', 'ollama_url', self::DEFAULT_OLLAMA_URL)), '/');
 		if ($baseUrl === '') {
@@ -175,12 +177,12 @@ class AiAdvisorService {
 		$data = $this->postJson($baseUrl . '/chat', $payload);
 		$text = trim((string)($data['message']['content'] ?? ''));
 		if ($text === '') {
-			throw new RuntimeException('Ollama returned no classification text.');
+			throw new RuntimeException($this->l10n->t('Ollama returned no classification text.'));
 		}
 
 		$result = json_decode($text, true, 512, JSON_THROW_ON_ERROR);
 		if (!is_array($result)) {
-			throw new RuntimeException('Ollama returned an invalid classification.');
+			throw new RuntimeException($this->l10n->t('Ollama returned an invalid classification.'));
 		}
 		$result['model'] = $model;
 
@@ -210,7 +212,7 @@ class AiAdvisorService {
 		$body = (string)$response->getBody();
 		if ($status < 200 || $status >= 300) {
 			$detail = trim(mb_substr($body, 0, 400));
-			throw new RuntimeException(sprintf('AI provider returned HTTP %d%s', $status, $detail !== '' ? ': ' . $detail : ''));
+			throw new RuntimeException($this->l10n->t('AI provider returned HTTP %d%s', [$status, $detail !== '' ? ': ' . $detail : '']));
 		}
 
 		$data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
@@ -266,7 +268,10 @@ class AiAdvisorService {
 	}
 
 	private function systemPrompt(): string {
-		return 'You are MusicCurator AI Advisor. Classify music-library folder structure conservatively. You are an advisory layer, not an audio-recognition engine. Never invent evidence that is not present. Preserve playlist and compilation folder structure unless the evidence strongly indicates one coherent album.';
+		return 'You are MusicCurator AI Advisor. Classify music-library folder structure conservatively. You are an advisory layer, not an audio-recognition engine. Never invent evidence that is not present. Preserve playlist and compilation folder structure unless the evidence strongly indicates one coherent album.'
+			. (str_starts_with($this->l10n->getLanguageCode(), 'de')
+				? ' Write the reason in German. Keep all JSON keys and enum values unchanged.'
+				: ' Write the reason in English. Keep all JSON keys and enum values unchanged.');
 	}
 
 	/** @return array<string, mixed> */
@@ -299,7 +304,7 @@ class AiAdvisorService {
 			'groupType' => $groupType,
 			'confidence' => max(0, min(100, (int)($result['confidence'] ?? 0))),
 			'recommendedMode' => $mode,
-			'reason' => trim((string)($result['reason'] ?? 'No explanation returned.')),
+			'reason' => trim((string)($result['reason'] ?? $this->l10n->t('No explanation returned.'))),
 			'model' => trim((string)($result['model'] ?? '')),
 		];
 	}
@@ -309,13 +314,13 @@ class AiAdvisorService {
 		$scheme = strtolower((string)($parts['scheme'] ?? ''));
 		$host = strtolower((string)($parts['host'] ?? ''));
 		if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
-			throw new RuntimeException('Invalid Ollama base URL.');
+			throw new RuntimeException($this->l10n->t('Invalid Ollama base URL.'));
 		}
 
 		// Keep the first local-AI implementation deliberately narrow. Remote
 		// Ollama servers can be supported later with explicit trust controls.
 		if (!in_array($host, ['127.0.0.1', 'localhost', '::1'], true)) {
-			throw new RuntimeException('For now, Ollama must run on the same server (localhost/127.0.0.1).');
+			throw new RuntimeException($this->l10n->t('For now, Ollama must run on the same server (localhost/127.0.0.1).'));
 		}
 	}
 }

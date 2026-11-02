@@ -7,6 +7,7 @@ import {
 	AUTO_ACCEPT_SCORE,
 	useBatchMetadata,
 } from '../composables/useBatchMetadata.ts'
+import { n, t } from '../l10n.ts'
 
 declare global {
 	interface Window {
@@ -95,10 +96,10 @@ async function searchTrack(path: string): Promise<BatchSearchResponse> {
 	})
 	const data = await response.json() as Partial<BatchSearchResponse> & { message?: string }
 	if (!response.ok) {
-		throw new Error(data.message || `Metadata lookup failed with HTTP ${response.status}`)
+		throw new Error(data.message || t('musiccurator', 'Metadata lookup failed with HTTP {status}', { status: response.status }))
 	}
 	if (!Array.isArray(data.results) || !Array.isArray(data.providers)) {
-		throw new Error('Metadata lookup returned an invalid response. Reload the app and check the server logs.')
+		throw new Error(t('musiccurator', 'Metadata lookup returned an invalid response. Reload the app and check the server logs.'))
 	}
 	return {
 		results: Array.isArray(data.results) ? data.results : [],
@@ -150,7 +151,7 @@ async function createPlaylistFromCurrentFolder(): Promise<void> {
 	if (!currentTrack.value || !currentFolder.value || playlistCreating.value) {
 		return
 	}
-	if (!window.confirm(`Create or refresh a MusicCurator-managed .m3u8 playlist in this folder?\n\n${currentFolder.value}\n\n${currentFolderTrackCount.value} indexed audio file${currentFolderTrackCount.value === 1 ? '' : 's'} in this folder will be listed. Existing playlists that are not managed by MusicCurator are never overwritten.`)) {
+	if (!window.confirm(n('musiccurator', 'Create or refresh a MusicCurator-managed .m3u8 playlist in {folder} with %n indexed audio file? Existing playlists not managed by MusicCurator are never overwritten.', 'Create or refresh a MusicCurator-managed .m3u8 playlist in {folder} with %n indexed audio files? Existing playlists not managed by MusicCurator are never overwritten.', currentFolderTrackCount.value, { folder: currentFolder.value }))) {
 		return
 	}
 
@@ -170,10 +171,10 @@ async function createPlaylistFromCurrentFolder(): Promise<void> {
 		})
 		const data = await response.json().catch(() => ({})) as Partial<PlaylistCreateResponse> & { message?: string }
 		if (!response.ok) {
-			throw new Error(data.message || `Playlist creation failed with HTTP ${response.status}`)
+			throw new Error(data.message || t('musiccurator', 'Playlist creation failed with HTTP {status}', { status: response.status }))
 		}
 		emit('libraryChanged')
-		playlistMessage.value = `${data.name || 'Playlist'} saved with ${data.entries ?? currentFolderTrackCount.value} track${(data.entries ?? currentFolderTrackCount.value) === 1 ? '' : 's'}. It is marked as MusicCurator-managed and is now available in Playlists.`
+		playlistMessage.value = n('musiccurator', '{name} saved with %n track. It is managed by MusicCurator and available in Playlists.', '{name} saved with %n tracks. It is managed by MusicCurator and available in Playlists.', data.entries ?? currentFolderTrackCount.value, { name: data.name || t('musiccurator', 'Playlist') })
 	} catch (error) {
 		playlistError.value = error instanceof Error ? error.message : String(error)
 	} finally {
@@ -218,7 +219,7 @@ async function writeCandidate(track: Track, candidate: BatchSuggestion): Promise
 		})
 		const data = await response.json().catch(() => ({})) as TagWriteResponse
 		if (!response.ok) {
-			throw new Error(data.message || `Metadata write failed with HTTP ${response.status}`)
+			throw new Error(data.message || t('musiccurator', 'Metadata write failed with HTTP {status}', { status: response.status }))
 		}
 		emit('libraryChanged')
 		writtenPaths.value = { ...writtenPaths.value, [track.path]: true }
@@ -229,12 +230,12 @@ async function writeCandidate(track: Track, candidate: BatchSuggestion): Promise
 
 async function writeOne(track: Track, candidate: BatchSuggestion): Promise<void> {
 	if (!isMp3(track.filename)) {
-		writeError.value = 'Experimental tag writing currently supports MP3 files only.'
+		writeError.value = t('musiccurator', 'Experimental tag writing currently supports MP3 files only.')
 		return
 	}
 
-	const genreLine = candidate.genre ? `\nGenre: ${candidate.genre}` : '\nGenre: no reliable suggestion'
-	if (!window.confirm(`Write this metadata into the MP3 file?\n\n${track.filename}\n\n${candidate.artist || 'Unknown artist'} — ${candidate.title || track.title || track.filename}\n${candidate.album || 'No album'}${genreLine}\n\nA rollback record for every changed field will be stored.`)) {
+	const genreLine = candidate.genre ? t('musiccurator', '\nGenre: {genre}', { genre: candidate.genre }) : t('musiccurator', '\nGenre: no reliable suggestion')
+	if (!window.confirm(t('musiccurator', 'Write this metadata into the MP3 file?\n\n{file}\n\n{artist} — {title}\n{album}{genre}\n\nA rollback record for every changed field will be stored.', { file: track.filename, artist: candidate.artist || t('musiccurator', 'Unknown artist'), title: candidate.title || track.title || track.filename, album: candidate.album || t('musiccurator', 'No album'), genre: genreLine }))) {
 		return
 	}
 
@@ -242,7 +243,7 @@ async function writeOne(track: Track, candidate: BatchSuggestion): Promise<void>
 	writeError.value = ''
 	try {
 		await writeCandidate(track, candidate)
-		writeMessage.value = `Metadata saved in ${track.filename}. Run Scan library to refresh the displayed current tags.`
+		writeMessage.value = t('musiccurator', 'Metadata saved in {file}. Run Scan library to refresh the displayed current tags.', { file: track.filename })
 	} catch (error) {
 		writeError.value = error instanceof Error ? error.message : String(error)
 	}
@@ -254,7 +255,7 @@ async function writeAutoSelected(): Promise<void> {
 		return
 	}
 	const withGenre = rows.filter((row) => Boolean(row.item?.selected?.genre)).length
-	if (!window.confirm(`Write the ${rows.length} auto-selected high-confidence matches into their MP3 files?\n\nOnly matches above ${AUTO_ACCEPT_SCORE}% are included. Review items are NOT written. ${withGenre} of these matches also have a normalized genre suggestion. A rollback record is stored for every file.`)) {
+	if (!window.confirm(t('musiccurator', 'Write {count} auto-selected high-confidence matches into their MP3 files?\n\nOnly matches above {threshold}% are included. Review items are NOT written. {genreCount} matches also have a normalized genre suggestion. A rollback record is stored for every file.', { count: rows.length, threshold: AUTO_ACCEPT_SCORE, genreCount: withGenre }))) {
 		return
 	}
 
@@ -271,12 +272,12 @@ async function writeAutoSelected(): Promise<void> {
 				await writeCandidate(row.track!, row.item.selected)
 				written += 1
 			} catch (error) {
-				writeError.value = `Stopped after ${written} file${written === 1 ? '' : 's'}: ${error instanceof Error ? error.message : String(error)}`
+				writeError.value = n('musiccurator', 'Stopped after %n file: {error}', 'Stopped after %n files: {error}', written, { error: error instanceof Error ? error.message : String(error) })
 				break
 			}
 		}
 		if (written > 0) {
-			writeMessage.value = `${written} MP3 file${written === 1 ? '' : 's'} updated. Run Scan library to refresh title, artist, album and genre from the files.`
+			writeMessage.value = n('musiccurator', '%n MP3 file updated. Refresh the library index to load the current tags.', '%n MP3 files updated. Refresh the library index to load the current tags.', written)
 		}
 	} finally {
 		bulkWriting.value = false
@@ -285,31 +286,31 @@ async function writeAutoSelected(): Promise<void> {
 
 function statusLabel(status: string): string {
 	return status === 'matched'
-		? 'High confidence'
+		? t('musiccurator', 'High confidence')
 		: status === 'review'
-			? 'Needs review'
+			? t('musiccurator', 'Needs review')
 			: status === 'unmatched'
-				? 'No match'
+				? t('musiccurator', 'No match')
 				: status === 'searching'
-					? 'Searching…'
+					? t('musiccurator', 'Searching…')
 					: status === 'queued'
-						? 'Queued'
-						: 'Error'
+						? t('musiccurator', 'Queued')
+						: t('musiccurator', 'Error')
 }
 
 function providerSummary(providers: BatchProviderStatus[]): string {
 	return providers.map((provider) => {
 		if (!provider.attempted) {
-			return `${provider.name}: ${provider.message || 'Not configured'}`
+			return `${provider.name}: ${provider.message || t('musiccurator', 'Not configured')}`
 		}
 		return provider.ok
 			? `${provider.name}: ${provider.results}`
-			: `${provider.name}: ${provider.message || 'Provider unavailable'}`
+			: `${provider.name}: ${provider.message || t('musiccurator', 'Provider unavailable')}`
 	}).join(' · ')
 }
 
 function candidateSummary(candidate: BatchSuggestion): string {
-	const artist = candidate.artist || candidate.albumArtist || 'Unknown artist'
+	const artist = candidate.artist || candidate.albumArtist || t('musiccurator', 'Unknown artist')
 	const album = candidate.album ? ` · ${candidate.album}` : ''
 	return `${artist}${album}`
 }
@@ -317,39 +318,39 @@ function candidateSummary(candidate: BatchSuggestion): string {
 
 <template>
 	<div class="batch-shell">
-		<section class="batch-toolbar" aria-label="Batch metadata preview controls">
+		<section class="batch-toolbar" :aria-label="t('musiccurator', 'Batch metadata preview controls')">
 			<div class="batch-heading">
 				<div>
-					<strong>Batch metadata preview</strong>
-					<small>Choose several tracks and let MusicCurator check them sequentially. Searching is a preview; writing requires a separate confirmation below.</small>
+					<strong>{{ t('musiccurator', 'Batch metadata preview') }}</strong>
+					<small>{{ t('musiccurator', 'Choose several tracks and let MusicCurator check them sequentially. Searching is a preview; writing requires a separate confirmation below.') }}</small>
 				</div>
-				<span class="selection-count">{{ batch.selectedCount.value }} selected</span>
+				<span class="selection-count">{{ n('musiccurator', '%n selected', '%n selected', batch.selectedCount.value) }}</span>
 			</div>
 
 			<div class="batch-actions">
 				<NcButton :disabled="batch.running.value || shownTracks.length === 0" @click="selectAllShown">
-					Select all shown
+					{{ t('musiccurator', 'Select all shown') }}
 				</NcButton>
 				<NcButton :disabled="batch.running.value || !canSelectAlbum" @click="selectCurrentAlbum">
-					Select current album
+					{{ t('musiccurator', 'Select current album') }}
 				</NcButton>
 				<NcButton :disabled="batch.running.value || !currentTrack" @click="selectCurrentFolder">
-					Select current folder
+					{{ t('musiccurator', 'Select current folder') }}
 				</NcButton>
 				<NcButton :disabled="batch.running.value || !currentTrack || playlistCreating" @click="createPlaylistFromCurrentFolder">
-					{{ playlistCreating ? 'Creating playlist…' : 'Create / refresh folder .m3u8' }}
+					{{ playlistCreating ? t('musiccurator', 'Creating playlist…') : t('musiccurator', 'Create / refresh folder .m3u8') }}
 				</NcButton>
 				<NcButton :disabled="batch.running.value || batch.selectedCount.value === 0" @click="batch.clearSelection">
-					Clear selection
+					{{ t('musiccurator', 'Clear selection') }}
 				</NcButton>
 				<NcButton
 					variant="primary"
 					:disabled="!canSearch"
 					@click="batch.run(allTracks)">
-					Search metadata for selected
+					{{ t('musiccurator', 'Search metadata for selected') }}
 				</NcButton>
 				<NcButton v-if="batch.running.value" @click="batch.cancel">
-					Stop after current track
+					{{ t('musiccurator', 'Stop after current track') }}
 				</NcButton>
 			</div>
 
@@ -361,23 +362,23 @@ function candidateSummary(candidate: BatchSuggestion): string {
 			</div>
 
 			<div class="batch-hint">
-				<span>Providers: {{ activeProviderNames.length ? activeProviderNames.join(', ') : 'none configured' }}</span>
-				<span>Best result &gt; {{ AUTO_ACCEPT_SCORE }}% is auto-selected for the preview.</span>
-				<span>Genre: MusicBrainz first, Last.fm track/artist tags as fallback; Discogs is optional.</span>
-				<span v-if="currentFolder">Folder playlist: {{ currentFolderTrackCount }} direct audio file{{ currentFolderTrackCount === 1 ? '' : 's' }} in {{ currentFolder }}.</span>
+				<span>{{ t('musiccurator', 'Providers: {providers}', { providers: activeProviderNames.length ? activeProviderNames.join(', ') : t('musiccurator', 'none configured') }) }}</span>
+				<span>{{ t('musiccurator', 'Best result > {threshold}% is auto-selected for the preview.', { threshold: AUTO_ACCEPT_SCORE }) }}</span>
+				<span>{{ t('musiccurator', 'Genre: MusicBrainz first, Last.fm track/artist tags as fallback; Discogs is optional.') }}</span>
+				<span v-if="currentFolder">{{ n('musiccurator', 'Folder playlist: %n direct audio file in {folder}.', 'Folder playlist: %n direct audio files in {folder}.', currentFolderTrackCount, { folder: currentFolder }) }}</span>
 			</div>
 
 			<div v-if="batch.running.value || batch.total.value > 0" class="batch-progress">
 				<div class="progress-copy">
-					<strong>{{ batch.processed.value }} / {{ batch.total.value }} processed</strong>
+					<strong>{{ t('musiccurator', '{processed} / {total} processed', { processed: batch.processed.value, total: batch.total.value }) }}</strong>
 					<span>{{ batch.progress.value }}%</span>
 				</div>
 				<progress :value="batch.processed.value" :max="Math.max(batch.total.value, 1)" />
 				<div class="batch-summary">
-					<span data-state="matched">{{ batch.matchedCount.value }} auto-selected</span>
-					<span data-state="review">{{ batch.reviewCount.value }} review</span>
-					<span data-state="unmatched">{{ batch.unmatchedCount.value }} no match</span>
-					<span v-if="batch.errorCount.value" data-state="error">{{ batch.errorCount.value }} errors</span>
+					<span data-state="matched">{{ t('musiccurator', '{count} auto-selected', { count: batch.matchedCount.value }) }}</span>
+					<span data-state="review">{{ t('musiccurator', '{count} review', { count: batch.reviewCount.value }) }}</span>
+					<span data-state="unmatched">{{ t('musiccurator', '{count} no match', { count: batch.unmatchedCount.value }) }}</span>
+					<span v-if="batch.errorCount.value" data-state="error">{{ n('musiccurator', '%n error', '%n errors', batch.errorCount.value) }}</span>
 				</div>
 			</div>
 		</section>
@@ -388,36 +389,36 @@ function candidateSummary(candidate: BatchSuggestion): string {
 				:key="track.path"
 				class="track-row"
 				:class="{ selected: selectedPath === track.path, checked: batch.isSelected(track.path) }">
-				<label class="track-check" :title="`Select ${track.title || track.filename} for batch preview`">
+				<label class="track-check" :title="t('musiccurator', 'Select {track} for batch preview', { track: track.title || track.filename })">
 					<input
 						type="checkbox"
 						:checked="batch.isSelected(track.path)"
 						:disabled="batch.running.value"
 						@change="batch.toggle(track.path)">
-					<span class="sr-only">Select for batch preview</span>
+					<span class="sr-only">{{ t('musiccurator', 'Select for batch preview') }}</span>
 				</label>
 				<button class="track-open" type="button" @click="emit('selectTrack', track)">
 					<span class="track-art" aria-hidden="true">♪</span>
 					<span class="track-main">
 						<strong>{{ track.title || track.filename }}</strong>
-						<small>{{ track.artist || 'Unknown artist' }} · {{ track.album || track.path }}</small>
+						<small>{{ track.artist || t('musiccurator', 'Unknown artist') }} · {{ track.album || track.path }}</small>
 					</span>
 				</button>
-				<span class="track-status" :data-status="track.status.toLowerCase().replaceAll(' ', '-')">{{ track.status }}</span>
+				<span class="track-status" :data-status="track.status.toLowerCase().replaceAll(' ', '-')">{{ track.status === 'Needs tags' ? t('musiccurator', 'Needs tags') : t('musiccurator', 'Metadata') }}</span>
 			</div>
 
 			<div v-if="hasMore" class="load-more-row">
 				<NcButton @click="emit('loadMore')">
-					Show {{ Math.min(100, remaining) }} more
+					{{ t('musiccurator', 'Show {count} more', { count: Math.min(100, remaining) }) }}
 				</NcButton>
 			</div>
 		</div>
 
-		<section v-if="hasResults" class="batch-results" aria-label="Batch metadata preview results">
+		<section v-if="hasResults" class="batch-results" :aria-label="t('musiccurator', 'Batch metadata preview results')">
 			<div class="batch-results-heading">
 				<div>
-					<strong>Batch review</strong>
-					<small>High-confidence matches are selected automatically. Review items stay manual and are never included in bulk writes.</small>
+					<strong>{{ t('musiccurator', 'Batch review') }}</strong>
+					<small>{{ t('musiccurator', 'High-confidence matches are selected automatically. Review items stay manual and are never included in bulk writes.') }}</small>
 				</div>
 				<div class="batch-write-actions">
 					<NcButton
@@ -425,10 +426,10 @@ function candidateSummary(candidate: BatchSuggestion): string {
 						variant="primary"
 						:disabled="batch.running.value || bulkWriting || writingPath !== ''"
 						@click="writeAutoSelected">
-						{{ bulkWriting ? 'Writing MP3 tags…' : `Write ${autoWriteRows.length} auto-selected to MP3` }}
+						{{ bulkWriting ? t('musiccurator', 'Writing MP3 tags…') : t('musiccurator', 'Write {count} auto-selected to MP3', { count: autoWriteRows.length }) }}
 					</NcButton>
 					<NcButton :disabled="batch.running.value || bulkWriting" @click="batch.clearResults">
-						Clear preview
+						{{ t('musiccurator', 'Clear preview') }}
 					</NcButton>
 				</div>
 			</div>
@@ -440,7 +441,7 @@ function candidateSummary(candidate: BatchSuggestion): string {
 				{{ writeError }}
 			</div>
 			<div class="write-warning">
-				<strong>Experimental write mode:</strong> currently MP3 only. Title, artist, album, album artist, track number, year and a normalized genre can be written. Audio is stream-copied by ffmpeg without re-encoding, and MusicCurator stores rollback values for every changed field.
+				<strong>{{ t('musiccurator', 'Experimental write mode:') }}</strong> {{ t('musiccurator', 'Currently MP3 only. Title, artist, album, album artist, track number, year and a normalized genre can be written. Audio is stream-copied by ffmpeg without re-encoding, and MusicCurator stores rollback values for every changed field.') }}
 			</div>
 
 			<div class="batch-result-list">
@@ -451,14 +452,14 @@ function candidateSummary(candidate: BatchSuggestion): string {
 					:data-state="row.item?.status || 'queued'">
 					<div class="result-track">
 						<strong>{{ row.track!.title || row.track!.filename }}</strong>
-						<small>{{ row.track!.artist || 'Unknown artist' }} · {{ row.track!.path }}</small>
+						<small>{{ row.track!.artist || t('musiccurator', 'Unknown artist') }} · {{ row.track!.path }}</small>
 					</div>
 
 					<div class="result-state">
-						<strong>{{ writtenPaths[row.track!.path] ? 'Saved to MP3' : statusLabel(row.item?.status || 'queued') }}</strong>
-						<small v-if="writtenPaths[row.track!.path]">Rollback record stored</small>
-						<small v-else-if="row.item?.autoSelected">Auto selected &gt; {{ AUTO_ACCEPT_SCORE }}%</small>
-						<small v-else-if="row.item?.status === 'review'">Not selected automatically</small>
+						<strong>{{ writtenPaths[row.track!.path] ? t('musiccurator', 'Saved to MP3') : statusLabel(row.item?.status || 'queued') }}</strong>
+						<small v-if="writtenPaths[row.track!.path]">{{ t('musiccurator', 'Rollback record stored') }}</small>
+						<small v-else-if="row.item?.autoSelected">{{ t('musiccurator', 'Auto selected > {threshold}%', { threshold: AUTO_ACCEPT_SCORE }) }}</small>
+						<small v-else-if="row.item?.status === 'review'">{{ t('musiccurator', 'Not selected automatically') }}</small>
 					</div>
 
 					<div v-if="row.item?.best" class="result-candidate">
@@ -475,31 +476,31 @@ function candidateSummary(candidate: BatchSuggestion): string {
 							<div class="candidate-copy">
 								<strong>{{ row.item.best.title || row.track!.title || row.track!.filename }}</strong>
 								<span>{{ candidateSummary(row.item.best) }}</span>
-								<small v-if="row.item.best.genre" class="genre-copy">Genre: {{ row.item.best.genre }}</small>
-								<small v-else class="genre-copy muted-genre">Genre: no reliable suggestion</small>
+								<small v-if="row.item.best.genre" class="genre-copy">{{ t('musiccurator', 'Genre: {genre}', { genre: row.item.best.genre }) }}</small>
+								<small v-else class="genre-copy muted-genre">{{ t('musiccurator', 'Genre: no reliable suggestion') }}</small>
 							</div>
 						</div>
-						<small>{{ row.item.best.source || 'Metadata' }} · {{ row.item.best.score }}%</small>
+						<small>{{ row.item.best.source || t('musiccurator', 'Metadata') }} · {{ row.item.best.score }}%</small>
 						<small v-if="providerSummary(row.item.providers)" class="provider-copy">{{ providerSummary(row.item.providers) }}</small>
 						<div v-if="isMp3(row.track!.filename) && !writtenPaths[row.track!.path]" class="row-write-action">
 							<NcButton
 								:disabled="bulkWriting || writingPath !== ''"
 								@click="writeOne(row.track!, row.item.best)">
-								{{ writingPath === row.track!.path ? 'Writing…' : 'Write this suggestion to MP3' }}
+								{{ writingPath === row.track!.path ? t('musiccurator', 'Writing…') : t('musiccurator', 'Write this suggestion to MP3') }}
 							</NcButton>
 						</div>
 					</div>
 					<div v-else-if="row.item?.status === 'error'" class="result-candidate error-copy">
-						<strong>Lookup failed</strong>
+						<strong>{{ t('musiccurator', 'Lookup failed') }}</strong>
 						<small>{{ row.item.error }}</small>
 					</div>
 					<div v-else-if="row.item?.status === 'unmatched'" class="result-candidate">
-						<strong>No candidate found</strong>
-						<small>{{ providerSummary(row.item.providers) || 'Configured providers returned no usable match.' }}</small>
+						<strong>{{ t('musiccurator', 'No candidate found') }}</strong>
+						<small>{{ providerSummary(row.item.providers) || t('musiccurator', 'Configured providers returned no usable match.') }}</small>
 					</div>
 					<div v-else class="result-candidate">
 						<strong>{{ statusLabel(row.item?.status || 'queued') }}</strong>
-						<small>Waiting for metadata providers.</small>
+						<small>{{ t('musiccurator', 'Waiting for metadata providers.') }}</small>
 					</div>
 				</article>
 			</div>

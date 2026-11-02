@@ -18,6 +18,7 @@ use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\IConfig;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -40,6 +41,7 @@ class AiController extends Controller {
 		private AiAdvisorService $advisor,
 		private ProviderCredentialsService $credentials,
 		private LoggerInterface $logger,
+		private IL10N $l10n,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -67,7 +69,7 @@ class AiController extends Controller {
 		$userId = $this->userId();
 		$aiProvider = strtolower(trim($aiProvider));
 		if (!in_array($aiProvider, ['off', 'openai', 'mistral', 'ollama'], true)) {
-			return new DataResponse(['message' => 'Unknown AI provider.'], Http::STATUS_BAD_REQUEST);
+			return new DataResponse(['message' => $this->l10n->t('Unknown AI provider.')], Http::STATUS_BAD_REQUEST);
 		}
 
 		$openAiModel = trim($openAiModel) !== '' ? trim($openAiModel) : self::DEFAULT_OPENAI_MODEL;
@@ -107,7 +109,7 @@ class AiController extends Controller {
 			$this->assertInsideLibrary($userId, $path);
 			$node = $this->nodeForUserPath($userId, $path);
 			if (!$node instanceof Folder) {
-				return new DataResponse(['message' => 'AI classification requires a folder path.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('AI classification requires a folder path.')], Http::STATUS_BAD_REQUEST);
 			}
 
 			$tracks = [];
@@ -130,7 +132,7 @@ class AiController extends Controller {
 			}
 
 			if ($tracks === []) {
-				return new DataResponse(['message' => 'No audio files were found directly in this folder.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('No audio files were found directly in this folder.')], Http::STATUS_BAD_REQUEST);
 			}
 
 			$this->logger->info('MusicCurator AI folder classification started', [
@@ -160,7 +162,7 @@ class AiController extends Controller {
 				'exception' => $e,
 			]);
 
-			return new DataResponse(['message' => 'AI classification failed: ' . $e->getMessage()], Http::STATUS_BAD_GATEWAY);
+			return new DataResponse(['message' => $this->l10n->t('AI classification failed: %s', [$e->getMessage()])], Http::STATUS_BAD_GATEWAY);
 		}
 	}
 
@@ -180,7 +182,7 @@ class AiController extends Controller {
 	private function userId(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			throw new \RuntimeException('No authenticated Nextcloud user.');
+			throw new \RuntimeException($this->l10n->t('No authenticated Nextcloud user.'));
 		}
 
 		return $user->getUID();
@@ -202,10 +204,10 @@ class AiController extends Controller {
 	private function assertInsideLibrary(string $userId, string $path): void {
 		$library = rtrim($this->libraryPath($userId), '/');
 		if ($library === '') {
-			throw new \RuntimeException('No music folder is configured.');
+			throw new \RuntimeException($this->l10n->t('No music folder is configured.'));
 		}
 		if ($path !== $library && !str_starts_with($path, $library . '/')) {
-			throw new \RuntimeException('The requested folder is outside the configured music library.');
+			throw new \RuntimeException($this->l10n->t('The requested folder is outside the configured music library.'));
 		}
 	}
 
@@ -225,7 +227,7 @@ class AiController extends Controller {
 				continue;
 			}
 			if ($segment === '..') {
-				throw new \InvalidArgumentException('Parent path segments are not allowed.');
+				throw new \InvalidArgumentException($this->l10n->t('Parent path segments are not allowed.'));
 			}
 			$segments[] = $segment;
 		}

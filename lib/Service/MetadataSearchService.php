@@ -6,6 +6,7 @@ namespace OCA\MusicCurator\Service;
 
 use OCP\Files\File;
 use OCP\IConfig;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -18,6 +19,7 @@ class MetadataSearchService {
 		private LastFmService $lastFm,
 		private AcoustIdService $acoustId,
 		private LoggerInterface $logger,
+		private IL10N $l10n,
 	) {
 	}
 
@@ -78,28 +80,28 @@ class MetadataSearchService {
 				], $rows);
 			}, $results, $providers);
 		} else {
-			$providers[] = $this->status('MusicBrainz', false, false, false, 'Disabled in personal settings.');
+			$providers[] = $this->status('MusicBrainz', false, false, false, $this->l10n->t('Disabled in personal settings.'));
 		}
 
 		$discogsToken = $this->credentials->get($userId, 'discogs_token');
 		if ($discogsToken !== '') {
 			$this->runProvider('Discogs', true, fn (): array => $this->discogs->search($title, $artist, $album, $discogsToken), $results, $providers);
 		} else {
-			$providers[] = $this->status('Discogs', false, false, false, 'No personal token configured.');
+			$providers[] = $this->status('Discogs', false, false, false, $this->l10n->t('No personal token configured.'));
 		}
 
 		$lastFmKey = $this->credentials->get($userId, 'lastfm_key');
 		if ($lastFmKey !== '') {
 			$this->runProvider('Last.fm', true, fn (): array => $this->lastFm->search($title, $artist, $lastFmKey), $results, $providers);
 		} else {
-			$providers[] = $this->status('Last.fm', false, false, false, 'No API key configured.');
+			$providers[] = $this->status('Last.fm', false, false, false, $this->l10n->t('No API key configured.'));
 		}
 
 		$acoustIdKey = $this->credentials->get($userId, 'acoustid_key');
 		if ($acoustIdKey !== '') {
 			$this->runProvider('AcoustID', true, fn (): array => $this->acoustId->identify($file, $acoustIdKey), $results, $providers);
 		} else {
-			$providers[] = $this->status('AcoustID', false, false, false, 'No client/API key configured.');
+			$providers[] = $this->status('AcoustID', false, false, false, $this->l10n->t('No client/API key configured.'));
 		}
 
 		// Genre evidence has its own priority and is deliberately independent of

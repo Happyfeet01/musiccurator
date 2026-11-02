@@ -1,0 +1,1423 @@
+# MusicCurator translations. See docs/TRANSLATING.md.
+msgid ""
+msgstr "Project-Id-Version: MusicCurator\nLanguage: de\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nPlural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/components/BatchTrackList.vue
+msgid "\nGenre: {genre}"
+msgstr "\nGenre: {genre}"
+
+#: src/components/BatchTrackList.vue
+msgid "\nGenre: no reliable suggestion"
+msgstr "\nGenre: kein verlässlicher Vorschlag"
+
+#: src/App.vue
+msgid " in {seconds} s"
+msgstr " in {seconds} s"
+
+#: src/App.vue
+msgid " Missing: {files}"
+msgstr " Fehlend: {files}"
+
+#: src/components/BatchTrackList.vue
+msgid "{name} saved with %n track. It is managed by MusicCurator and available in Playlists."
+msgid_plural "{name} saved with %n tracks. It is managed by MusicCurator and available in Playlists."
+msgstr[0] "{name} mit %n Titel gespeichert. Die Playlist wird von MusicCurator verwaltet und ist unter Playlists verfügbar."
+msgstr[1] "{name} mit %n Titeln gespeichert. Die Playlist wird von MusicCurator verwaltet und ist unter Playlists verfügbar."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "%n album"
+msgid_plural "%n albums"
+msgstr[0] "%n Album"
+msgstr[1] "%n Alben"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "%n artist"
+msgid_plural "%n artists"
+msgstr[0] "%n Interpret"
+msgstr[1] "%n Interpreten"
+
+#: src/App.vue
+msgid "%n audio file indexed from {path}{duration}."
+msgid_plural "%n audio files indexed from {path}{duration}."
+msgstr[0] "%n Audiodatei aus {path}{duration} indexiert."
+msgstr[1] "%n Audiodateien aus {path}{duration} indexiert."
+
+#: src/App.vue
+msgid "%n audio file"
+msgid_plural "%n audio files"
+msgstr[0] "%n Audiodatei"
+msgstr[1] "%n Audiodateien"
+
+#: src/components/BatchTrackList.vue
+msgid "%n error"
+msgid_plural "%n errors"
+msgstr[0] "%n Fehler"
+msgstr[1] "%n Fehler"
+
+#: src/App.vue
+msgid "%n metadata candidate found for {track}."
+msgid_plural "%n metadata candidates found for {track}."
+msgstr[0] "%n Metadatenvorschlag für {track} gefunden."
+msgstr[1] "%n Metadatenvorschläge für {track} gefunden."
+
+#: src/components/BatchTrackList.vue
+msgid "%n MP3 file updated. Refresh the library index to load the current tags."
+msgid_plural "%n MP3 files updated. Refresh the library index to load the current tags."
+msgstr[0] "%n MP3-Datei aktualisiert. Aktualisiere den Bibliotheksindex, um die aktuellen Tags zu laden."
+msgstr[1] "%n MP3-Dateien aktualisiert. Aktualisiere den Bibliotheksindex, um die aktuellen Tags zu laden."
+
+#: src/App.vue
+msgid "%n result · {duration} ms"
+msgid_plural "%n results · {duration} ms"
+msgstr[0] "%n Ergebnis · {duration} ms"
+msgstr[1] "%n Ergebnisse · {duration} ms"
+
+#: src/components/BatchTrackList.vue
+msgid "%n selected"
+msgid_plural "%n selected"
+msgstr[0] "%n ausgewählt"
+msgstr[1] "%n ausgewählt"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "%n track"
+msgid_plural "%n tracks"
+msgstr[0] "%n Titel"
+msgstr[1] "%n Titel"
+
+#: src/components/BatchTrackList.vue
+msgid "Create or refresh a MusicCurator-managed .m3u8 playlist in {folder} with %n indexed audio file? Existing playlists not managed by MusicCurator are never overwritten."
+msgid_plural "Create or refresh a MusicCurator-managed .m3u8 playlist in {folder} with %n indexed audio files? Existing playlists not managed by MusicCurator are never overwritten."
+msgstr[0] "Eine von MusicCurator verwaltete .m3u8-Playlist im Ordner {folder} mit %n indexierten Audiodatei erstellen oder aktualisieren? Andere Playlists werden niemals überschrieben."
+msgstr[1] "Eine von MusicCurator verwaltete .m3u8-Playlist im Ordner {folder} mit %n indexierten Audiodateien erstellen oder aktualisieren? Andere Playlists werden niemals überschrieben."
+
+#: src/components/BatchTrackList.vue
+msgid "Folder playlist: %n direct audio file in {folder}."
+msgid_plural "Folder playlist: %n direct audio files in {folder}."
+msgstr[0] "Ordner-Playlist: %n direkte Audiodatei in {folder}."
+msgstr[1] "Ordner-Playlist: %n direkte Audiodateien in {folder}."
+
+#: src/components/BatchTrackList.vue
+msgid "Stopped after %n file: {error}"
+msgid_plural "Stopped after %n files: {error}"
+msgstr[0] "Nach %n Datei gestoppt: {error}"
+msgstr[1] "Nach %n Dateien gestoppt: {error}"
+
+#: src/App.vue
+msgid ".m3u / .m3u8 found"
+msgstr ".m3u / .m3u8 gefunden"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "{confidence}% confidence"
+msgstr "{confidence}% Übereinstimmung"
+
+#: src/components/BatchTrackList.vue
+msgid "{count} auto-selected"
+msgstr "{count} automatisch ausgewählt"
+
+#: src/components/BatchTrackList.vue
+msgid "{count} no match"
+msgstr "{count} ohne Treffer"
+
+#: src/components/BatchTrackList.vue
+msgid "{count} review"
+msgstr "{count} zu prüfen"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "{duration} ms"
+msgstr "{duration} ms"
+
+#: src/components/BatchTrackList.vue
+msgid "{processed} / {total} processed"
+msgstr "{processed} / {total} verarbeitet"
+
+#: lib/Controller/LibraryController.php
+msgid "A file already exists at the proposed destination."
+msgstr "Am vorgeschlagenen Ziel existiert bereits eine Datei."
+
+#: lib/Controller/LibraryController.php
+msgid "A file blocks the target folder %s."
+msgstr "Eine Datei blockiert den Zielordner %s."
+
+#: lib/Service/PlaylistService.php
+msgid "A folder already uses the requested playlist name."
+msgstr "Ein Ordner verwendet bereits den gewünschten Playlist-Namen."
+
+#: lib/Service/PlaylistService.php
+msgid "A playlist with this name already exists and is not managed by MusicCurator. It was left untouched."
+msgstr "Eine Playlist mit diesem Namen existiert bereits und wird nicht von MusicCurator verwaltet. Sie wurde nicht verändert."
+
+#: src/App.vue
+msgid "AcoustID client/API key"
+msgstr "AcoustID-Client-/API-Schlüssel"
+
+#: lib/Service/AcoustIdService.php
+msgid "AcoustID is configured, but fpcalc (Chromaprint) is not installed on the server."
+msgstr "AcoustID ist konfiguriert, aber fpcalc (Chromaprint) ist auf dem Server nicht installiert."
+
+#: lib/Service/AcoustIdService.php
+msgid "AcoustID returned an error response."
+msgstr "AcoustID hat eine Fehlerantwort geliefert."
+
+#: lib/Service/AcoustIdService.php
+msgid "AcoustID returned HTTP %d"
+msgstr "AcoustID hat HTTP %d zurückgegeben"
+
+#: src/App.vue
+msgid "AcoustID user key"
+msgstr "AcoustID-Nutzerschlüssel"
+
+#: src/App.vue
+msgid "Adds release, compilation and track-list candidates plus cover artwork when available."
+msgstr "Ergänzt Vorschläge für Veröffentlichungen, Sampler und Titellisten sowie verfügbare Cover."
+
+#: src/App.vue
+msgid "Adds track, artist and genre fallbacks plus album artwork when available."
+msgstr "Ergänzt alternative Titel-, Interpreten- und Genre-Vorschläge sowie verfügbare Albumcover."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "AI Advisor folder selection is limited to your configured music library."
+msgstr "Die Ordnerauswahl für den KI-Assistenten ist auf deine konfigurierte Musikbibliothek beschränkt."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "AI advisor settings saved."
+msgstr "Einstellungen des KI-Assistenten gespeichert."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "AI classification completed. This is advice only; no files were changed."
+msgstr "KI-Einordnung abgeschlossen. Dies ist nur eine Empfehlung; es wurden keine Dateien geändert."
+
+#: lib/Controller/AiController.php
+msgid "AI classification failed: %s"
+msgstr "KI-Einordnung fehlgeschlagen: %s"
+
+#: lib/Controller/AiController.php
+msgid "AI classification requires a folder path."
+msgstr "Die KI-Einordnung benötigt einen Ordnerpfad."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "AI provider"
+msgstr "KI-Anbieter"
+
+#: lib/Service/AiAdvisorService.php
+msgid "AI provider returned HTTP %d%s"
+msgstr "Der KI-Anbieter hat HTTP %d%s zurückgegeben"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "AI test folder reset to {folder}."
+msgstr "KI-Testordner auf {folder} zurückgesetzt."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "AI test folder set to {folder}."
+msgstr "KI-Testordner auf {folder} gesetzt."
+
+#: src/App.vue src/components/AiAdvisorPanel.vue
+msgid "Album"
+msgstr "Album"
+
+#: src/App.vue
+msgid "Album covers appear automatically when MusicCurator has a confident MusicBrainz release match. Provider lookups enrich the persistent index as you use the app."
+msgstr "Albumcover erscheinen automatisch, sobald MusicCurator eine verlässliche MusicBrainz-Veröffentlichung zugeordnet hat. Anbieterabfragen ergänzen den gespeicherten Index während der Nutzung."
+
+#: src/App.vue
+msgid "Albums"
+msgstr "Alben"
+
+#: src/App.vue
+msgid "Albums found in your tags"
+msgstr "Alben aus deinen Tags"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "API key"
+msgstr "API-Schlüssel"
+
+#: src/App.vue
+msgid "Artist"
+msgstr "Interpret"
+
+#: lib/Controller/ArtworkController.php
+msgid "Artwork not found."
+msgstr "Cover nicht gefunden."
+
+#: lib/Controller/ArtworkController.php
+msgid "Artwork provider is currently unavailable."
+msgstr "Der Cover-Anbieter ist derzeit nicht verfügbar."
+
+#: lib/Controller/ArtworkController.php
+msgid "Artwork provider returned an unexpected content type."
+msgstr "Der Cover-Anbieter hat einen unerwarteten Inhaltstyp geliefert."
+
+#: lib/Controller/ArtworkController.php
+msgid "Artwork URL is not allowed."
+msgstr "Die Cover-URL ist nicht erlaubt."
+
+#: src/components/BatchTrackList.vue
+msgid "Auto selected > {threshold}%"
+msgstr "Automatisch ausgewählt > {threshold}%"
+
+#: src/components/BatchTrackList.vue
+msgid "Batch metadata preview"
+msgstr "Metadaten-Sammelvorschau"
+
+#: src/components/BatchTrackList.vue
+msgid "Batch metadata preview controls"
+msgstr "Steuerung der Metadaten-Sammelvorschau"
+
+#: src/components/BatchTrackList.vue
+msgid "Batch metadata preview results"
+msgstr "Ergebnisse der Metadaten-Sammelvorschau"
+
+#: src/components/BatchTrackList.vue
+msgid "Batch review"
+msgstr "Sammelprüfung"
+
+#: src/components/BatchTrackList.vue
+msgid "Best result > {threshold}% is auto-selected for the preview."
+msgstr "Das beste Ergebnis mit > {threshold}% wird für die Vorschau automatisch ausgewählt."
+
+#: src/App.vue
+msgid "Browse"
+msgstr "Durchsuchen"
+
+#: src/App.vue src/components/AiAdvisorPanel.vue
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: src/App.vue
+msgid "Changes"
+msgstr "Änderungen"
+
+#: lib/Controller/SettingsController.php
+msgid "Choose a music folder before saving."
+msgstr "Wähle vor dem Speichern einen Musikordner aus."
+
+#: src/App.vue
+msgid "Choose a music folder first."
+msgstr "Wähle zuerst einen Musikordner aus."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Choose AI test folder"
+msgstr "KI-Testordner auswählen"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Choose an AI provider first."
+msgstr "Wähle zuerst einen KI-Anbieter aus."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Choose any folder inside your configured music library, or keep the automatic folder from the selected library track."
+msgstr "Wähle einen Ordner innerhalb deiner Musikbibliothek oder verwende den automatisch gewählten Ordner des ausgewählten Titels."
+
+#: lib/Controller/TagController.php
+msgid "Choose at least one metadata field to write."
+msgstr "Wähle mindestens ein Metadatenfeld zum Schreiben aus."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Choose folder"
+msgstr "Ordner auswählen"
+
+#: src/App.vue
+msgid "Choose music folder"
+msgstr "Musikordner auswählen"
+
+#: src/components/BatchTrackList.vue
+msgid "Choose several tracks and let MusicCurator check them sequentially. Searching is a preview; writing requires a separate confirmation below."
+msgstr "Wähle mehrere Titel aus, die MusicCurator nacheinander prüfen soll. Die Suche ist eine Vorschau; das Schreiben erfordert unten eine eigene Bestätigung."
+
+#: src/App.vue
+msgid "Choose your music folder and scan it once. After that MusicCurator loads the persistent index automatically whenever you open the app."
+msgstr "Wähle deinen Musikordner aus und scanne ihn einmal. Danach lädt MusicCurator den gespeicherten Index beim Öffnen der App automatisch."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Classify folder"
+msgstr "Ordner einordnen"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Classify music folders with an optional LLM"
+msgstr "Musikordner mit einem optionalen Sprachmodell einordnen"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Classifying…"
+msgstr "Wird eingeordnet…"
+
+#: src/components/BatchTrackList.vue
+msgid "Clear preview"
+msgstr "Vorschau leeren"
+
+#: src/components/BatchTrackList.vue
+msgid "Clear selection"
+msgstr "Auswahl aufheben"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Compilation"
+msgstr "Sampler"
+
+#: src/components/CredentialField.vue
+msgid "Configured — enter a new value to replace"
+msgstr "Gespeichert — zum Ersetzen einen neuen Wert eingeben"
+
+#: src/App.vue
+msgid "Configured library:"
+msgstr "Konfigurierte Bibliothek:"
+
+#: src/App.vue
+msgid "Configured path:"
+msgstr "Konfigurierter Pfad:"
+
+#: src/components/BatchTrackList.vue
+msgid "Configured providers returned no usable match."
+msgstr "Die konfigurierten Anbieter haben keinen brauchbaren Treffer geliefert."
+
+#: src/App.vue
+msgid "configured: {path}"
+msgstr "konfiguriert: {path}"
+
+#: lib/Service/AudioTagWriter.php
+msgid "Could not allocate temporary storage."
+msgstr "Temporärer Speicher konnte nicht zugewiesen werden."
+
+#: lib/Service/AudioTagWriter.php
+msgid "Could not copy the audio file to temporary storage."
+msgstr "Audiodatei konnte nicht in den temporären Speicher kopiert werden."
+
+#: lib/Service/AcoustIdService.php
+msgid "Could not create a temporary file for audio fingerprinting."
+msgstr "Temporäre Datei für den Audiofingerabdruck konnte nicht erstellt werden."
+
+#: lib/Service/AudioTagWriter.php
+msgid "Could not create a temporary input file."
+msgstr "Temporäre Eingabedatei konnte nicht erstellt werden."
+
+#: lib/Controller/CredentialController.php src/components/CredentialField.vue
+msgid "Could not delete the saved credential. Please try again."
+msgstr "Der gespeicherte Schlüssel konnte nicht gelöscht werden. Versuche es erneut."
+
+#: lib/Service/AcoustIdService.php
+msgid "Could not open the audio file for fingerprinting."
+msgstr "Audiodatei für die Fingerabdrucksuche konnte nicht geöffnet werden."
+
+#: lib/Service/AudioTagWriter.php
+msgid "Could not open the generated audio file."
+msgstr "Die erzeugte Audiodatei konnte nicht geöffnet werden."
+
+#: lib/Service/AudioTagWriter.php
+msgid "Could not open the Nextcloud file for reading."
+msgstr "Nextcloud-Datei konnte nicht zum Lesen geöffnet werden."
+
+#: lib/Service/AudioTagWriter.php
+msgid "Could not open the Nextcloud file for writing."
+msgstr "Nextcloud-Datei konnte nicht zum Schreiben geöffnet werden."
+
+#: lib/Service/AudioTagWriter.php
+msgid "Could not prepare temporary storage."
+msgstr "Temporärer Speicher konnte nicht vorbereitet werden."
+
+#: lib/Service/AudioTagWriter.php
+msgid "Could not start ffmpeg. Make sure ffmpeg is installed and available in the PHP-FPM PATH."
+msgstr "ffmpeg konnte nicht gestartet werden. Prüfe, ob ffmpeg installiert und im PATH von PHP-FPM verfügbar ist."
+
+#: lib/Service/AcoustIdService.php
+msgid "Could not start fpcalc."
+msgstr "fpcalc konnte nicht gestartet werden."
+
+#: lib/Service/AudioTagWriter.php
+msgid "Could not write the generated audio file back to Nextcloud."
+msgstr "Die erzeugte Audiodatei konnte nicht in Nextcloud zurückgeschrieben werden."
+
+#: src/components/BatchTrackList.vue
+msgid "Create / refresh folder .m3u8"
+msgstr "Ordner-Playlist (.m3u8) erstellen / aktualisieren"
+
+#: src/components/BatchTrackList.vue
+msgid "Creating playlist…"
+msgstr "Playlist wird erstellt…"
+
+#: src/App.vue
+msgid "Current file"
+msgstr "Aktuelle Datei"
+
+#: src/App.vue
+msgid "Current path"
+msgstr "Aktueller Pfad"
+
+#: src/components/BatchTrackList.vue
+msgid "Currently MP3 only. Title, artist, album, album artist, track number, year and a normalized genre can be written. Audio is stream-copied by ffmpeg without re-encoding, and MusicCurator stores rollback values for every changed field."
+msgstr "Derzeit nur MP3. Titel, Interpret, Album, Albuminterpret, Titelnummer, Jahr und ein vereinheitlichtes Genre können geschrieben werden. ffmpeg kopiert die Audiodaten ohne Neukodierung. MusicCurator speichert für jedes geänderte Feld Werte zum Rückgängigmachen."
+
+#: src/components/CredentialField.vue
+msgid "Delete {label}"
+msgstr "{label} löschen"
+
+#: src/components/CredentialField.vue
+msgid "Deleting…"
+msgstr "Wird gelöscht…"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Development build currently accepts localhost only."
+msgstr "Die Entwicklungsversion unterstützt derzeit nur localhost."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Disabled"
+msgstr "Deaktiviert"
+
+#: lib/Service/MetadataSearchService.php
+msgid "Disabled in personal settings."
+msgstr "In den persönlichen Einstellungen deaktiviert."
+
+#: src/App.vue
+msgid "Discogs personal token"
+msgstr "Persönlicher Discogs-Token"
+
+#: lib/Service/DiscogsService.php
+msgid "Discogs returned HTTP %d"
+msgstr "Discogs hat HTTP %d zurückgegeben"
+
+#: lib/Service/MusicPlaylistService.php
+msgid "Enable Nextcloud Music and scan your music collection there first."
+msgstr "Aktiviere Nextcloud Music und scanne dort zuerst deine Musiksammlung."
+
+#: src/components/BatchTrackList.vue
+msgid "Error"
+msgstr "Fehler"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Experimental AI advisor"
+msgstr "Experimenteller KI-Assistent"
+
+#: lib/Controller/TagController.php lib/Service/AudioTagWriter.php src/components/BatchTrackList.vue
+msgid "Experimental tag writing currently supports MP3 files only."
+msgstr "Das experimentelle Schreiben von Tags unterstützt derzeit nur MP3-Dateien."
+
+#: src/components/BatchTrackList.vue
+msgid "Experimental write mode:"
+msgstr "Experimenteller Schreibmodus:"
+
+#: lib/Service/AudioTagWriter.php
+msgid "ffmpeg metadata write failed%s"
+msgstr "Schreiben der Metadaten mit ffmpeg fehlgeschlagen%s"
+
+#: lib/Service/AudioTagWriter.php
+msgid "ffmpeg produced an empty output file."
+msgstr "ffmpeg hat eine leere Ausgabedatei erzeugt."
+
+#: src/App.vue
+msgid "Field"
+msgstr "Feld"
+
+#: src/App.vue
+msgid "File location will be preserved."
+msgstr "Der Speicherort bleibt erhalten."
+
+#: src/App.vue
+msgid "File moved"
+msgstr "Datei verschoben"
+
+#: src/App.vue
+msgid "File moved through the Nextcloud Files API."
+msgstr "Datei über die Nextcloud-Dateischnittstelle verschoben."
+
+#: lib/Controller/FolderController.php
+msgid "Folder not found: %s"
+msgstr "Ordner nicht gefunden: %s"
+
+#: lib/Controller/LibraryController.php
+msgid "Folder not found."
+msgstr "Ordner nicht gefunden."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Folder to test"
+msgstr "Testordner"
+
+#: lib/Service/AiAdvisorService.php
+msgid "For now, Ollama must run on the same server (localhost/127.0.0.1)."
+msgstr "Ollama muss derzeit auf demselben Server laufen (localhost/127.0.0.1)."
+
+#: lib/Service/AcoustIdService.php
+msgid "fpcalc did not return a usable Chromaprint fingerprint."
+msgstr "fpcalc hat keinen brauchbaren Chromaprint-Fingerabdruck geliefert."
+
+#: lib/Service/AcoustIdService.php
+msgid "fpcalc failed: %s"
+msgstr "fpcalc fehlgeschlagen: %s"
+
+#: lib/Service/AcoustIdService.php
+msgid "fpcalc returned invalid JSON."
+msgstr "fpcalc hat ungültiges JSON geliefert."
+
+#: src/App.vue
+msgid "from indexed tags"
+msgstr "aus indexierten Tags"
+
+#: src/App.vue
+msgid "Genre"
+msgstr "Genre"
+
+#: src/components/BatchTrackList.vue
+msgid "Genre: {genre}"
+msgstr "Genre: {genre}"
+
+#: src/components/BatchTrackList.vue
+msgid "Genre: MusicBrainz first, Last.fm track/artist tags as fallback; Discogs is optional."
+msgstr "Genre: zuerst MusicBrainz, alternativ Last.fm-Titel-/Interpreten-Tags; Discogs ist optional."
+
+#: src/components/BatchTrackList.vue
+msgid "Genre: no reliable suggestion"
+msgstr "Genre: kein verlässlicher Vorschlag"
+
+#: src/components/BatchTrackList.vue
+msgid "High confidence"
+msgstr "Hohe Übereinstimmung"
+
+#: src/components/BatchTrackList.vue
+msgid "High-confidence matches are selected automatically. Review items stay manual and are never included in bulk writes."
+msgstr "Treffer mit hoher Übereinstimmung werden automatisch ausgewählt. Zu prüfende Treffer bleiben manuell und werden beim Sammelschreiben nie berücksichtigt."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "HTTP {status}"
+msgstr "HTTP {status}"
+
+#: src/App.vue
+msgid "Index your library first."
+msgstr "Indexiere zuerst deine Bibliothek."
+
+#: src/App.vue
+msgid "indexed {date}"
+msgstr "indexiert am {date}"
+
+#: src/App.vue
+msgid "Indexed path:"
+msgstr "Indexierter Pfad:"
+
+#: lib/Controller/ArtworkController.php
+msgid "Invalid MusicBrainz release id."
+msgstr "Ungültige MusicBrainz-Veröffentlichungs-ID."
+
+#: lib/Service/AiAdvisorService.php
+msgid "Invalid Ollama base URL."
+msgstr "Ungültige Ollama-Basis-URL."
+
+#: lib/Service/MusicPlaylistService.php
+msgid "Invalid playlist path."
+msgstr "Ungültiger Playlist-Pfad."
+
+#: src/App.vue
+msgid "Keep the file exactly where it is."
+msgstr "Die Datei bleibt genau an ihrem bisherigen Speicherort."
+
+#: src/App.vue
+msgid "Last index refresh:"
+msgstr "Letzte Indexaktualisierung:"
+
+#: src/App.vue
+msgid "Last.fm API key"
+msgstr "Last.fm-API-Schlüssel"
+
+#: lib/Service/LastFmService.php
+msgid "Last.fm error: %s"
+msgstr "Last.fm-Fehler: %s"
+
+#: lib/Service/LastFmService.php
+msgid "Last.fm returned HTTP %d"
+msgstr "Last.fm hat HTTP %d zurückgegeben"
+
+#: src/App.vue
+msgid "Library"
+msgstr "Bibliothek"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Loading folders…"
+msgstr "Ordner werden geladen…"
+
+#: src/components/BatchTrackList.vue
+msgid "Lookup failed"
+msgstr "Abfrage fehlgeschlagen"
+
+#: src/App.vue src/components/BatchTrackList.vue
+msgid "Metadata"
+msgstr "Metadaten"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Metadata + organize"
+msgstr "Metadaten + Sortieren"
+
+#: src/App.vue
+msgid "Metadata + organize file"
+msgstr "Metadaten + Datei sortieren"
+
+#: src/App.vue
+msgid "Metadata lookup and file moves stay behind a preview. MP3 tag writing, including genre, is available in the Batch review with confirmation and rollback values."
+msgstr "Metadatensuche und Dateiverschiebungen zeigen zunächst eine Vorschau. Das Schreiben von MP3-Tags einschließlich Genre ist in der Sammelprüfung mit Bestätigung und Rückgängig-Funktion verfügbar."
+
+#: src/components/BatchTrackList.vue
+msgid "Metadata lookup failed with HTTP {status}"
+msgstr "Metadatenabfrage mit HTTP {status} fehlgeschlagen"
+
+#: lib/Controller/ReadController.php
+msgid "Metadata lookup failed: %s"
+msgstr "Metadatenabfrage fehlgeschlagen: %s"
+
+#: src/components/BatchTrackList.vue
+msgid "Metadata lookup returned an invalid response. Reload the app and check the server logs."
+msgstr "Die Metadatenabfrage hat eine ungültige Antwort geliefert. Lade die App neu und prüfe die Serverprotokolle."
+
+#: src/App.vue src/components/AiAdvisorPanel.vue
+msgid "Metadata only"
+msgstr "Nur Metadaten"
+
+#: src/App.vue
+msgid "Metadata providers"
+msgstr "Metadatenanbieter"
+
+#: src/components/BatchTrackList.vue
+msgid "Metadata saved in {file}. Run Scan library to refresh the displayed current tags."
+msgstr "Metadaten in {file} gespeichert. Aktualisiere den Bibliotheksindex, um die aktuellen Tags anzuzeigen."
+
+#: src/App.vue
+msgid "Metadata suggestion"
+msgstr "Metadatenvorschlag"
+
+#: lib/Service/AudioTagWriter.php
+msgid "Metadata write failed and restoring the original file also failed: %s"
+msgstr "Schreiben der Metadaten und Wiederherstellen der Originaldatei fehlgeschlagen: %s"
+
+#: src/components/BatchTrackList.vue
+msgid "Metadata write failed with HTTP {status}"
+msgstr "Schreiben der Metadaten mit HTTP {status} fehlgeschlagen"
+
+#: lib/Controller/TagController.php
+msgid "Metadata write failed: %s"
+msgstr "Schreiben der Metadaten fehlgeschlagen: %s"
+
+#: src/App.vue
+msgid "missing title or artist"
+msgstr "Titel oder Interpret fehlt"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Mistral"
+msgstr "Mistral"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Mistral API key"
+msgstr "Mistral-API-Schlüssel"
+
+#: lib/Service/AiAdvisorService.php
+msgid "Mistral is selected but no API key is configured."
+msgstr "Mistral ist ausgewählt, aber es ist kein API-Schlüssel konfiguriert."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Mistral model"
+msgstr "Mistral-Modell"
+
+#: lib/Service/AiAdvisorService.php
+msgid "Mistral returned an invalid classification."
+msgstr "Mistral hat eine ungültige Einordnung geliefert."
+
+#: lib/Service/AiAdvisorService.php
+msgid "Mistral returned no classification text."
+msgstr "Mistral hat keinen Einordnungstext geliefert."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Mixed"
+msgstr "Gemischt"
+
+#: lib/Controller/LibraryController.php
+msgid "Move failed: %s"
+msgstr "Verschieben fehlgeschlagen: %s"
+
+#: src/App.vue
+msgid "Move file"
+msgstr "Datei verschieben"
+
+#: src/App.vue
+msgid "Move this file?\n\n{source}\n→\n{target}"
+msgstr "Diese Datei verschieben?\n\n{source}\n→\n{target}"
+
+#: src/App.vue
+msgid "Music folder set to {path}. Scan once to create its persistent index."
+msgstr "Musikordner auf {path} gesetzt. Scanne ihn einmal, um den gespeicherten Index anzulegen."
+
+#: src/App.vue
+msgid "Music library"
+msgstr "Musikbibliothek"
+
+#: src/App.vue
+msgid "Music library manager"
+msgstr "Musikbibliothek verwalten"
+
+#: lib/Controller/PlaylistController.php
+msgid "Music playlist publication failed: %s"
+msgstr "Bereitstellen der Musik-Playlist fehlgeschlagen: %s"
+
+#: lib/Controller/LibraryController.php
+msgid "MusicBrainz is disabled in your personal settings."
+msgstr "MusicBrainz ist in deinen persönlichen Einstellungen deaktiviert."
+
+#: lib/Controller/LibraryController.php
+msgid "MusicBrainz lookup failed: %s"
+msgstr "MusicBrainz-Abfrage fehlgeschlagen: %s"
+
+#: src/App.vue
+msgid "MusicBrainz needs no personal API key. Discogs, Last.fm and AcoustID become active automatically after their credentials are saved. Provider failures do not block results from the others. Empty fields keep saved credentials; use the delete button to remove one. Deletion removes the saved copy from MusicCurator; revoke it at the provider to invalidate it everywhere."
+msgstr "MusicBrainz benötigt keinen persönlichen API-Schlüssel. Discogs, Last.fm und AcoustID werden nach dem Speichern ihrer Zugangsdaten automatisch aktiv. Fehler eines Anbieters blockieren die anderen nicht. Leere Felder behalten gespeicherte Schlüssel bei; verwende zum Entfernen den Löschknopf. Gelöscht wird die gespeicherte Kopie in MusicCurator. Um den Schlüssel überall ungültig zu machen, widerrufe ihn beim Anbieter."
+
+#: lib/Service/MusicBrainzService.php
+msgid "MusicBrainz returned HTTP %d%s"
+msgstr "MusicBrainz hat HTTP %d%s zurückgegeben"
+
+#: src/App.vue
+msgid "MusicCurator detects .m3u and .m3u8 files without altering them. If indexed playlist tracks already have MusicBrainz matches, their covers form a small playlist mosaic."
+msgstr "MusicCurator erkennt .m3u- und .m3u8-Dateien, ohne sie zu verändern. Haben indexierte Playlist-Titel bereits MusicBrainz-Zuordnungen, bilden ihre Cover ein kleines Playlist-Mosaik."
+
+#: src/App.vue
+msgid "MusicCurator mobile navigation"
+msgstr "Mobile MusicCurator-Navigation"
+
+#: src/App.vue
+msgid "MusicCurator navigation"
+msgstr "MusicCurator-Navigation"
+
+#: src/App.vue
+msgid "MusicCurator now loads the last indexed library instantly from its database. Refresh the index only when files changed, then compare and write metadata with your configured providers."
+msgstr "MusicCurator lädt die zuletzt indexierte Bibliothek sofort aus der Datenbank. Aktualisiere den Index, wenn Dateien geändert wurden, und vergleiche und schreibe anschließend Metadaten mit deinen konfigurierten Anbietern."
+
+#: src/components/BatchTrackList.vue
+msgid "Needs review"
+msgstr "Prüfung erforderlich"
+
+#: src/App.vue src/components/BatchTrackList.vue
+msgid "Needs tags"
+msgstr "Tags fehlen"
+
+#: src/App.vue
+msgid "Nextcloud files"
+msgstr "Nextcloud-Dateien"
+
+#: src/App.vue
+msgid "Nextcloud music folder"
+msgstr "Nextcloud-Musikordner"
+
+#: lib/Service/AiAdvisorService.php
+msgid "No AI advisor provider is enabled in your personal settings."
+msgstr "In deinen persönlichen Einstellungen ist kein KI-Anbieter aktiviert."
+
+#: src/components/BatchTrackList.vue
+msgid "No album"
+msgstr "Kein Album"
+
+#: src/App.vue
+msgid "No album tags found in the indexed tracks. Albums are grouped from saved album tags, not folder names. Review and save album metadata, or scan the library after changing tags outside MusicCurator. Tag reading currently supports MP3 and FLAC."
+msgstr "Keine Album-Tags in den indexierten Titeln gefunden. Alben werden anhand gespeicherter Album-Tags gruppiert, nicht anhand von Ordnernamen. Prüfe und speichere Album-Metadaten oder scanne die Bibliothek nach externen Tag-Änderungen erneut. Das Lesen von Tags unterstützt derzeit MP3 und FLAC."
+
+#: lib/Service/MetadataSearchService.php
+msgid "No API key configured."
+msgstr "Kein API-Schlüssel konfiguriert."
+
+#: lib/Controller/AiController.php
+msgid "No audio files were found directly in this folder."
+msgstr "Direkt in diesem Ordner wurden keine Audiodateien gefunden."
+
+#: lib/Controller/AiController.php lib/Controller/CredentialController.php lib/Controller/FolderController.php lib/Controller/LibraryController.php lib/Controller/PlaylistController.php lib/Controller/ReadController.php lib/Controller/ScanController.php lib/Controller/SettingsController.php lib/Controller/TagController.php
+msgid "No authenticated Nextcloud user."
+msgstr "Kein angemeldeter Nextcloud-Nutzer."
+
+#: src/components/BatchTrackList.vue
+msgid "No candidate found"
+msgstr "Kein Vorschlag gefunden"
+
+#: lib/Service/MetadataSearchService.php
+msgid "No client/API key configured."
+msgstr "Kein Client-/API-Schlüssel konfiguriert."
+
+#: lib/Service/AiAdvisorService.php
+msgid "No explanation returned."
+msgstr "Keine Erklärung erhalten."
+
+#: src/App.vue
+msgid "No files match the current filter."
+msgstr "Keine Dateien entsprechen dem aktuellen Filter."
+
+#: src/components/BatchTrackList.vue
+msgid "No match"
+msgstr "Kein Treffer"
+
+#: src/App.vue
+msgid "No metadata candidates were found for {track}. Check the provider status below."
+msgstr "Keine Metadatenvorschläge für {track} gefunden. Prüfe unten den Anbieterstatus."
+
+#: lib/Service/AudioTagWriter.php
+msgid "No metadata fields were selected for writing."
+msgstr "Es wurden keine Metadatenfelder zum Schreiben ausgewählt."
+
+#: src/composables/useBatchMetadata.ts
+msgid "No metadata provider is enabled and configured."
+msgstr "Kein Metadatenanbieter ist aktiviert und konfiguriert."
+
+#: lib/Controller/AiController.php lib/Controller/ReadController.php lib/Controller/TagController.php lib/Service/PlaylistService.php
+msgid "No music folder is configured."
+msgstr "Kein Musikordner konfiguriert."
+
+#: lib/Controller/ScanController.php
+msgid "No music folder is configured. Choose a music folder first."
+msgstr "Kein Musikordner konfiguriert. Wähle zuerst einen Musikordner aus."
+
+#: src/App.vue
+msgid "No MusicCurator file moves yet."
+msgstr "Noch keine Dateien mit MusicCurator verschoben."
+
+#: lib/Service/MetadataSearchService.php
+msgid "No personal token configured."
+msgstr "Kein persönlicher Token konfiguriert."
+
+#: src/App.vue
+msgid "No playlist files found in the selected library."
+msgstr "Keine Playlist-Dateien in der ausgewählten Bibliothek gefunden."
+
+#: src/App.vue
+msgid "no provider configured"
+msgstr "kein Anbieter konfiguriert"
+
+#: src/App.vue
+msgid "No subfolders here. You can still select this folder."
+msgstr "Keine Unterordner vorhanden. Du kannst diesen Ordner trotzdem auswählen."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "No subfolders here. You can still use this folder."
+msgstr "Keine Unterordner vorhanden. Du kannst diesen Ordner trotzdem verwenden."
+
+#: src/App.vue
+msgid "none"
+msgstr "keiner"
+
+#: src/components/BatchTrackList.vue
+msgid "none configured"
+msgstr "keine konfiguriert"
+
+#: src/App.vue src/components/BatchTrackList.vue
+msgid "Not configured"
+msgstr "Nicht konfiguriert"
+
+#: src/components/BatchTrackList.vue
+msgid "Not selected automatically"
+msgstr "Nicht automatisch ausgewählt"
+
+#: src/App.vue
+msgid "Nothing to review."
+msgstr "Nichts zu prüfen."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Ollama (local)"
+msgstr "Ollama (lokal)"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Ollama API base URL"
+msgstr "Ollama-API-Basis-URL"
+
+#: lib/Service/AiAdvisorService.php
+msgid "Ollama is selected but no model name is configured."
+msgstr "Ollama ist ausgewählt, aber es ist kein Modellname konfiguriert."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Ollama model"
+msgstr "Ollama-Modell"
+
+#: lib/Service/AiAdvisorService.php
+msgid "Ollama returned an invalid classification."
+msgstr "Ollama hat eine ungültige Einordnung geliefert."
+
+#: lib/Service/AiAdvisorService.php
+msgid "Ollama returned no classification text."
+msgstr "Ollama hat keinen Einordnungstext geliefert."
+
+#: src/App.vue
+msgid "Only items needing attention"
+msgstr "Nur Einträge mit Handlungsbedarf"
+
+#: lib/Service/MusicPlaylistService.php
+msgid "Only MusicCurator-managed M3U8 playlists can be published."
+msgstr "Nur von MusicCurator verwaltete M3U8-Playlists können bereitgestellt werden."
+
+#: src/App.vue
+msgid "Only real file operations performed by MusicCurator are listed here. Batch previews never appear as changes."
+msgstr "Hier werden nur tatsächliche Dateioperationen von MusicCurator aufgeführt. Sammelvorschauen erscheinen nie als Änderungen."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "OpenAI"
+msgstr "OpenAI"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "OpenAI API key"
+msgstr "OpenAI-API-Schlüssel"
+
+#: lib/Service/AiAdvisorService.php
+msgid "OpenAI is selected but no API key is configured."
+msgstr "OpenAI ist ausgewählt, aber es ist kein API-Schlüssel konfiguriert."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "OpenAI model"
+msgstr "OpenAI-Modell"
+
+#: lib/Service/AiAdvisorService.php
+msgid "OpenAI returned an invalid classification."
+msgstr "OpenAI hat eine ungültige Einordnung geliefert."
+
+#: lib/Service/AiAdvisorService.php
+msgid "OpenAI returned no structured classification text."
+msgstr "OpenAI hat keinen strukturierten Einordnungstext geliefert."
+
+#: src/components/CredentialField.vue
+msgid "Optional"
+msgstr "Optional"
+
+#: lib/Controller/AiController.php lib/Controller/FolderController.php lib/Controller/LibraryController.php lib/Controller/ReadController.php lib/Controller/ScanController.php lib/Controller/SettingsController.php lib/Controller/TagController.php lib/Service/PlaylistService.php
+msgid "Parent path segments are not allowed."
+msgstr "Übergeordnete Pfadsegmente sind nicht erlaubt."
+
+#: lib/Controller/FolderController.php lib/Controller/LibraryController.php
+msgid "Path is not a folder."
+msgstr "Der Pfad ist kein Ordner."
+
+#: src/App.vue
+msgid "Personal MusicCurator settings saved."
+msgstr "Persönliche MusicCurator-Einstellungen gespeichert."
+
+#: src/App.vue
+msgid "Personal settings"
+msgstr "Persönliche Einstellungen"
+
+#: lib/Service/AudioTagWriter.php
+msgid "PHP proc_open is unavailable, so ffmpeg cannot be started."
+msgstr "PHP proc_open ist nicht verfügbar; ffmpeg kann nicht gestartet werden."
+
+#: src/components/AiAdvisorPanel.vue src/components/BatchTrackList.vue
+msgid "Playlist"
+msgstr "Playlist"
+
+#: src/components/BatchTrackList.vue
+msgid "Playlist creation failed with HTTP {status}"
+msgstr "Erstellen der Playlist mit HTTP {status} fehlgeschlagen"
+
+#: lib/Controller/PlaylistController.php
+msgid "Playlist creation failed: %s"
+msgstr "Erstellen der Playlist fehlgeschlagen: %s"
+
+#: src/App.vue
+msgid "Playlist files"
+msgstr "Playlist-Dateien"
+
+#: lib/Service/MusicPlaylistService.php
+msgid "Playlist is outside the configured music library."
+msgstr "Die Playlist liegt außerhalb der konfigurierten Musikbibliothek."
+
+#: lib/Service/MusicPlaylistService.php
+msgid "Playlist published in Nextcloud Music. Refresh playlists in Amperfy or play:Sub."
+msgstr "Playlist in Nextcloud Music bereitgestellt. Aktualisiere die Playlists in Amperfy oder play:Sub."
+
+#: src/App.vue
+msgid "Playlist-like folder detected — keeping the file in place is the safe default."
+msgstr "Playlist-ähnlicher Ordner erkannt — die Datei bleibt standardmäßig an ihrem Speicherort."
+
+#: src/App.vue
+msgid "Playlists"
+msgstr "Playlists"
+
+#: src/App.vue
+msgid "Preview a move into an artist/album hierarchy."
+msgstr "Vorschau einer Verschiebung in eine Interpreten-/Album-Ordnerstruktur."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Preview only"
+msgstr "Nur Vorschau"
+
+#: src/App.vue
+msgid "Proposed path"
+msgstr "Vorgeschlagener Pfad"
+
+#: src/App.vue src/components/BatchTrackList.vue src/composables/useBatchMetadata.ts
+msgid "Provider unavailable"
+msgstr "Anbieter nicht verfügbar"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Provider:"
+msgstr "Anbieter:"
+
+#: src/components/BatchTrackList.vue
+msgid "Providers: {providers}"
+msgstr "Anbieter: {providers}"
+
+#: src/App.vue
+msgid "Publish in Nextcloud Music"
+msgstr "In Nextcloud Music bereitstellen"
+
+#: src/App.vue
+msgid "Publishing…"
+msgstr "Wird bereitgestellt…"
+
+#: src/components/BatchTrackList.vue
+msgid "Queued"
+msgstr "Wartend"
+
+#: src/App.vue
+msgid "Ready to index"
+msgstr "Bereit zum Indexieren"
+
+#: src/App.vue
+msgid "Recent file operations"
+msgstr "Letzte Dateioperationen"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Recommendation:"
+msgstr "Empfehlung:"
+
+#: src/App.vue
+msgid "Refresh library index"
+msgstr "Bibliotheksindex aktualisieren"
+
+#: src/App.vue
+msgid "Refresh preview"
+msgstr "Vorschau aktualisieren"
+
+#: src/App.vue
+msgid "Request failed with HTTP {status}"
+msgstr "Anfrage mit HTTP {status} fehlgeschlagen"
+
+#: src/App.vue
+msgid "Reserved for future fingerprint submissions; not required for lookup."
+msgstr "Für zukünftige Fingerabdruck-Übermittlungen vorgesehen; für die Suche nicht erforderlich."
+
+#: src/components/BatchTrackList.vue
+msgid "Rollback record stored"
+msgstr "Werte zum Rückgängigmachen gespeichert"
+
+#: src/App.vue
+msgid "Safe workflow:"
+msgstr "Sicherer Ablauf:"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Save AI settings"
+msgstr "KI-Einstellungen speichern"
+
+#: src/App.vue
+msgid "Save folder"
+msgstr "Ordner speichern"
+
+#: src/App.vue
+msgid "Save personal settings"
+msgstr "Persönliche Einstellungen speichern"
+
+#: src/components/CredentialField.vue
+msgid "Saved credential deleted from MusicCurator."
+msgstr "Gespeicherter Schlüssel aus MusicCurator gelöscht."
+
+#: src/components/BatchTrackList.vue
+msgid "Saved to MP3"
+msgstr "In MP3 gespeichert"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Saving…"
+msgstr "Wird gespeichert…"
+
+#: src/App.vue
+msgid "Scan library"
+msgstr "Bibliothek scannen"
+
+#: lib/Service/MusicPlaylistService.php
+msgid "Scan the listed files in Nextcloud Music, then publish again. The server playlist was left unchanged."
+msgstr "Scanne die aufgeführten Dateien in Nextcloud Music und stelle die Playlist anschließend erneut bereit. Die Server-Playlist wurde nicht verändert."
+
+#: src/App.vue
+msgid "Search metadata"
+msgstr "Metadaten suchen"
+
+#: src/components/BatchTrackList.vue
+msgid "Search metadata for selected"
+msgstr "Metadaten für Auswahl suchen"
+
+#: src/App.vue src/components/BatchTrackList.vue
+msgid "Searching…"
+msgstr "Wird gesucht…"
+
+#: src/components/BatchTrackList.vue
+msgid "Select {track} for batch preview"
+msgstr "{track} für Sammelvorschau auswählen"
+
+#: src/components/BatchTrackList.vue
+msgid "Select all shown"
+msgstr "Alle angezeigten auswählen"
+
+#: src/components/BatchTrackList.vue
+msgid "Select current album"
+msgstr "Aktuelles Album auswählen"
+
+#: src/components/BatchTrackList.vue
+msgid "Select current folder"
+msgstr "Aktuellen Ordner auswählen"
+
+#: src/components/BatchTrackList.vue
+msgid "Select for batch preview"
+msgstr "Für Sammelvorschau auswählen"
+
+#: lib/Controller/LibraryController.php lib/Controller/ReadController.php lib/Controller/TagController.php
+msgid "Selected path is not a file."
+msgstr "Der ausgewählte Pfad ist keine Datei."
+
+#: src/App.vue
+msgid "Selected track"
+msgstr "Ausgewählter Titel"
+
+#: src/App.vue
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: src/components/BatchTrackList.vue
+msgid "Show {count} more"
+msgstr "{count} weitere anzeigen"
+
+#: src/App.vue
+msgid "Show {count} more albums"
+msgstr "{count} weitere Alben anzeigen"
+
+#: src/App.vue
+msgid "Showing {shown} of {total} albums."
+msgstr "{shown} von {total} Alben werden angezeigt."
+
+#: src/App.vue
+msgid "Showing {shown} of {total} for a faster interface."
+msgstr "Für eine schnellere Oberfläche werden {shown} von {total} angezeigt."
+
+#: lib/Controller/LibraryController.php
+msgid "Source is not a file."
+msgstr "Die Quelle ist keine Datei."
+
+#: src/components/BatchTrackList.vue
+msgid "Stop after current track"
+msgstr "Nach aktuellem Titel stoppen"
+
+#: lib/Controller/LibraryController.php
+msgid "The configured library path is not a folder."
+msgstr "Der konfigurierte Bibliothekspfad ist kein Ordner."
+
+#: lib/Controller/ScanController.php
+msgid "The configured music folder \"%s\" does not exist or cannot be accessed. Choose the folder again."
+msgstr "Der konfigurierte Musikordner \"%s\" existiert nicht oder ist nicht zugänglich. Wähle den Ordner erneut aus."
+
+#: lib/Controller/LibraryController.php
+msgid "The configured music folder no longer exists."
+msgstr "Der konfigurierte Musikordner existiert nicht mehr."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "The default favors lower-cost classification."
+msgstr "Die Voreinstellung bevorzugt eine kostengünstige Einordnung."
+
+#: src/App.vue
+msgid "The displayed results were indexed from {indexedPath}, while your configured library is now {configuredPath}. Refresh the library index to update the view."
+msgstr "Die angezeigten Ergebnisse wurden aus {indexedPath} indexiert; deine konfigurierte Bibliothek ist jetzt {configuredPath}. Aktualisiere den Bibliotheksindex, um die Ansicht anzupassen."
+
+#: lib/Controller/TagController.php
+msgid "The file from the last metadata write no longer exists."
+msgstr "Die Datei der letzten Metadatenänderung existiert nicht mehr."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "The first experiment sends filenames, existing tags and folder statistics only. Audio files are never uploaded to a cloud AI provider."
+msgstr "Das erste Experiment übermittelt nur Dateinamen, vorhandene Tags und Ordnerstatistiken. Audiodateien werden niemals zu einem Cloud-KI-Anbieter hochgeladen."
+
+#: src/App.vue
+msgid "The index stopped after 5,000 audio files for this development build."
+msgstr "Der Index wurde in dieser Entwicklungsversion nach 5.000 Audiodateien gestoppt."
+
+#: lib/Service/MusicPlaylistService.php
+msgid "The linked Music playlist is no longer managed by MusicCurator."
+msgstr "Die verknüpfte Music-Playlist wird nicht mehr von MusicCurator verwaltet."
+
+#: lib/Service/AcoustIdService.php
+msgid "The PHP proc_open function is disabled; AcoustID fingerprinting cannot run."
+msgstr "Die PHP-Funktion proc_open ist deaktiviert; die AcoustID-Fingerabdrucksuche kann nicht ausgeführt werden."
+
+#: lib/Controller/AiController.php
+msgid "The requested folder is outside the configured music library."
+msgstr "Der angeforderte Ordner liegt außerhalb der konfigurierten Musikbibliothek."
+
+#: lib/Controller/ReadController.php
+msgid "The requested path \"%s\" is outside the configured music library \"%s\"."
+msgstr "Der angeforderte Pfad \"%s\" liegt außerhalb der konfigurierten Musikbibliothek \"%s\"."
+
+#: lib/Controller/LibraryController.php lib/Controller/TagController.php
+msgid "The requested path is outside the configured music library."
+msgstr "Der angeforderte Pfad liegt außerhalb der konfigurierten Musikbibliothek."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "The selected AI provider is not fully configured."
+msgstr "Der ausgewählte KI-Anbieter ist nicht vollständig konfiguriert."
+
+#: lib/Service/PlaylistService.php
+msgid "The selected folder is outside the configured music library."
+msgstr "Der ausgewählte Ordner liegt außerhalb der konfigurierten Musikbibliothek."
+
+#: src/App.vue
+msgid "The selected folder is your Nextcloud root. This may scan thousands of files and take a while. Continue?"
+msgstr "Der ausgewählte Ordner ist dein Nextcloud-Hauptordner. Dadurch können Tausende Dateien gescannt werden, was eine Weile dauern kann. Fortfahren?"
+
+#: lib/Controller/LibraryController.php lib/Controller/ScanController.php lib/Controller/SettingsController.php
+msgid "The selected library path is not a folder."
+msgstr "Der ausgewählte Bibliothekspfad ist kein Ordner."
+
+#: lib/Controller/SettingsController.php
+msgid "The selected music folder \"%s\" does not exist in your Nextcloud files."
+msgstr "Der ausgewählte Musikordner \"%s\" existiert nicht in deinen Nextcloud-Dateien."
+
+#: lib/Controller/LibraryController.php
+msgid "The selected music folder does not exist in your Nextcloud files."
+msgstr "Der ausgewählte Musikordner existiert nicht in deinen Nextcloud-Dateien."
+
+#: lib/Service/PlaylistService.php
+msgid "The selected path is not a folder."
+msgstr "Der ausgewählte Pfad ist kein Ordner."
+
+#: lib/Controller/TagController.php
+msgid "The stored rollback record contains no tag fields."
+msgstr "Der gespeicherte Rückgängig-Datensatz enthält keine Tag-Felder."
+
+#: lib/Controller/TagController.php
+msgid "There is no metadata write to undo."
+msgstr "Es gibt keine Metadatenänderung zum Rückgängigmachen."
+
+#: src/App.vue
+msgid "These settings belong to the currently signed-in Nextcloud user."
+msgstr "Diese Einstellungen gehören zum aktuell angemeldeten Nextcloud-Nutzer."
+
+#: lib/Service/PlaylistService.php
+msgid "This folder contains no supported audio files."
+msgstr "Dieser Ordner enthält keine unterstützten Audiodateien."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Time:"
+msgstr "Dauer:"
+
+#: src/App.vue
+msgid "Title"
+msgstr "Titel"
+
+#: src/App.vue
+msgid "Track"
+msgstr "Titelnummer"
+
+#: src/App.vue
+msgid "Tracks"
+msgstr "Titel"
+
+#: lib/Controller/TagController.php
+msgid "Undo failed: %s"
+msgstr "Rückgängigmachen fehlgeschlagen: %s"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Unknown"
+msgstr "Unbekannt"
+
+#: lib/Controller/AiController.php
+msgid "Unknown AI provider."
+msgstr "Unbekannter KI-Anbieter."
+
+#: src/App.vue src/components/BatchTrackList.vue
+msgid "Unknown artist"
+msgstr "Unbekannter Interpret"
+
+#: src/App.vue
+msgid "Unknown Artist"
+msgstr "Unbekannter Interpret"
+
+#: lib/Controller/CredentialController.php
+msgid "Unknown provider credential."
+msgstr "Unbekannter Anbieterschlüssel."
+
+#: src/App.vue
+msgid "Unknown release"
+msgstr "Unbekannte Veröffentlichung"
+
+#: lib/Service/MusicPlaylistService.php
+msgid "Unsupported playlist entry"
+msgstr "Nicht unterstützter Playlist-Eintrag"
+
+#: src/App.vue src/components/AiAdvisorPanel.vue
+msgid "Up"
+msgstr "Übergeordneter Ordner"
+
+#: src/App.vue
+msgid "Use"
+msgstr "Verwenden"
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Use a model that is already installed in your local Ollama instance."
+msgstr "Verwende ein Modell, das bereits in deiner lokalen Ollama-Instanz installiert ist."
+
+#: src/components/AiAdvisorPanel.vue
+msgid "Use automatic folder"
+msgstr "Automatischen Ordner verwenden"
+
+#: src/App.vue
+msgid "Use MusicBrainz"
+msgstr "MusicBrainz verwenden"
+
+#: src/App.vue
+msgid "Use the Batch review to write approved MP3 metadata without moving the file."
+msgstr "Verwende die Sammelprüfung, um bestätigte MP3-Metadaten zu schreiben, ohne die Datei zu verschieben."
+
+#: src/App.vue src/components/AiAdvisorPanel.vue
+msgid "Use this folder"
+msgstr "Diesen Ordner verwenden"
+
+#: src/App.vue
+msgid "Used for fingerprint lookup. Requires fpcalc/Chromaprint on the Nextcloud server."
+msgstr "Für die Fingerabdrucksuche. Benötigt fpcalc/Chromaprint auf dem Nextcloud-Server."
+
+#: lib/Controller/TagController.php
+msgid "Verification failed for field %s; the previous metadata was restored."
+msgstr "Die Prüfung für das Feld %s ist fehlgeschlagen; die vorherigen Metadaten wurden wiederhergestellt."
+
+#: src/components/BatchTrackList.vue
+msgid "Waiting for metadata providers."
+msgstr "Warte auf Metadatenanbieter."
+
+#: src/App.vue
+msgid "What should MusicCurator do?"
+msgstr "Was soll MusicCurator tun?"
+
+#: src/App.vue
+msgid "Will search: {providers}"
+msgstr "Gesucht wird bei: {providers}"
+
+#: src/App.vue
+msgid "Working…"
+msgstr "Wird verarbeitet…"
+
+#: src/components/BatchTrackList.vue
+msgid "Write {count} auto-selected high-confidence matches into their MP3 files?\n\nOnly matches above {threshold}% are included. Review items are NOT written. {genreCount} matches also have a normalized genre suggestion. A rollback record is stored for every file."
+msgstr "{count} automatisch ausgewählte Treffer mit hoher Übereinstimmung in die MP3-Dateien schreiben?\n\nNur Treffer über {threshold}% werden berücksichtigt. Zu prüfende Treffer werden NICHT geschrieben. {genreCount} Treffer haben auch einen vereinheitlichten Genre-Vorschlag. Für jede Datei werden Werte zum Rückgängigmachen gespeichert."
+
+#: src/components/BatchTrackList.vue
+msgid "Write {count} auto-selected to MP3"
+msgstr "{count} automatisch ausgewählte Treffer in MP3 schreiben"
+
+#: src/components/BatchTrackList.vue
+msgid "Write this metadata into the MP3 file?\n\n{file}\n\n{artist} — {title}\n{album}{genre}\n\nA rollback record for every changed field will be stored."
+msgstr "Diese Metadaten in die MP3-Datei schreiben?\n\n{file}\n\n{artist} — {title}\n{album}{genre}\n\nFür jedes geänderte Feld werden Werte zum Rückgängigmachen gespeichert."
+
+#: src/components/BatchTrackList.vue
+msgid "Write this suggestion to MP3"
+msgstr "Diesen Vorschlag in MP3 schreiben"
+
+#: src/components/BatchTrackList.vue
+msgid "Writing MP3 tags…"
+msgstr "MP3-Tags werden geschrieben…"
+
+#: src/components/BatchTrackList.vue
+msgid "Writing…"
+msgstr "Wird geschrieben…"
+
+#: src/App.vue
+msgid "Year"
+msgstr "Jahr"
+
+#: src/App.vue
+msgid "Your library and providers"
+msgstr "Deine Bibliothek und Anbieter"
+
+#: src/App.vue
+msgid "Your real Nextcloud music library."
+msgstr "Deine Musikbibliothek in Nextcloud."

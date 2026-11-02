@@ -16,6 +16,7 @@ use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\IConfig;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -34,6 +35,7 @@ class TagController extends Controller {
 		private AudioTagWriter $tagWriter,
 		private LoggerInterface $logger,
 		private ScanIndexService $scanIndex,
+		private IL10N $l10n,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -64,10 +66,10 @@ class TagController extends Controller {
 			$this->assertInsideLibrary($userId, $path);
 			$node = $this->nodeForUserPath($userId, $path);
 			if (!$node instanceof File) {
-				return new DataResponse(['message' => 'Selected path is not a file.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('Selected path is not a file.')], Http::STATUS_BAD_REQUEST);
 			}
 			if (strtolower(pathinfo($node->getName(), PATHINFO_EXTENSION)) !== 'mp3') {
-				return new DataResponse(['message' => 'Experimental tag writing currently supports MP3 files only.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('Experimental tag writing currently supports MP3 files only.')], Http::STATUS_BAD_REQUEST);
 			}
 
 			$values = [
@@ -96,7 +98,7 @@ class TagController extends Controller {
 				}
 			}
 			if ($updates === []) {
-				return new DataResponse(['message' => 'Choose at least one metadata field to write.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('Choose at least one metadata field to write.')], Http::STATUS_BAD_REQUEST);
 			}
 
 			$before = $this->tagReader->read($node);
@@ -122,7 +124,7 @@ class TagController extends Controller {
 				}
 				if ($actual !== trim($expected)) {
 					$this->tagWriter->writeMp3($node, $backup);
-					throw new \RuntimeException(sprintf('Verification failed for field %s; the previous metadata was restored.', $field));
+					throw new \RuntimeException($this->l10n->t('Verification failed for field %s; the previous metadata was restored.', [$field]));
 				}
 			}
 
@@ -155,7 +157,7 @@ class TagController extends Controller {
 				'exception' => $e,
 			]);
 
-			return new DataResponse(['message' => 'Metadata write failed: ' . $e->getMessage()], Http::STATUS_BAD_GATEWAY);
+			return new DataResponse(['message' => $this->l10n->t('Metadata write failed: %s', [$e->getMessage()])], Http::STATUS_BAD_GATEWAY);
 		}
 	}
 
@@ -166,7 +168,7 @@ class TagController extends Controller {
 		$backups = $this->backups($userId);
 		$backup = $backups[0] ?? null;
 		if (!is_array($backup)) {
-			return new DataResponse(['message' => 'There is no metadata write to undo.'], Http::STATUS_NOT_FOUND);
+			return new DataResponse(['message' => $this->l10n->t('There is no metadata write to undo.')], Http::STATUS_NOT_FOUND);
 		}
 
 		try {
@@ -174,7 +176,7 @@ class TagController extends Controller {
 			$this->assertInsideLibrary($userId, $path);
 			$node = $this->nodeForUserPath($userId, $path);
 			if (!$node instanceof File) {
-				throw new \RuntimeException('The file from the last metadata write no longer exists.');
+				throw new \RuntimeException($this->l10n->t('The file from the last metadata write no longer exists.'));
 			}
 			$before = is_array($backup['before'] ?? null) ? $backup['before'] : [];
 			$restore = [];
@@ -184,7 +186,7 @@ class TagController extends Controller {
 				}
 			}
 			if ($restore === []) {
-				throw new \RuntimeException('The stored rollback record contains no tag fields.');
+				throw new \RuntimeException($this->l10n->t('The stored rollback record contains no tag fields.'));
 			}
 
 			$this->tagWriter->writeMp3($node, $restore);
@@ -199,7 +201,7 @@ class TagController extends Controller {
 				'tags' => $this->tagReader->read($node),
 			]);
 		} catch (Throwable $e) {
-			return new DataResponse(['message' => 'Undo failed: ' . $e->getMessage()], Http::STATUS_BAD_GATEWAY);
+			return new DataResponse(['message' => $this->l10n->t('Undo failed: %s', [$e->getMessage()])], Http::STATUS_BAD_GATEWAY);
 		}
 	}
 
@@ -262,7 +264,7 @@ class TagController extends Controller {
 	private function userId(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			throw new \RuntimeException('No authenticated Nextcloud user.');
+			throw new \RuntimeException($this->l10n->t('No authenticated Nextcloud user.'));
 		}
 		return $user->getUID();
 	}
@@ -281,10 +283,10 @@ class TagController extends Controller {
 	private function assertInsideLibrary(string $userId, string $path): void {
 		$library = rtrim($this->libraryPath($userId), '/');
 		if ($library === '') {
-			throw new \RuntimeException('No music folder is configured.');
+			throw new \RuntimeException($this->l10n->t('No music folder is configured.'));
 		}
 		if ($path !== $library && !str_starts_with($path, $library . '/')) {
-			throw new \RuntimeException('The requested path is outside the configured music library.');
+			throw new \RuntimeException($this->l10n->t('The requested path is outside the configured music library.'));
 		}
 	}
 
@@ -303,7 +305,7 @@ class TagController extends Controller {
 				continue;
 			}
 			if ($segment === '..') {
-				throw new \InvalidArgumentException('Parent path segments are not allowed.');
+				throw new \InvalidArgumentException($this->l10n->t('Parent path segments are not allowed.'));
 			}
 			$segments[] = $segment;
 		}

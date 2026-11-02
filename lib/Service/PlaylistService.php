@@ -9,6 +9,7 @@ use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\IConfig;
+use OCP\IL10N;
 use RuntimeException;
 use Throwable;
 
@@ -20,6 +21,7 @@ class PlaylistService {
 		private IRootFolder $rootFolder,
 		private IConfig $config,
 		private AudioTagReader $tagReader,
+		private IL10N $l10n,
 	) {
 	}
 
@@ -31,12 +33,12 @@ class PlaylistService {
 		$this->assertInsideLibrary($userId, $folderPath);
 		$node = $this->nodeForUserPath($userId, $folderPath);
 		if (!$node instanceof Folder) {
-			throw new RuntimeException('The selected path is not a folder.');
+			throw new RuntimeException($this->l10n->t('The selected path is not a folder.'));
 		}
 
 		$audioEntries = $this->audioEntries($node);
 		if ($audioEntries === []) {
-			throw new RuntimeException('This folder contains no supported audio files.');
+			throw new RuntimeException($this->l10n->t('This folder contains no supported audio files.'));
 		}
 
 		$playlistName = $this->playlistName($node, $requestedName);
@@ -46,11 +48,11 @@ class PlaylistService {
 		if ($node->nodeExists($playlistName)) {
 			$playlist = $node->get($playlistName);
 			if (!$playlist instanceof File) {
-				throw new RuntimeException('A folder already uses the requested playlist name.');
+				throw new RuntimeException($this->l10n->t('A folder already uses the requested playlist name.'));
 			}
 			$existing = $this->safeContent($playlist);
 			if (!str_contains($existing, self::MANAGED_MARKER)) {
-				throw new RuntimeException('A playlist with this name already exists and is not managed by MusicCurator. It was left untouched.');
+				throw new RuntimeException($this->l10n->t('A playlist with this name already exists and is not managed by MusicCurator. It was left untouched.'));
 			}
 			$playlist->putContent($content);
 		} else {
@@ -254,14 +256,14 @@ class PlaylistService {
 	private function assertInsideLibrary(string $userId, string $path): void {
 		$library = trim($this->config->getUserValue($userId, 'musiccurator', 'library_path', ''));
 		if ($library === '') {
-			throw new RuntimeException('No music folder is configured.');
+			throw new RuntimeException($this->l10n->t('No music folder is configured.'));
 		}
 		$library = rtrim($this->normalizePath($library), '/');
 		if ($library === '') {
 			$library = '/';
 		}
 		if ($library !== '/' && $path !== $library && !str_starts_with($path, $library . '/')) {
-			throw new RuntimeException('The selected folder is outside the configured music library.');
+			throw new RuntimeException($this->l10n->t('The selected folder is outside the configured music library.'));
 		}
 	}
 
@@ -280,7 +282,7 @@ class PlaylistService {
 				continue;
 			}
 			if ($segment === '..') {
-				throw new RuntimeException('Parent path segments are not allowed.');
+				throw new RuntimeException($this->l10n->t('Parent path segments are not allowed.'));
 			}
 			$segments[] = $segment;
 		}

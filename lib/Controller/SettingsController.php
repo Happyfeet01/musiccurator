@@ -14,6 +14,7 @@ use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\IConfig;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -32,6 +33,7 @@ class SettingsController extends Controller {
 		private IConfig $config,
 		private ProviderCredentialsService $credentials,
 		private LoggerInterface $logger,
+		private IL10N $l10n,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -62,14 +64,14 @@ class SettingsController extends Controller {
 				'user' => $userId,
 			]);
 
-			return new DataResponse(['message' => 'Choose a music folder before saving.'], Http::STATUS_BAD_REQUEST);
+			return new DataResponse(['message' => $this->l10n->t('Choose a music folder before saving.')], Http::STATUS_BAD_REQUEST);
 		}
 
 		try {
 			$libraryPath = $this->normalizePath($libraryPath);
 			$node = $this->nodeForUserPath($userId, $libraryPath);
 			if (!$node instanceof Folder) {
-				return new DataResponse(['message' => 'The selected library path is not a folder.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('The selected library path is not a folder.')], Http::STATUS_BAD_REQUEST);
 			}
 		} catch (Throwable $e) {
 			$this->logger->warning('MusicCurator could not save the selected music folder', [
@@ -80,7 +82,7 @@ class SettingsController extends Controller {
 			]);
 
 			return new DataResponse([
-				'message' => sprintf('The selected music folder "%s" does not exist in your Nextcloud files.', $libraryPath),
+				'message' => $this->l10n->t('The selected music folder "%s" does not exist in your Nextcloud files.', [$libraryPath]),
 			], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -156,7 +158,7 @@ class SettingsController extends Controller {
 	private function userId(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			throw new \RuntimeException('No authenticated Nextcloud user.');
+			throw new \RuntimeException($this->l10n->t('No authenticated Nextcloud user.'));
 		}
 
 		return $user->getUID();
@@ -186,7 +188,7 @@ class SettingsController extends Controller {
 				continue;
 			}
 			if ($segment === '..') {
-				throw new \InvalidArgumentException('Parent path segments are not allowed.');
+				throw new \InvalidArgumentException($this->l10n->t('Parent path segments are not allowed.'));
 			}
 			$segments[] = $segment;
 		}

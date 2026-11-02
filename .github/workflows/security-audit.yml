@@ -35,4 +35,4 @@ jobs:
           composer install --no-scripts --no-interaction --prefer-dist
           composer install --working-dir=vendor-bin/phpunit --no-scripts --no-interaction --prefer-dist
       - name: Test credential deletion and user isolation
-        run: vendor-bin/phpunit/vendor/bin/phpunit --no-configuration --bootstrap tests/bootstrap-unit.php tests/unit/CredentialsTest.php --fail-on-warning --fail-on-risky
+        run: vendor-bin/phpunit/vendor/bin/phpunit --no-configuration --bootstrap tests/bootstrap-unit.php tests/unit/CredentialsTest.php tests/unit/LocalizationTest.php --fail-on-warning --fail-on-risky

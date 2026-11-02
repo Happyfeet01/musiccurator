@@ -9,6 +9,7 @@ use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\IConfig;
 use OCP\IDBConnection;
+use OCP\IL10N;
 use RuntimeException;
 use Throwable;
 
@@ -19,29 +20,30 @@ class MusicPlaylistService {
 		private IRootFolder $rootFolder,
 		private IConfig $config,
 		private IDBConnection $db,
+		private IL10N $l10n,
 	) {
 	}
 
 	/** @return array<string, mixed> */
 	public function publish(string $userId, string $path): array {
 		if (!$this->appManager->isEnabledForUser('music')) {
-			throw new RuntimeException('Enable Nextcloud Music and scan your music collection there first.');
+			throw new RuntimeException($this->l10n->t('Enable Nextcloud Music and scan your music collection there first.'));
 		}
 		$segments = explode('/', str_replace('\\', '/', $path));
 		if (in_array('..', $segments, true) || in_array('.', $segments, true)) {
-			throw new RuntimeException('Invalid playlist path.');
+			throw new RuntimeException($this->l10n->t('Invalid playlist path.'));
 		}
 		$path = '/' . implode('/', array_filter($segments, static fn (string $part): bool => $part !== ''));
 		$storedLibrary = $this->config->getUserValue($userId, 'musiccurator', 'library_path', '');
 		$library = rtrim($storedLibrary, '/');
 		if ($storedLibrary === '' || !str_starts_with($path, $library . '/')) {
-			throw new RuntimeException('Playlist is outside the configured music library.');
+			throw new RuntimeException($this->l10n->t('Playlist is outside the configured music library.'));
 		}
 		$folder = $this->rootFolder->getUserFolder($userId);
 		$file = $folder->get(ltrim($path, '/'));
 		if (!$file instanceof File || strtolower(pathinfo($path, PATHINFO_EXTENSION)) !== 'm3u8'
 			|| !str_contains((string)$file->getContent(), '# MusicCurator managed playlist')) {
-			throw new RuntimeException('Only MusicCurator-managed M3U8 playlists can be published.');
+			throw new RuntimeException($this->l10n->t('Only MusicCurator-managed M3U8 playlists can be published.'));
 		}
 
 		// Resolve only on explicit publication, so Music remains an optional app.
@@ -55,7 +57,7 @@ class MusicPlaylistService {
 		foreach ($parsed['files'] as $entry) {
 			$node = $entry['file'] ?? null;
 			if (!$node instanceof File) {
-				$missing[] = (string)($entry['url'] ?? 'Unsupported playlist entry');
+				$missing[] = (string)($entry['url'] ?? $this->l10n->t('Unsupported playlist entry'));
 				continue;
 			}
 			$track = $tracks->findByFileId($node->getId(), $userId);
@@ -68,7 +70,7 @@ class MusicPlaylistService {
 		// Preserve the previous server playlist until every entry is available.
 		if ($missing !== [] || $ids === []) {
 			return ['published' => false, 'missing' => array_values($missing), 'matched' => count($ids),
-				'message' => 'Scan the listed files in Nextcloud Music, then publish again. The server playlist was left unchanged.'];
+				'message' => $this->l10n->t('Scan the listed files in Nextcloud Music, then publish again. The server playlist was left unchanged.')];
 		}
 
 		// User setting keys are limited to 64 characters (15 + 48 = 63).
@@ -80,7 +82,7 @@ class MusicPlaylistService {
 			if ($id > 0) {
 				$playlist = $playlists->find($id, $userId);
 				if ($playlist->getComment() !== $marker) {
-					throw new RuntimeException('The linked Music playlist is no longer managed by MusicCurator.');
+					throw new RuntimeException($this->l10n->t('The linked Music playlist is no longer managed by MusicCurator.'));
 				}
 			} else {
 				$playlist = $playlists->create(pathinfo($file->getName(), PATHINFO_FILENAME) . ' [MusicCurator]', $userId);
@@ -95,6 +97,6 @@ class MusicPlaylistService {
 			throw $e;
 		}
 		return ['published' => true, 'playlistId' => $id, 'tracks' => count($ids), 'missing' => [],
-			'message' => 'Playlist published in Nextcloud Music. Refresh playlists in Amperfy or play:Sub.'];
+			'message' => $this->l10n->t('Playlist published in Nextcloud Music. Refresh playlists in Amperfy or play:Sub.')];
 	}
 }

@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import CredentialField from './CredentialField.vue'
+import { n, t } from '../l10n.ts'
 
 declare global {
 	interface Window {
@@ -137,7 +138,7 @@ async function load(): Promise<void> {
 		})
 		const data = await response.json() as SettingsResponse & { message?: string }
 		if (!response.ok) {
-			throw new Error(data.message || `HTTP ${response.status}`)
+			throw new Error(data.message || t('musiccurator', 'HTTP {status}', { status: response.status }))
 		}
 		provider.value = data.aiProvider ?? 'off'
 		openAiConfigured.value = Boolean(data.openAiConfigured)
@@ -177,7 +178,7 @@ async function save(): Promise<boolean> {
 		})
 		const data = await response.json() as SettingsResponse & { message?: string }
 		if (!response.ok) {
-			throw new Error(data.message || `HTTP ${response.status}`)
+			throw new Error(data.message || t('musiccurator', 'HTTP {status}', { status: response.status }))
 		}
 		provider.value = data.aiProvider ?? provider.value
 		openAiConfigured.value = Boolean(data.openAiConfigured)
@@ -188,7 +189,7 @@ async function save(): Promise<boolean> {
 		ollamaUrl.value = data.ollamaUrl || ollamaUrl.value
 		openAiKey.value = ''
 		mistralKey.value = ''
-		message.value = 'AI advisor settings saved.'
+		message.value = t('musiccurator', 'AI advisor settings saved.')
 		return true
 	} catch (e) {
 		error.value = e instanceof Error ? e.message : String(e)
@@ -215,7 +216,7 @@ async function openFolderPicker(): Promise<void> {
 async function browseFolder(path: string): Promise<void> {
 	const target = normalizePath(path)
 	if (!isInsideLibrary(target)) {
-		error.value = 'AI Advisor folder selection is limited to your configured music library.'
+		error.value = t('musiccurator', 'AI Advisor folder selection is limited to your configured music library.')
 		return
 	}
 
@@ -228,7 +229,7 @@ async function browseFolder(path: string): Promise<void> {
 		})
 		const data = await response.json() as FolderResponse
 		if (!response.ok) {
-			throw new Error(data.message || `HTTP ${response.status}`)
+			throw new Error(data.message || t('musiccurator', 'HTTP {status}', { status: response.status }))
 		}
 		folderPath.value = data.path
 		folderParent.value = data.parent
@@ -245,14 +246,14 @@ function chooseCurrentFolder(): void {
 	selectedFolder.value = normalizePath(folderPath.value)
 	folderPickerOpen.value = false
 	classification.value = null
-	message.value = `AI test folder set to ${selectedFolder.value}.`
+	message.value = t('musiccurator', 'AI test folder set to {folder}.', { folder: selectedFolder.value })
 }
 
 function useAutomaticFolder(): void {
 	selectedFolder.value = ''
 	folderPickerOpen.value = false
 	classification.value = null
-	message.value = `AI test folder reset to ${automaticFolder.value}.`
+	message.value = t('musiccurator', 'AI test folder reset to {folder}.', { folder: automaticFolder.value })
 }
 
 async function classify(): Promise<void> {
@@ -260,11 +261,11 @@ async function classify(): Promise<void> {
 	message.value = ''
 	error.value = ''
 	if (provider.value === 'off') {
-		error.value = 'Choose an AI provider first.'
+		error.value = t('musiccurator', 'Choose an AI provider first.')
 		return
 	}
 	if (!providerReady.value) {
-		error.value = 'The selected AI provider is not fully configured.'
+		error.value = t('musiccurator', 'The selected AI provider is not fully configured.')
 		return
 	}
 	if (!(await save())) {
@@ -286,15 +287,25 @@ async function classify(): Promise<void> {
 		})
 		const data = await response.json() as Classification & { message?: string }
 		if (!response.ok) {
-			throw new Error(data.message || `HTTP ${response.status}`)
+			throw new Error(data.message || t('musiccurator', 'HTTP {status}', { status: response.status }))
 		}
 		classification.value = data
-		message.value = 'AI classification completed. This is advice only; no files were changed.'
+		message.value = t('musiccurator', 'AI classification completed. This is advice only; no files were changed.')
 	} catch (e) {
 		error.value = e instanceof Error ? e.message : String(e)
 	} finally {
 		testing.value = false
 	}
+}
+
+function groupTypeLabel(type: Classification['groupType']): string {
+	return {
+		album: t('musiccurator', 'Album'),
+		compilation: t('musiccurator', 'Compilation'),
+		playlist: t('musiccurator', 'Playlist'),
+		mixed: t('musiccurator', 'Mixed'),
+		unknown: t('musiccurator', 'Unknown'),
+	}[type]
 }
 
 onMounted(load)
@@ -305,14 +316,14 @@ onMounted(load)
 		<div class="ai-heading">
 			<div>
 				<p class="eyebrow">
-					Experimental AI advisor
+					{{ t('musiccurator', 'Experimental AI advisor') }}
 				</p>
-				<h2>Classify music folders with an optional LLM</h2>
+				<h2>{{ t('musiccurator', 'Classify music folders with an optional LLM') }}</h2>
 				<p class="muted">
-					The first experiment sends filenames, existing tags and folder statistics only. Audio files are never uploaded to a cloud AI provider.
+					{{ t('musiccurator', 'The first experiment sends filenames, existing tags and folder statistics only. Audio files are never uploaded to a cloud AI provider.') }}
 				</p>
 			</div>
-			<span class="preview-badge">Preview only</span>
+			<span class="preview-badge">{{ t('musiccurator', 'Preview only') }}</span>
 		</div>
 
 		<div v-if="message" class="ai-notice success">
@@ -324,75 +335,75 @@ onMounted(load)
 
 		<div class="ai-grid">
 			<label>
-				<span>AI provider</span>
+				<span>{{ t('musiccurator', 'AI provider') }}</span>
 				<select v-model="provider" class="text-input">
-					<option value="off">Disabled</option>
-					<option value="openai">OpenAI</option>
-					<option value="mistral">Mistral</option>
-					<option value="ollama">Ollama (local)</option>
+					<option value="off">{{ t('musiccurator', 'Disabled') }}</option>
+					<option value="openai">{{ t('musiccurator', 'OpenAI') }}</option>
+					<option value="mistral">{{ t('musiccurator', 'Mistral') }}</option>
+					<option value="ollama">{{ t('musiccurator', 'Ollama (local)') }}</option>
 				</select>
 			</label>
 
 			<template v-if="provider === 'openai'">
 				<CredentialField v-model="openAiKey"
 					credential="openai_key"
-					label="OpenAI API key"
+					:label="t('musiccurator', 'OpenAI API key')"
 					:configured="openAiConfigured"
 					:disabled="saving || testing"
 					placeholder="sk-…"
 					@busy="saving = $event"
 					@deleted="openAiConfigured = false; classification = null" />
-				<label><span>OpenAI model</span><input v-model="openAiModel"
+				<label><span>{{ t('musiccurator', 'OpenAI model') }}</span><input v-model="openAiModel"
 					class="text-input"
 					type="text"
-					placeholder="gpt-5.6-luna"><small class="muted">The default favors lower-cost classification.</small></label>
+					placeholder="gpt-5.6-luna"><small class="muted">{{ t('musiccurator', 'The default favors lower-cost classification.') }}</small></label>
 			</template>
 
 			<template v-else-if="provider === 'mistral'">
 				<CredentialField v-model="mistralKey"
 					credential="mistral_key"
-					label="Mistral API key"
+					:label="t('musiccurator', 'Mistral API key')"
 					:configured="mistralConfigured"
 					:disabled="saving || testing"
-					placeholder="API key"
+					:placeholder="t('musiccurator', 'API key')"
 					@busy="saving = $event"
 					@deleted="mistralConfigured = false; classification = null" />
-				<label><span>Mistral model</span><input v-model="mistralModel"
+				<label><span>{{ t('musiccurator', 'Mistral model') }}</span><input v-model="mistralModel"
 					class="text-input"
 					type="text"
 					placeholder="mistral-small-latest"></label>
 			</template>
 
 			<template v-else-if="provider === 'ollama'">
-				<label><span>Ollama model</span><input v-model="ollamaModel"
+				<label><span>{{ t('musiccurator', 'Ollama model') }}</span><input v-model="ollamaModel"
 					class="text-input"
 					type="text"
-					placeholder="gemma4"><small class="muted">Use a model that is already installed in your local Ollama instance.</small></label>
-				<label><span>Ollama API base URL</span><input v-model="ollamaUrl"
+					placeholder="gemma4"><small class="muted">{{ t('musiccurator', 'Use a model that is already installed in your local Ollama instance.') }}</small></label>
+				<label><span>{{ t('musiccurator', 'Ollama API base URL') }}</span><input v-model="ollamaUrl"
 					class="text-input"
 					type="text"
-					placeholder="http://127.0.0.1:11434/api"><small class="muted">Development build currently accepts localhost only.</small></label>
+					placeholder="http://127.0.0.1:11434/api"><small class="muted">{{ t('musiccurator', 'Development build currently accepts localhost only.') }}</small></label>
 			</template>
 		</div>
 
 		<div class="test-card">
 			<div>
-				<strong>Folder to test</strong>
+				<strong>{{ t('musiccurator', 'Folder to test') }}</strong>
 				<code>{{ testFolder }}</code>
-				<small class="muted">Choose any folder inside your configured music library, or keep the automatic folder from the selected library track.</small>
+				<small class="muted">{{ t('musiccurator', 'Choose any folder inside your configured music library, or keep the automatic folder from the selected library track.') }}</small>
 			</div>
 			<div class="actions">
 				<NcButton :disabled="folderLoading" @click="openFolderPicker">
-					Choose folder
+					{{ t('musiccurator', 'Choose folder') }}
 				</NcButton>
 				<NcButton v-if="selectedFolder" :disabled="folderLoading" @click="useAutomaticFolder">
-					Use automatic folder
+					{{ t('musiccurator', 'Use automatic folder') }}
 				</NcButton>
 				<NcButton :disabled="saving" @click="save">
-					{{ saving ? 'Saving…' : 'Save AI settings' }}
+					{{ saving ? t('musiccurator', 'Saving…') : t('musiccurator', 'Save AI settings') }}
 				</NcButton>
 				<NcButton variant="primary" :disabled="testing || saving || provider === 'off' || !providerReady" @click="classify">
-					{{ testing ? 'Classifying…' : 'Classify folder' }}
+					{{ testing ? t('musiccurator', 'Classifying…') : t('musiccurator', 'Classify folder') }}
 				</NcButton>
 			</div>
 		</div>
@@ -400,23 +411,23 @@ onMounted(load)
 		<div v-if="folderPickerOpen" class="folder-picker">
 			<div class="folder-picker-heading">
 				<div>
-					<strong>Choose AI test folder</strong>
+					<strong>{{ t('musiccurator', 'Choose AI test folder') }}</strong>
 					<code>{{ folderPath }}</code>
 				</div>
 				<div class="actions">
 					<NcButton v-if="canBrowseUp" :disabled="folderLoading" @click="browseFolder(folderParent)">
-						Up
+						{{ t('musiccurator', 'Up') }}
 					</NcButton>
 					<NcButton :disabled="folderLoading" @click="folderPickerOpen = false">
-						Cancel
+						{{ t('musiccurator', 'Cancel') }}
 					</NcButton>
 					<NcButton variant="primary" :disabled="folderLoading" @click="chooseCurrentFolder">
-						Use this folder
+						{{ t('musiccurator', 'Use this folder') }}
 					</NcButton>
 				</div>
 			</div>
 			<div v-if="folderLoading" class="folder-empty muted">
-				Loading folders…
+				{{ t('musiccurator', 'Loading folders…') }}
 			</div>
 			<div v-else-if="folderEntries.length" class="folder-list">
 				<button v-for="folder in folderEntries"
@@ -428,25 +439,25 @@ onMounted(load)
 				</button>
 			</div>
 			<div v-else class="folder-empty muted">
-				No subfolders here. You can still use this folder.
+				{{ t('musiccurator', 'No subfolders here. You can still use this folder.') }}
 			</div>
 		</div>
 
 		<article v-if="classification" class="result-card">
 			<div class="result-title">
-				<strong>{{ classification.groupType }}</strong>
-				<span>{{ classification.confidence }}% confidence</span>
+				<strong>{{ groupTypeLabel(classification.groupType) }}</strong>
+				<span>{{ t('musiccurator', '{confidence}% confidence', { confidence: classification.confidence }) }}</span>
 			</div>
 			<p>{{ classification.reason }}</p>
 			<div class="result-meta">
-				<span><b>Recommendation:</b> {{ classification.recommendedMode === 'metadata' ? 'Metadata only' : 'Metadata + organize' }}</span>
-				<span><b>Provider:</b> {{ classification.provider }} · {{ classification.model }}</span>
-				<span><b>Time:</b> {{ classification.durationMs }} ms</span>
+				<span><b>{{ t('musiccurator', 'Recommendation:') }}</b> {{ classification.recommendedMode === 'metadata' ? t('musiccurator', 'Metadata only') : t('musiccurator', 'Metadata + organize') }}</span>
+				<span><b>{{ t('musiccurator', 'Provider:') }}</b> {{ classification.provider }} · {{ classification.model }}</span>
+				<span><b>{{ t('musiccurator', 'Time:') }}</b> {{ t('musiccurator', '{duration} ms', { duration: classification.durationMs }) }}</span>
 			</div>
 			<div v-if="classification.stats" class="stats-row">
-				<span>{{ classification.stats.tracks ?? '—' }} tracks</span>
-				<span>{{ classification.stats.distinctArtists ?? '—' }} artists</span>
-				<span>{{ classification.stats.distinctAlbums ?? '—' }} albums</span>
+				<span>{{ n('musiccurator', '%n track', '%n tracks', classification.stats.tracks ?? 0) }}</span>
+				<span>{{ n('musiccurator', '%n artist', '%n artists', classification.stats.distinctArtists ?? 0) }}</span>
+				<span>{{ n('musiccurator', '%n album', '%n albums', classification.stats.distinctAlbums ?? 0) }}</span>
 			</div>
 		</article>
 	</section>

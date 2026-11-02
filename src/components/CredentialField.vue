@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import { t } from '../l10n.ts'
 
 const props = defineProps<{
 	modelValue: string
@@ -35,13 +36,13 @@ async function deleteCredential(): Promise<void> {
 			headers: { Accept: 'application/json', requesttoken: window.OC.requestToken },
 		})
 		if (!response.ok) {
-			throw new Error('Could not delete the saved credential. Please try again.')
+			throw new Error(t('musiccurator', 'Could not delete the saved credential. Please try again.'))
 		}
 		emit('update:modelValue', '')
 		emit('deleted')
-		message.value = 'Saved credential deleted from MusicCurator.'
+		message.value = t('musiccurator', 'Saved credential deleted from MusicCurator.')
 	} catch {
-		error.value = 'Could not delete the saved credential. Please try again.'
+		error.value = t('musiccurator', 'Could not delete the saved credential. Please try again.')
 	} finally {
 		deleting.value = false
 		emit('busy', false)
@@ -58,14 +59,14 @@ async function deleteCredential(): Promise<void> {
 			type="password"
 			autocomplete="new-password"
 			:disabled="disabled || deleting"
-			:placeholder="configured ? 'Configured — enter a new value to replace' : (placeholder || 'Optional')"
+			:placeholder="configured ? t('musiccurator', 'Configured — enter a new value to replace') : (placeholder || t('musiccurator', 'Optional'))"
 			@input="emit('update:modelValue', ($event.target as HTMLInputElement).value)">
 		<small v-if="hint" class="muted">{{ hint }}</small>
 		<NcButton v-if="configured"
 			:disabled="disabled || deleting"
-			:aria-label="`Delete saved ${label}`"
+			:aria-label="t('musiccurator', 'Delete {label}', { label })"
 			@click="deleteCredential">
-			{{ deleting ? 'Deleting…' : 'Delete saved credential' }}
+			{{ deleting ? t('musiccurator', 'Deleting…') : t('musiccurator', 'Delete {label}', { label }) }}
 		</NcButton>
 		<small v-if="message" role="status">{{ message }}</small>
 		<small v-if="error" role="alert">{{ error }}</small>

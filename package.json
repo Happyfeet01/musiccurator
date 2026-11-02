@@ -9,12 +9,15 @@
     "lint": "eslint src",
     "test:frontend": "node --test tests/frontend/*.test.mjs",
     "stylelint": "stylelint \"src/**/*.{vue,scss,css}\"",
-    "watch": "vite --mode development build --watch"
+    "watch": "vite --mode development build --watch",
+    "l10n:check": "node scripts/l10n.mjs --check",
+    "l10n:build": "node scripts/l10n.mjs"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"
   ],
   "dependencies": {
+    "@nextcloud/l10n": "^3.4.1",
     "@nextcloud/vue": "^9.14.0",
     "vue": "^3.5.43"
   },
