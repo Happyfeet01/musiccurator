@@ -10,6 +10,7 @@ use RuntimeException;
 use Throwable;
 
 class AudioTagWriter {
+	/** @psalm-api Instantiated through Nextcloud dependency injection. */
 	public function __construct(
 		private IL10N $l10n,
 	) {
