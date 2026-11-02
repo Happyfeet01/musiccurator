@@ -6,6 +6,7 @@ return [
 	'routes' => [
 		['name' => 'read#settings', 'url' => '/api/settings', 'verb' => 'GET'],
 		['name' => 'settings#saveSettings', 'url' => '/api/settings', 'verb' => 'POST'],
+		['name' => 'credential#delete', 'url' => '/api/settings/credentials/{credential}', 'verb' => 'DELETE'],
 		['name' => 'folder#folders', 'url' => '/api/folders', 'verb' => 'GET'],
 		['name' => 'scan#cached', 'url' => '/api/library/cache', 'verb' => 'GET'],
 		['name' => 'scan#scan', 'url' => '/api/library/scan', 'verb' => 'POST'],

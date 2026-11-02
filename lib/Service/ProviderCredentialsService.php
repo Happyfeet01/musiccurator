@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\MusicCurator\Service;
 
+use OCP\Config\IUserConfig;
 use OCP\IConfig;
 use OCP\Security\ICredentialsManager;
 use Throwable;
@@ -14,6 +15,7 @@ class ProviderCredentialsService {
 	public function __construct(
 		private ICredentialsManager $credentialsManager,
 		private IConfig $config,
+		private IUserConfig $userConfig,
 	) {
 	}
 
@@ -45,6 +47,12 @@ class ProviderCredentialsService {
 
 	public function configured(string $userId, string $key): bool {
 		return $this->get($userId, $key) !== '';
+	}
+
+	public function delete(string $userId, string $key): void {
+		// Remove the fallback first so a deleted secret cannot be migrated back.
+		$this->userConfig->deleteUserConfig($userId, 'musiccurator', $key);
+		$this->credentialsManager->delete($userId, self::PREFIX . $key);
 	}
 
 	public function storeIfProvided(string $userId, string $key, string $value): void {

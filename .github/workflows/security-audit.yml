@@ -30,3 +30,9 @@ jobs:
           for directory in vendor-bin/*/; do
             composer audit --locked --no-interaction --working-dir="$directory"
           done
+      - name: Install credential regression test dependencies
+        run: |
+          composer install --no-scripts --no-interaction --prefer-dist
+          composer install --working-dir=vendor-bin/phpunit --no-scripts --no-interaction --prefer-dist
+      - name: Test credential deletion and user isolation
+        run: vendor-bin/phpunit/vendor/bin/phpunit --no-configuration --bootstrap tests/bootstrap-unit.php tests/unit/CredentialsTest.php --fail-on-warning --fail-on-risky

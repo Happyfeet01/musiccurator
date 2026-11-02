@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import CredentialField from './CredentialField.vue'
 
 declare global {
 	interface Window {
@@ -333,10 +334,14 @@ onMounted(load)
 			</label>
 
 			<template v-if="provider === 'openai'">
-				<label><span>OpenAI API key</span><input v-model="openAiKey"
-					class="text-input"
-					type="password"
-					:placeholder="openAiConfigured ? 'Configured — enter a new key to replace' : 'sk-…'"></label>
+				<CredentialField v-model="openAiKey"
+					credential="openai_key"
+					label="OpenAI API key"
+					:configured="openAiConfigured"
+					:disabled="saving || testing"
+					placeholder="sk-…"
+					@busy="saving = $event"
+					@deleted="openAiConfigured = false; classification = null" />
 				<label><span>OpenAI model</span><input v-model="openAiModel"
 					class="text-input"
 					type="text"
@@ -344,10 +349,14 @@ onMounted(load)
 			</template>
 
 			<template v-else-if="provider === 'mistral'">
-				<label><span>Mistral API key</span><input v-model="mistralKey"
-					class="text-input"
-					type="password"
-					:placeholder="mistralConfigured ? 'Configured — enter a new key to replace' : 'API key'"></label>
+				<CredentialField v-model="mistralKey"
+					credential="mistral_key"
+					label="Mistral API key"
+					:configured="mistralConfigured"
+					:disabled="saving || testing"
+					placeholder="API key"
+					@busy="saving = $event"
+					@deleted="mistralConfigured = false; classification = null" />
 				<label><span>Mistral model</span><input v-model="mistralModel"
 					class="text-input"
 					type="text"
