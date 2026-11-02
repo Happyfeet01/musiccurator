@@ -7,6 +7,7 @@ namespace OCA\MusicCurator\Tests\Unit;
 use OCA\MusicCurator\Controller\CredentialController;
 use OCA\MusicCurator\Service\ProviderCredentialsService;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\Config\IUserConfig;
 use OCP\IConfig;
 use OCP\IRequest;
 use OCP\IUser;
@@ -27,9 +28,10 @@ final class CredentialsTest extends TestCase {
 	#[DataProvider('credentials')]
 	public function testDeletesSecureAndLegacyCopiesForCurrentUser(string $key): void {
 		$config = $this->createMock(IConfig::class);
+		$userConfig = $this->createMock(IUserConfig::class);
 		$manager = $this->createMock(ICredentialsManager::class);
 		$order = [];
-		$config->expects(self::once())->method('deleteUserValue')->with('alice', 'musiccurator', $key)
+		$userConfig->expects(self::once())->method('deleteUserConfig')->with('alice', 'musiccurator', $key)
 			->willReturnCallback(static function () use (&$order): void {
 				$order[] = 'legacy';
 			});
@@ -39,7 +41,7 @@ final class CredentialsTest extends TestCase {
 				return 1;
 			});
 		$config->expects(self::never())->method('setUserValue');
-		$service = new ProviderCredentialsService($manager, $config);
+		$service = new ProviderCredentialsService($manager, $config, $userConfig);
 		$response = $this->controller($service)->delete($key);
 		self::assertSame(200, $response->getStatus());
 		self::assertSame(['deleted' => true], $response->getData());
@@ -50,8 +52,9 @@ final class CredentialsTest extends TestCase {
 		$secure = ['alice:musiccurator:lastfm_key' => 'old-secure-key', 'bob:musiccurator:lastfm_key' => 'other-user-key', 'alice:musiccurator:discogs_token' => 'other-provider-key'];
 		$legacy = ['alice:lastfm_key' => 'old-legacy-key', 'bob:lastfm_key' => 'other-user-legacy'];
 		$config = $this->createMock(IConfig::class);
+		$userConfig = $this->createMock(IUserConfig::class);
 		$manager = $this->createMock(ICredentialsManager::class);
-		$config->method('deleteUserValue')->willReturnCallback(static function ($user, $app, $key) use (&$legacy): void {
+		$userConfig->method('deleteUserConfig')->willReturnCallback(static function ($user, $app, $key) use (&$legacy): void {
 			unset($legacy[$user . ':' . $key]);
 		});
 		$config->method('getUserValue')->willReturnCallback(static function ($user, $app, $key) use (&$legacy): string {
@@ -65,7 +68,7 @@ final class CredentialsTest extends TestCase {
 			return $secure[$user . ':' . $key] ?? null;
 		});
 		$manager->expects(self::never())->method('store');
-		$service = new ProviderCredentialsService($manager, $config);
+		$service = new ProviderCredentialsService($manager, $config, $userConfig);
 		$service->delete('alice', 'lastfm_key');
 		$service->delete('alice', 'lastfm_key');
 		self::assertFalse($service->configured('alice', 'lastfm_key'));
@@ -76,11 +79,12 @@ final class CredentialsTest extends TestCase {
 
 	public function testBlankSaveStillPreservesExistingCredentials(): void {
 		$config = $this->createMock(IConfig::class);
+		$userConfig = $this->createMock(IUserConfig::class);
 		$manager = $this->createMock(ICredentialsManager::class);
 		$manager->expects(self::never())->method('store');
 		$manager->expects(self::never())->method('delete');
 		$config->expects(self::never())->method('deleteUserValue');
-		(new ProviderCredentialsService($manager, $config))->storeIfProvided('alice', 'lastfm_key', '  ');
+		(new ProviderCredentialsService($manager, $config, $userConfig))->storeIfProvided('alice', 'lastfm_key', '  ');
 	}
 
 	public function testRejectsUnrelatedConfigKey(): void {

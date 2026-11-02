@@ -15,7 +15,8 @@ use OCP\IUserSession;
 use RuntimeException;
 use Throwable;
 
-class CredentialController extends Controller {
+/** @psalm-api Instantiated by Nextcloud through appinfo/routes.php. */
+final class CredentialController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
