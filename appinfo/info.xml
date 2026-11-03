@@ -19,7 +19,7 @@ Vergleiche vorhandene Tags mit Anbietervorschlägen, wähle Änderungen feldweis
 
 Die App ergänzt Nextcloud Music. MusicCurator verwaltet deine Bibliothek; die Wiedergabe übernimmt weiterhin Nextcloud Music.
 	]]></description>
-	<version>1.5.2</version>
+	<version>1.6.0</version>
 	<licence>AGPL-3.0-or-later</licence>
 	<author>Happyfeet01</author>
 	<namespace>MusicCurator</namespace>
