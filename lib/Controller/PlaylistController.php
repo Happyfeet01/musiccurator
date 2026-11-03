@@ -11,6 +11,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\OpenAPI;
 use OCP\AppFramework\Http\DataResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Throwable;
@@ -22,6 +23,7 @@ class PlaylistController extends Controller {
 		private IUserSession $userSession,
 		private PlaylistService $playlists,
 		private MusicPlaylistService $musicPlaylists,
+		private IL10N $l10n,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -34,7 +36,7 @@ class PlaylistController extends Controller {
 
 			return new DataResponse($playlist);
 		} catch (Throwable $e) {
-			return new DataResponse(['message' => 'Playlist creation failed: ' . $e->getMessage()], Http::STATUS_BAD_REQUEST);
+			return new DataResponse(['message' => $this->l10n->t('Playlist creation failed: %s', [$e->getMessage()])], Http::STATUS_BAD_REQUEST);
 		}
 	}
 
@@ -44,14 +46,14 @@ class PlaylistController extends Controller {
 		try {
 			return new DataResponse($this->musicPlaylists->publish($this->userId(), $path));
 		} catch (Throwable $e) {
-			return new DataResponse(['message' => 'Music playlist publication failed: ' . $e->getMessage()], Http::STATUS_BAD_REQUEST);
+			return new DataResponse(['message' => $this->l10n->t('Music playlist publication failed: %s', [$e->getMessage()])], Http::STATUS_BAD_REQUEST);
 		}
 	}
 
 	private function userId(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			throw new \RuntimeException('No authenticated Nextcloud user.');
+			throw new \RuntimeException($this->l10n->t('No authenticated Nextcloud user.'));
 		}
 
 		return $user->getUID();

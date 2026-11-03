@@ -1,0 +1,9 @@
+js/
+css/
+node_modules/
+vendor/
+vendor-bin/
+tests/
+docs/
+scripts/
+dist/

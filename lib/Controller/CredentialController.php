@@ -10,6 +10,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\OpenAPI;
 use OCP\AppFramework\Http\DataResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use RuntimeException;
@@ -22,6 +23,7 @@ final class CredentialController extends Controller {
 		IRequest $request,
 		private IUserSession $userSession,
 		private ProviderCredentialsService $credentials,
+		private IL10N $l10n,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -31,17 +33,17 @@ final class CredentialController extends Controller {
 	public function delete(string $credential): DataResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			throw new RuntimeException('No authenticated Nextcloud user.');
+			throw new RuntimeException($this->l10n->t('No authenticated Nextcloud user.'));
 		}
 		$userId = $user->getUID();
 		if (!in_array($credential, ['acoustid_key', 'acoustid_user_key', 'discogs_token', 'lastfm_key', 'openai_key', 'mistral_key'], true)) {
-			return new DataResponse(['message' => 'Unknown provider credential.'], Http::STATUS_BAD_REQUEST);
+			return new DataResponse(['message' => $this->l10n->t('Unknown provider credential.')], Http::STATUS_BAD_REQUEST);
 		}
 
 		try {
 			$this->credentials->delete($userId, $credential);
 		} catch (Throwable) {
-			return new DataResponse(['message' => 'Could not delete the saved credential. Please try again.'], Http::STATUS_INTERNAL_SERVER_ERROR);
+			return new DataResponse(['message' => $this->l10n->t('Could not delete the saved credential. Please try again.')], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
 		return new DataResponse(['deleted' => true]);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\MusicCurator\Service;
 
 use OCP\Http\Client\IClientService;
+use OCP\IL10N;
 use RuntimeException;
 
 class MusicBrainzService {
@@ -12,6 +13,7 @@ class MusicBrainzService {
 
 	public function __construct(
 		private IClientService $clientService,
+		private IL10N $l10n,
 	) {
 	}
 
@@ -205,11 +207,7 @@ class MusicBrainzService {
 			$details = substr($details, 0, 180) . '…';
 		}
 
-		throw new RuntimeException(sprintf(
-			'MusicBrainz returned HTTP %d%s',
-			$lastStatus,
-			$details !== '' ? ': ' . $details : '',
-		));
+		throw new RuntimeException($this->l10n->t('MusicBrainz returned HTTP %d%s', [$lastStatus, $details !== '' ? ': ' . $details : '']));
 	}
 
 	/**

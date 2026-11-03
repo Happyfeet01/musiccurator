@@ -5,6 +5,14 @@ All notable changes to MusicCurator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Localize the interface, confirmations, provider status and application errors in German and English using each Nextcloud user's language; dates use the Nextcloud locale.
+- Ship gettext sources and Nextcloud translation catalogs, with validation for coverage, placeholders and plurals.
+- Prepare community translation contributions and Nextcloud Transifex onboarding.
+
 ## [1.5.2] - Unreleased
 
 ### Added

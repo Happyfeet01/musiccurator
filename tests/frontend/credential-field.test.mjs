@@ -10,6 +10,7 @@ const { descriptor } = parse(source)
 const script = compileScript(descriptor, { id: 'credential-field-test' }).content
   .replace(/import NcButton from '[^']+'/u, 'const NcButton = {}')
   .replaceAll("from 'vue'", `from '${import.meta.resolve('vue')}'`)
+  .replaceAll("from '../l10n.ts'", `from '${new URL('../../src/l10n.ts', import.meta.url).href}'`)
 const { outputText } = ts.transpileModule(script, {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
 })

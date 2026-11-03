@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace OCA\MusicCurator\Service;
 
 use OCP\Http\Client\IClientService;
+use OCP\IL10N;
 use RuntimeException;
 
 class LastFmService {
 	public function __construct(
 		private IClientService $clientService,
+		private IL10N $l10n,
 	) {
 	}
 
@@ -199,11 +201,11 @@ class LastFmService {
 		$status = $response->getStatusCode();
 		$body = (string)$response->getBody();
 		if ($status < 200 || $status >= 300) {
-			throw new RuntimeException(sprintf('Last.fm returned HTTP %d', $status));
+			throw new RuntimeException($this->l10n->t('Last.fm returned HTTP %d', [$status]));
 		}
 		$data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
 		if (is_array($data) && isset($data['error'])) {
-			throw new RuntimeException('Last.fm error: ' . (string)($data['message'] ?? $data['error']));
+			throw new RuntimeException($this->l10n->t('Last.fm error: %s', [(string)($data['message'] ?? $data['error'])]));
 		}
 		return is_array($data) ? $data : [];
 	}

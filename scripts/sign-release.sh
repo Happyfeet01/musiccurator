@@ -43,10 +43,11 @@ mkdir -p dist
 archive="$release_source/dist/musiccurator-$version.tar.gz"
 [[ ! -e $archive ]] || fail "Archive already exists: $archive. Move it aside before rebuilding."
 npm ci
+npm run l10n:check
 npm run lint
 npm run stylelint
 npm run build
-node --test tests/frontend/audit-policy.test.mjs
+npm run test:frontend
 node scripts/audit-dependencies.mjs
 [[ -s js/musiccurator-main.mjs && -s css/musiccurator-main.css ]] || fail 'Compiled frontend assets are missing.'
 

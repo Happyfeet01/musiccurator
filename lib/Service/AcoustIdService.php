@@ -6,6 +6,7 @@ namespace OCA\MusicCurator\Service;
 
 use OCP\Files\File;
 use OCP\Http\Client\IClientService;
+use OCP\IL10N;
 use OCP\ITempManager;
 use RuntimeException;
 
@@ -13,6 +14,7 @@ class AcoustIdService {
 	public function __construct(
 		private IClientService $clientService,
 		private ITempManager $tempManager,
+		private IL10N $l10n,
 	) {
 	}
 
@@ -25,18 +27,18 @@ class AcoustIdService {
 
 		$fpcalc = $this->fpcalcPath();
 		if ($fpcalc === '') {
-			throw new RuntimeException('AcoustID is configured, but fpcalc (Chromaprint) is not installed on the server.');
+			throw new RuntimeException($this->l10n->t('AcoustID is configured, but fpcalc (Chromaprint) is not installed on the server.'));
 		}
 
 		$temp = $this->tempManager->getTemporaryFile('.' . $file->getExtension());
 		if ($temp === false) {
-			throw new RuntimeException('Could not create a temporary file for audio fingerprinting.');
+			throw new RuntimeException($this->l10n->t('Could not create a temporary file for audio fingerprinting.'));
 		}
 
 		$input = $file->fopen('r');
 		$output = fopen($temp, 'wb');
 		if (!is_resource($input) || !is_resource($output)) {
-			throw new RuntimeException('Could not open the audio file for fingerprinting.');
+			throw new RuntimeException($this->l10n->t('Could not open the audio file for fingerprinting.'));
 		}
 		try {
 			stream_copy_to_stream($input, $output);
@@ -47,7 +49,7 @@ class AcoustIdService {
 
 		$fingerprint = $this->fingerprint($fpcalc, $temp);
 		if ($fingerprint['fingerprint'] === '' || $fingerprint['duration'] <= 0) {
-			throw new RuntimeException('fpcalc did not return a usable Chromaprint fingerprint.');
+			throw new RuntimeException($this->l10n->t('fpcalc did not return a usable Chromaprint fingerprint.'));
 		}
 
 		$params = [
@@ -123,7 +125,7 @@ class AcoustIdService {
 	/** @return array{duration: int, fingerprint: string} */
 	private function fingerprint(string $fpcalc, string $file): array {
 		if (!function_exists('proc_open')) {
-			throw new RuntimeException('The PHP proc_open function is disabled; AcoustID fingerprinting cannot run.');
+			throw new RuntimeException($this->l10n->t('The PHP proc_open function is disabled; AcoustID fingerprinting cannot run.'));
 		}
 
 		$descriptors = [
@@ -132,7 +134,7 @@ class AcoustIdService {
 		];
 		$process = proc_open([$fpcalc, '-json', $file], $descriptors, $pipes);
 		if (!is_resource($process)) {
-			throw new RuntimeException('Could not start fpcalc.');
+			throw new RuntimeException($this->l10n->t('Could not start fpcalc.'));
 		}
 		$stdout = stream_get_contents($pipes[1]);
 		$stderr = stream_get_contents($pipes[2]);
@@ -140,12 +142,12 @@ class AcoustIdService {
 		fclose($pipes[2]);
 		$exitCode = proc_close($process);
 		if ($exitCode !== 0) {
-			throw new RuntimeException('fpcalc failed: ' . trim((string)$stderr));
+			throw new RuntimeException($this->l10n->t('fpcalc failed: %s', [trim((string)$stderr)]));
 		}
 
 		$data = json_decode((string)$stdout, true);
 		if (!is_array($data)) {
-			throw new RuntimeException('fpcalc returned invalid JSON.');
+			throw new RuntimeException($this->l10n->t('fpcalc returned invalid JSON.'));
 		}
 
 		return [
@@ -169,11 +171,11 @@ class AcoustIdService {
 		$status = $response->getStatusCode();
 		$body = (string)$response->getBody();
 		if ($status < 200 || $status >= 300) {
-			throw new RuntimeException(sprintf('AcoustID returned HTTP %d', $status));
+			throw new RuntimeException($this->l10n->t('AcoustID returned HTTP %d', [$status]));
 		}
 		$data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
 		if (!is_array($data) || ($data['status'] ?? '') !== 'ok') {
-			throw new RuntimeException('AcoustID returned an error response.');
+			throw new RuntimeException($this->l10n->t('AcoustID returned an error response.'));
 		}
 		return $data;
 	}

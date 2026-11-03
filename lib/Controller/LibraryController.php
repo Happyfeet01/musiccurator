@@ -17,6 +17,7 @@ use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\IConfig;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Throwable;
@@ -34,6 +35,7 @@ class LibraryController extends Controller {
 		private IConfig $config,
 		private AudioTagReader $tagReader,
 		private MusicBrainzService $musicBrainz,
+		private IL10N $l10n,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -69,10 +71,10 @@ class LibraryController extends Controller {
 			$libraryPath = $this->normalizePath($libraryPath);
 			$node = $this->nodeForUserPath($userId, $libraryPath);
 			if (!$node instanceof Folder) {
-				return new DataResponse(['message' => 'The selected library path is not a folder.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('The selected library path is not a folder.')], Http::STATUS_BAD_REQUEST);
 			}
 		} catch (Throwable) {
-			return new DataResponse(['message' => 'The selected music folder does not exist in your Nextcloud files.'], Http::STATUS_BAD_REQUEST);
+			return new DataResponse(['message' => $this->l10n->t('The selected music folder does not exist in your Nextcloud files.')], Http::STATUS_BAD_REQUEST);
 		}
 
 		$this->config->setUserValue($userId, 'musiccurator', 'library_path', $libraryPath);
@@ -94,10 +96,10 @@ class LibraryController extends Controller {
 			$path = $this->normalizePath($path);
 			$node = $this->nodeForUserPath($userId, $path);
 			if (!$node instanceof Folder) {
-				return new DataResponse(['message' => 'Path is not a folder.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('Path is not a folder.')], Http::STATUS_BAD_REQUEST);
 			}
 		} catch (Throwable) {
-			return new DataResponse(['message' => 'Folder not found.'], Http::STATUS_NOT_FOUND);
+			return new DataResponse(['message' => $this->l10n->t('Folder not found.')], Http::STATUS_NOT_FOUND);
 		}
 
 		$folders = [];
@@ -127,10 +129,10 @@ class LibraryController extends Controller {
 		try {
 			$node = $this->nodeForUserPath($userId, $libraryPath);
 			if (!$node instanceof Folder) {
-				return new DataResponse(['message' => 'The configured library path is not a folder.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('The configured library path is not a folder.')], Http::STATUS_BAD_REQUEST);
 			}
 		} catch (Throwable) {
-			return new DataResponse(['message' => 'The configured music folder no longer exists.'], Http::STATUS_NOT_FOUND);
+			return new DataResponse(['message' => $this->l10n->t('The configured music folder no longer exists.')], Http::STATUS_NOT_FOUND);
 		}
 
 		$tracks = [];
@@ -168,7 +170,7 @@ class LibraryController extends Controller {
 	public function musicBrainz(string $path): DataResponse {
 		$userId = $this->userId();
 		if ($this->config->getUserValue($userId, 'musiccurator', 'musicbrainz_enabled', '1') !== '1') {
-			return new DataResponse(['message' => 'MusicBrainz is disabled in your personal settings.'], Http::STATUS_BAD_REQUEST);
+			return new DataResponse(['message' => $this->l10n->t('MusicBrainz is disabled in your personal settings.')], Http::STATUS_BAD_REQUEST);
 		}
 
 		try {
@@ -176,14 +178,14 @@ class LibraryController extends Controller {
 			$this->assertInsideLibrary($userId, $path);
 			$node = $this->nodeForUserPath($userId, $path);
 			if (!$node instanceof File) {
-				return new DataResponse(['message' => 'Selected path is not a file.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('Selected path is not a file.')], Http::STATUS_BAD_REQUEST);
 			}
 			$tags = $this->tagReader->read($node);
 			$title = $tags['title'] !== '' ? $tags['title'] : pathinfo($node->getName(), PATHINFO_FILENAME);
 			$results = $this->musicBrainz->search($title, $tags['artist'], $tags['album']);
 			return new DataResponse(['results' => $results]);
 		} catch (Throwable $e) {
-			return new DataResponse(['message' => 'MusicBrainz lookup failed: ' . $e->getMessage()], Http::STATUS_BAD_GATEWAY);
+			return new DataResponse(['message' => $this->l10n->t('MusicBrainz lookup failed: %s', [$e->getMessage()])], Http::STATUS_BAD_GATEWAY);
 		}
 	}
 
@@ -203,7 +205,7 @@ class LibraryController extends Controller {
 			$this->assertInsideLibrary($userId, $source);
 			$sourceNode = $this->nodeForUserPath($userId, $source);
 			if (!$sourceNode instanceof File) {
-				return new DataResponse(['message' => 'Source is not a file.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('Source is not a file.')], Http::STATUS_BAD_REQUEST);
 			}
 			$target = $this->buildTargetPath($userId, $sourceNode, $title, $artist, $album, $track);
 			return new DataResponse(['source' => $source, 'target' => $target]);
@@ -225,12 +227,12 @@ class LibraryController extends Controller {
 
 			$sourceNode = $this->nodeForUserPath($userId, $source);
 			if (!$sourceNode instanceof File) {
-				return new DataResponse(['message' => 'Source is not a file.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('Source is not a file.')], Http::STATUS_BAD_REQUEST);
 			}
 
 			$userFolder = $this->rootFolder->getUserFolder($userId);
 			if ($userFolder->nodeExists(ltrim($target, '/'))) {
-				return new DataResponse(['message' => 'A file already exists at the proposed destination.'], Http::STATUS_CONFLICT);
+				return new DataResponse(['message' => $this->l10n->t('A file already exists at the proposed destination.')], Http::STATUS_CONFLICT);
 			}
 
 			$targetDirectoryPath = $this->parentPath($target);
@@ -241,7 +243,7 @@ class LibraryController extends Controller {
 
 			return new DataResponse(['source' => $source, 'target' => $target, 'moved' => true]);
 		} catch (Throwable $e) {
-			return new DataResponse(['message' => 'Move failed: ' . $e->getMessage()], Http::STATUS_BAD_REQUEST);
+			return new DataResponse(['message' => $this->l10n->t('Move failed: %s', [$e->getMessage()])], Http::STATUS_BAD_REQUEST);
 		}
 	}
 
@@ -320,7 +322,7 @@ class LibraryController extends Controller {
 			if ($folder->nodeExists($segment)) {
 				$node = $folder->get($segment);
 				if (!$node instanceof Folder) {
-					throw new \RuntimeException('A file blocks the target folder ' . $segment . '.');
+					throw new \RuntimeException($this->l10n->t('A file blocks the target folder %s.', [$segment]));
 				}
 				$folder = $node;
 			} else {
@@ -352,7 +354,7 @@ class LibraryController extends Controller {
 			return;
 		}
 		if ($path !== $library && !str_starts_with($path, $library . '/')) {
-			throw new \RuntimeException('The requested path is outside the configured music library.');
+			throw new \RuntimeException($this->l10n->t('The requested path is outside the configured music library.'));
 		}
 	}
 
@@ -376,7 +378,7 @@ class LibraryController extends Controller {
 	private function userId(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			throw new \RuntimeException('No authenticated Nextcloud user.');
+			throw new \RuntimeException($this->l10n->t('No authenticated Nextcloud user.'));
 		}
 		return $user->getUID();
 	}
@@ -396,7 +398,7 @@ class LibraryController extends Controller {
 				continue;
 			}
 			if ($segment === '..') {
-				throw new \InvalidArgumentException('Parent path segments are not allowed.');
+				throw new \InvalidArgumentException($this->l10n->t('Parent path segments are not allowed.'));
 			}
 			$segments[] = $segment;
 		}

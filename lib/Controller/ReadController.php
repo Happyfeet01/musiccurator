@@ -17,6 +17,7 @@ use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\IConfig;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -37,6 +38,7 @@ class ReadController extends Controller {
 		private ProviderCredentialsService $credentials,
 		private ScanIndexService $scanIndex,
 		private LoggerInterface $logger,
+		private IL10N $l10n,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -88,7 +90,7 @@ class ReadController extends Controller {
 			$this->assertInsideLibrary($userId, $path);
 			$node = $this->nodeForUserPath($userId, $path);
 			if (!$node instanceof File) {
-				return new DataResponse(['message' => 'Selected path is not a file.'], 400);
+				return new DataResponse(['message' => $this->l10n->t('Selected path is not a file.')], 400);
 			}
 
 			$tags = $this->tagReader->read($node);
@@ -131,7 +133,7 @@ class ReadController extends Controller {
 				'exception' => $e,
 			]);
 
-			return new DataResponse(['message' => 'Metadata lookup failed: ' . $e->getMessage()], 502);
+			return new DataResponse(['message' => $this->l10n->t('Metadata lookup failed: %s', [$e->getMessage()])], 502);
 		}
 	}
 
@@ -169,7 +171,7 @@ class ReadController extends Controller {
 	private function userId(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			throw new \RuntimeException('No authenticated Nextcloud user.');
+			throw new \RuntimeException($this->l10n->t('No authenticated Nextcloud user.'));
 		}
 
 		return $user->getUID();
@@ -191,10 +193,10 @@ class ReadController extends Controller {
 	private function assertInsideLibrary(string $userId, string $path): void {
 		$library = rtrim($this->libraryPath($userId), '/');
 		if ($library === '') {
-			throw new \RuntimeException('No music folder is configured.');
+			throw new \RuntimeException($this->l10n->t('No music folder is configured.'));
 		}
 		if ($path !== $library && !str_starts_with($path, $library . '/')) {
-			throw new \RuntimeException(sprintf('The requested path "%s" is outside the configured music library "%s".', $path, $library));
+			throw new \RuntimeException($this->l10n->t('The requested path "%s" is outside the configured music library "%s".', [$path, $library]));
 		}
 	}
 
@@ -215,7 +217,7 @@ class ReadController extends Controller {
 				continue;
 			}
 			if ($segment === '..') {
-				throw new \InvalidArgumentException('Parent path segments are not allowed.');
+				throw new \InvalidArgumentException($this->l10n->t('Parent path segments are not allowed.'));
 			}
 			$segments[] = $segment;
 		}

@@ -12,6 +12,7 @@ use OCP\AppFramework\Http\Attribute\OpenAPI;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\Http\Client\IClientService;
+use OCP\IL10N;
 use OCP\IRequest;
 use Throwable;
 
@@ -20,6 +21,7 @@ class ArtworkController extends Controller {
 		string $appName,
 		IRequest $request,
 		private IClientService $clientService,
+		private IL10N $l10n,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -33,13 +35,13 @@ class ArtworkController extends Controller {
 
 		if ($url === '' && $releaseId !== '') {
 			if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $releaseId)) {
-				return new DataResponse(['message' => 'Invalid MusicBrainz release id.'], Http::STATUS_BAD_REQUEST);
+				return new DataResponse(['message' => $this->l10n->t('Invalid MusicBrainz release id.')], Http::STATUS_BAD_REQUEST);
 			}
 			$url = 'https://coverartarchive.org/release/' . rawurlencode($releaseId) . '/front-250';
 		}
 
 		if (!$this->isAllowedArtworkUrl($url)) {
-			return new DataResponse(['message' => 'Artwork URL is not allowed.'], Http::STATUS_BAD_REQUEST);
+			return new DataResponse(['message' => $this->l10n->t('Artwork URL is not allowed.')], Http::STATUS_BAD_REQUEST);
 		}
 
 		try {
@@ -57,12 +59,12 @@ class ArtworkController extends Controller {
 
 			$status = $response->getStatusCode();
 			if ($status < 200 || $status >= 300) {
-				return new DataResponse(['message' => 'Artwork not found.'], Http::STATUS_NOT_FOUND);
+				return new DataResponse(['message' => $this->l10n->t('Artwork not found.')], Http::STATUS_NOT_FOUND);
 			}
 
 			$contentType = trim((string)$response->getHeader('Content-Type'));
 			if (!str_starts_with(strtolower($contentType), 'image/')) {
-				return new DataResponse(['message' => 'Artwork provider returned an unexpected content type.'], Http::STATUS_BAD_GATEWAY);
+				return new DataResponse(['message' => $this->l10n->t('Artwork provider returned an unexpected content type.')], Http::STATUS_BAD_GATEWAY);
 			}
 
 			return new DataDisplayResponse((string)$response->getBody(), Http::STATUS_OK, [
@@ -70,7 +72,7 @@ class ArtworkController extends Controller {
 				'Cache-Control' => 'private, max-age=86400',
 			]);
 		} catch (Throwable) {
-			return new DataResponse(['message' => 'Artwork provider is currently unavailable.'], Http::STATUS_BAD_GATEWAY);
+			return new DataResponse(['message' => $this->l10n->t('Artwork provider is currently unavailable.')], Http::STATUS_BAD_GATEWAY);
 		}
 	}
 
