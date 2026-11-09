@@ -5,13 +5,20 @@ All notable changes to MusicCurator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.6.0] - Unreleased
+## [1.6.1] - Unreleased
 
-### Development
+### Added
 
 - Add per-track pending/done review status, filters and persistent review history for explicit review actions, tag writes, undo and file moves.
 - Add Nextcloud diagnostics for cache restoration, empty/invalid index rows, scan limits and index/history persistence failures.
 - Add isolated PHP/SQLite regression coverage and CI, including cache restoration above 5,000 indexed tracks. Scan resumption remains separate work.
+
+### Changed
+
+- Prepare version 1.6.1 with a versioned app upgrade so Nextcloud applies the review-status and history migration.
+- Replace the misleading development-build scan-limit warning.
+
+## [1.6.0] - Unreleased
 
 ### Added
 

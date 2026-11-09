@@ -38,7 +38,7 @@ against repeating the write blindly. This is diagnostic support, not proof of th
 
 The new `Version0202Date20261109120000` migration adds review columns and a history table
 without clearing the existing index. Run it through Nextcloud's normal app upgrade as part
-of a versioned release; merely replacing PHP files without running migrations is insufficient.
+of the 1.6.1 release; merely replacing PHP files without running migrations is insufficient.
 This change does not remove the 5,000-file scan cap or add scan resumption.
 
 Run `npm run test:frontend`, `npm run lint`, `npm run stylelint`, `npm run l10n:check`,
