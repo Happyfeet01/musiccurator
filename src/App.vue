@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { TrackProgress as ReviewProgressData, ReviewStatus } from './composables/useTrackProgress.ts'
+
 import { getCanonicalLocale } from '@nextcloud/l10n'
 import { computed, onMounted, ref } from 'vue'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
@@ -11,6 +13,8 @@ import NcContent from '@nextcloud/vue/components/NcContent'
 import AiAdvisorPanel from './components/AiAdvisorPanel.vue'
 import BatchTrackList from './components/BatchTrackList.vue'
 import CredentialField from './components/CredentialField.vue'
+import TrackProgress from './components/TrackProgress.vue'
+import { filterReviewTracks } from './composables/useTrackProgress.ts'
 import { n, t } from './l10n.ts'
 
 declare global {
@@ -42,6 +46,8 @@ type Track = {
 	genre: string
 	tagged: boolean
 	status: string
+	reviewStatus?: ReviewStatus
+	reviewUpdatedAt?: number
 	musicBrainzRecordingId?: string
 	musicBrainzReleaseId?: string
 	musicBrainzScore?: number
@@ -124,6 +130,7 @@ const ALBUM_PAGE_SIZE = 96
 const section = ref<Section>('library')
 const mobileMenuOpen = ref(false)
 const onlyNeedsAttention = ref(false)
+const reviewFilter = ref<'all' | ReviewStatus>('all')
 const loading = ref(false)
 const metadataLoading = ref(false)
 const message = ref('')
@@ -181,9 +188,19 @@ const navigation: Array<{ id: Section, label: string }> = [
 
 const activeSectionLabel = computed(() => navigation.find((item) => item.id === section.value)?.label ?? t('musiccurator', 'Library'))
 
-const visibleTracks = computed(() => onlyNeedsAttention.value
+const attentionTracks = computed(() => onlyNeedsAttention.value
 	? tracks.value.filter((track) => track.status === 'Needs tags')
 	: tracks.value)
+const visibleTracks = computed(() => filterReviewTracks(attentionTracks.value, reviewFilter.value))
+const doneTracks = computed(() => tracks.value.filter((track) => track.reviewStatus === 'done').length)
+
+function applyReviewProgress(path: string, progress: ReviewProgressData): void {
+	const state = { reviewStatus: progress.reviewStatus, reviewUpdatedAt: progress.reviewUpdatedAt }
+	tracks.value = tracks.value.map((track) => track.path === path ? { ...track, ...state } : track)
+	if (selectedTrack.value?.path === path) {
+		selectedTrack.value = { ...selectedTrack.value, ...state }
+	}
+}
 
 const renderedTracks = computed(() => visibleTracks.value.slice(0, trackLimit.value))
 
@@ -320,12 +337,15 @@ async function loadSettings(): Promise<void> {
 }
 
 async function loadCachedLibrary(): Promise<void> {
-	if (!settings.value.libraryPath.trim()) {
-		return
-	}
 	try {
 		const data = await apiRequest<ScanResponse>('/api/library/cache')
+		if (!Array.isArray(data.tracks) || !Array.isArray(data.playlists) || !data.stats) {
+			throw new Error(t('musiccurator', 'The saved library response is invalid. Check the Nextcloud log and reload the app.'))
+		}
 		tracks.value = data.tracks
+		if (selectedTrack.value) {
+			selectedTrack.value = data.tracks.find((track) => track.path === selectedTrack.value?.path) ?? null
+		}
 		playlists.value = data.playlists
 		stats.value = data.stats
 		lastScannedPath.value = data.libraryPath
@@ -780,7 +800,7 @@ onMounted(async () => {
 					</div>
 
 					<div v-if="truncated" class="notice">
-						{{ t('musiccurator', 'The index stopped after 5,000 audio files for this development build.') }}
+						{{ t('musiccurator', 'This scan reached the 5,000-track limit. Indexed tracks remain saved; continuing with the remaining files is not supported yet.') }}
 					</div>
 
 					<section class="glass-panel library-panel">
@@ -790,14 +810,34 @@ onMounted(async () => {
 									{{ t('musiccurator', 'Library') }}
 								</p>
 								<h2>{{ hasScanned ? n('musiccurator', '%n audio file', '%n audio files', tracks.length) : t('musiccurator', 'Ready to index') }}</h2>
+								<p v-if="hasScanned">
+									{{ t('musiccurator', 'Review: {pending} pending · {done} done', { pending: tracks.length - doneTracks, done: doneTracks }) }}
+								</p>
 								<small v-if="hasScanned && visibleTracks.length > renderedTracks.length" class="muted">{{ t('musiccurator', 'Showing {shown} of {total} for a faster interface.', { shown: renderedTracks.length, total: visibleTracks.length }) }}</small>
 							</div>
-							<NcCheckboxRadioSwitch v-model="onlyNeedsAttention"
-								type="switch"
-								:disabled="!hasScanned"
-								@update:modelValue="trackLimit = TRACK_PAGE_SIZE">
-								{{ t('musiccurator', 'Only items needing attention') }}
-							</NcCheckboxRadioSwitch>
+							<div class="review-actions">
+								<label class="field-label" for="review-filter">{{ t('musiccurator', 'Review status') }}</label>
+								<select id="review-filter"
+									v-model="reviewFilter"
+									:disabled="!hasScanned"
+									@change="trackLimit = TRACK_PAGE_SIZE">
+									<option value="all">
+										{{ t('musiccurator', 'All tracks') }}
+									</option>
+									<option value="pending">
+										{{ t('musiccurator', 'Pending') }}
+									</option>
+									<option value="done">
+										{{ t('musiccurator', 'Done') }}
+									</option>
+								</select>
+								<NcCheckboxRadioSwitch v-model="onlyNeedsAttention"
+									type="switch"
+									:disabled="!hasScanned"
+									@update:modelValue="trackLimit = TRACK_PAGE_SIZE">
+									{{ t('musiccurator', 'Only items needing attention') }}
+								</NcCheckboxRadioSwitch>
+							</div>
 						</div>
 
 						<div v-if="!hasScanned" class="empty-state">
@@ -854,6 +894,8 @@ onMounted(async () => {
 								</NcButton>
 							</div>
 						</div>
+
+						<TrackProgress :track="selectedTrack" @updated="applyReviewProgress" />
 
 						<div v-if="providerStatuses.length" class="provider-status-grid">
 							<div v-for="provider in providerStatuses"

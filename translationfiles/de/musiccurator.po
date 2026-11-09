@@ -226,6 +226,10 @@ msgstr "Alben"
 msgid "Albums found in your tags"
 msgstr "Alben aus deinen Tags"
 
+#: src/App.vue
+msgid "All tracks"
+msgstr "Alle Titel"
+
 #: src/components/AiAdvisorPanel.vue
 msgid "API key"
 msgstr "API-Schlüssel"
@@ -390,6 +394,10 @@ msgstr "Temporäre Eingabedatei konnte nicht erstellt werden."
 msgid "Could not delete the saved credential. Please try again."
 msgstr "Der gespeicherte Schlüssel konnte nicht gelöscht werden. Versuche es erneut."
 
+#: lib/Controller/ProgressController.php src/composables/useTrackProgress.ts
+msgid "Could not load or save review progress. Check the Nextcloud log and try again."
+msgstr "Der Bearbeitungsstatus konnte nicht geladen oder gespeichert werden. Prüfe das Nextcloud-Protokoll und versuche es erneut."
+
 #: lib/Service/AcoustIdService.php
 msgid "Could not open the audio file for fingerprinting."
 msgstr "Audiodatei für die Fingerabdrucksuche konnte nicht geöffnet werden."
@@ -409,6 +417,10 @@ msgstr "Nextcloud-Datei konnte nicht zum Schreiben geöffnet werden."
 #: lib/Service/AudioTagWriter.php
 msgid "Could not prepare temporary storage."
 msgstr "Temporärer Speicher konnte nicht vorbereitet werden."
+
+#: lib/Controller/ScanController.php
+msgid "Could not restore the saved library. Check the Nextcloud log for details."
+msgstr "Die gespeicherte Bibliothek konnte nicht geladen werden. Details findest du im Nextcloud-Protokoll."
 
 #: lib/Service/AudioTagWriter.php
 msgid "Could not start ffmpeg. Make sure ffmpeg is installed and available in the PHP-FPM PATH."
@@ -470,6 +482,10 @@ msgstr "Persönlicher Discogs-Token"
 msgid "Discogs returned HTTP %d"
 msgstr "Discogs hat HTTP %d zurückgegeben"
 
+#: src/App.vue src/components/BatchTrackList.vue src/components/TrackProgress.vue
+msgid "Done"
+msgstr "Erledigt"
+
 #: lib/Service/MusicPlaylistService.php
 msgid "Enable Nextcloud Music and scan your music collection there first."
 msgstr "Aktiviere Nextcloud Music und scanne dort zuerst deine Musiksammlung."
@@ -506,7 +522,7 @@ msgstr "Feld"
 msgid "File location will be preserved."
 msgstr "Der Speicherort bleibt erhalten."
 
-#: src/App.vue
+#: src/App.vue src/components/TrackProgress.vue
 msgid "File moved"
 msgstr "Datei verschoben"
 
@@ -598,6 +614,10 @@ msgstr "Ungültige Ollama-Basis-URL."
 msgid "Invalid playlist path."
 msgstr "Ungültiger Playlist-Pfad."
 
+#: lib/Controller/ProgressController.php
+msgid "Invalid review status."
+msgstr "Ungültiger Bearbeitungsstatus."
+
 #: src/App.vue
 msgid "Keep the file exactly where it is."
 msgstr "Die Datei bleibt genau an ihrem bisherigen Speicherort."
@@ -622,13 +642,33 @@ msgstr "Last.fm hat HTTP %d zurückgegeben"
 msgid "Library"
 msgstr "Bibliothek"
 
+#: lib/Controller/ScanController.php
+msgid "Library scan failed. Check the Nextcloud log for details."
+msgstr "Das Einlesen der Bibliothek ist fehlgeschlagen. Details findest du im Nextcloud-Protokoll."
+
 #: src/components/AiAdvisorPanel.vue
 msgid "Loading folders…"
 msgstr "Ordner werden geladen…"
 
+#: src/components/TrackProgress.vue
+msgid "Loading review history…"
+msgstr "Bearbeitungsverlauf wird geladen…"
+
 #: src/components/BatchTrackList.vue
 msgid "Lookup failed"
 msgstr "Abfrage fehlgeschlagen"
+
+#: src/components/TrackProgress.vue
+msgid "Mark a track as done after reviewing it. Scanning and metadata previews do not complete it. Saving tags, undoing a write or moving the file reopens it."
+msgstr "Markiere einen Titel nach deiner Prüfung als erledigt. Ein Scan oder eine Metadatenvorschau erledigt ihn nicht. Nach dem Speichern von Tags, einer Rücknahme oder dem Verschieben ist er wieder offen."
+
+#: src/components/TrackProgress.vue
+msgid "Mark as done"
+msgstr "Als erledigt markieren"
+
+#: src/components/TrackProgress.vue
+msgid "Marked as done"
+msgstr "Als erledigt markiert"
 
 #: src/App.vue src/components/BatchTrackList.vue
 msgid "Metadata"
@@ -670,6 +710,10 @@ msgstr "Metadatenanbieter"
 msgid "Metadata saved in {file}. Run Scan library to refresh the displayed current tags."
 msgstr "Metadaten in {file} gespeichert. Aktualisiere den Bibliotheksindex, um die aktuellen Tags anzuzeigen."
 
+#: src/components/TrackProgress.vue
+msgid "Metadata saved to file"
+msgstr "Metadaten in der Datei gespeichert"
+
 #: src/App.vue
 msgid "Metadata suggestion"
 msgstr "Metadatenvorschlag"
@@ -685,6 +729,10 @@ msgstr "Schreiben der Metadaten mit HTTP {status} fehlgeschlagen"
 #: lib/Controller/TagController.php
 msgid "Metadata write failed: %s"
 msgstr "Schreiben der Metadaten fehlgeschlagen: %s"
+
+#: src/components/TrackProgress.vue
+msgid "Metadata write undone"
+msgstr "Metadatenänderung rückgängig gemacht"
 
 #: src/App.vue
 msgid "missing title or artist"
@@ -814,7 +862,7 @@ msgstr "Kein API-Schlüssel konfiguriert."
 msgid "No audio files were found directly in this folder."
 msgstr "Direkt in diesem Ordner wurden keine Audiodateien gefunden."
 
-#: lib/Controller/AiController.php lib/Controller/CredentialController.php lib/Controller/FolderController.php lib/Controller/LibraryController.php lib/Controller/PlaylistController.php lib/Controller/ReadController.php lib/Controller/ScanController.php lib/Controller/SettingsController.php lib/Controller/TagController.php
+#: lib/Controller/AiController.php lib/Controller/CredentialController.php lib/Controller/FolderController.php lib/Controller/LibraryController.php lib/Controller/PlaylistController.php lib/Controller/ProgressController.php lib/Controller/ReadController.php lib/Controller/ScanController.php lib/Controller/SettingsController.php lib/Controller/TagController.php
 msgid "No authenticated Nextcloud user."
 msgstr "Kein angemeldeter Nextcloud-Nutzer."
 
@@ -873,6 +921,10 @@ msgstr "Keine Playlist-Dateien in der ausgewählten Bibliothek gefunden."
 #: src/App.vue
 msgid "no provider configured"
 msgstr "kein Anbieter konfiguriert"
+
+#: src/components/TrackProgress.vue
+msgid "No review actions recorded yet."
+msgstr "Noch keine Bearbeitungsschritte aufgezeichnet."
 
 #: src/App.vue
 msgid "No subfolders here. You can still select this folder."
@@ -974,6 +1026,10 @@ msgstr "Übergeordnete Pfadsegmente sind nicht erlaubt."
 msgid "Path is not a folder."
 msgstr "Der Pfad ist kein Ordner."
 
+#: src/App.vue src/components/BatchTrackList.vue src/components/TrackProgress.vue
+msgid "Pending"
+msgstr "Offen"
+
 #: src/App.vue
 msgid "Personal MusicCurator settings saved."
 msgstr "Persönliche MusicCurator-Einstellungen gespeichert."
@@ -1074,6 +1130,14 @@ msgstr "Bibliotheksindex aktualisieren"
 msgid "Refresh preview"
 msgstr "Vorschau aktualisieren"
 
+#: src/components/TrackProgress.vue
+msgid "Reopen for review"
+msgstr "Wieder öffnen"
+
+#: src/components/TrackProgress.vue
+msgid "Reopened for review"
+msgstr "Zur erneuten Prüfung geöffnet"
+
 #: src/App.vue
 msgid "Request failed with HTTP {status}"
 msgstr "Anfrage mit HTTP {status} fehlgeschlagen"
@@ -1081,6 +1145,30 @@ msgstr "Anfrage mit HTTP {status} fehlgeschlagen"
 #: src/App.vue
 msgid "Reserved for future fingerprint submissions; not required for lookup."
 msgstr "Für zukünftige Fingerabdruck-Übermittlungen vorgesehen; für die Suche nicht erforderlich."
+
+#: src/components/TrackProgress.vue
+msgid "Retry"
+msgstr "Erneut versuchen"
+
+#: src/components/TrackProgress.vue
+msgid "Review activity"
+msgstr "Bearbeitungsschritt"
+
+#: src/components/TrackProgress.vue
+msgid "Review history (latest 50 actions)"
+msgstr "Bearbeitungsverlauf (letzte 50 Schritte)"
+
+#: src/components/TrackProgress.vue
+msgid "Review progress"
+msgstr "Bearbeitungsfortschritt"
+
+#: src/App.vue
+msgid "Review status"
+msgstr "Bearbeitungsstatus"
+
+#: src/App.vue
+msgid "Review: {pending} pending · {done} done"
+msgstr "Bearbeitung: {pending} offen · {done} erledigt"
 
 #: src/components/BatchTrackList.vue
 msgid "Rollback record stored"
@@ -1158,6 +1246,10 @@ msgstr "Für Sammelvorschau auswählen"
 msgid "Selected path is not a file."
 msgstr "Der ausgewählte Pfad ist keine Datei."
 
+#: lib/Controller/ProgressController.php
+msgid "Selected path is not a readable file."
+msgstr "Der ausgewählte Pfad ist keine lesbare Datei."
+
 #: src/App.vue
 msgid "Selected track"
 msgstr "Ausgewählter Titel"
@@ -1214,13 +1306,13 @@ msgstr "Die angezeigten Ergebnisse wurden aus {indexedPath} indexiert; deine kon
 msgid "The file from the last metadata write no longer exists."
 msgstr "Die Datei der letzten Metadatenänderung existiert nicht mehr."
 
+#: src/components/BatchTrackList.vue
+msgid "The file was saved, but its index or history could not be updated. Check the Nextcloud log before retrying any write."
+msgstr "Die Datei wurde gespeichert, aber Index oder Verlauf konnten nicht aktualisiert werden. Prüfe das Nextcloud-Protokoll, bevor du erneut schreibst."
+
 #: src/components/AiAdvisorPanel.vue
 msgid "The first experiment sends filenames, existing tags and folder statistics only. Audio files are never uploaded to a cloud AI provider."
 msgstr "Das erste Experiment übermittelt nur Dateinamen, vorhandene Tags und Ordnerstatistiken. Audiodateien werden niemals zu einem Cloud-KI-Anbieter hochgeladen."
-
-#: src/App.vue
-msgid "The index stopped after 5,000 audio files for this development build."
-msgstr "Der Index wurde in dieser Entwicklungsversion nach 5.000 Audiodateien gestoppt."
 
 #: lib/Service/MusicPlaylistService.php
 msgid "The linked Music playlist is no longer managed by MusicCurator."
@@ -1242,9 +1334,17 @@ msgstr "Der angeforderte Pfad \"%s\" liegt außerhalb der konfigurierten Musikbi
 msgid "The requested path is outside the configured music library."
 msgstr "Der angeforderte Pfad liegt außerhalb der konfigurierten Musikbibliothek."
 
+#: src/App.vue
+msgid "The saved library response is invalid. Check the Nextcloud log and reload the app."
+msgstr "Die Antwort für die gespeicherte Bibliothek ist ungültig. Prüfe das Nextcloud-Protokoll und lade die App neu."
+
 #: src/components/AiAdvisorPanel.vue
 msgid "The selected AI provider is not fully configured."
 msgstr "Der ausgewählte KI-Anbieter ist nicht vollständig konfiguriert."
+
+#: lib/Controller/ProgressController.php
+msgid "The selected file is outside the configured music library."
+msgstr "Die ausgewählte Datei liegt außerhalb der eingestellten Musikbibliothek."
 
 #: lib/Service/PlaylistService.php
 msgid "The selected folder is outside the configured music library."
@@ -1270,6 +1370,10 @@ msgstr "Der ausgewählte Musikordner existiert nicht in deinen Nextcloud-Dateien
 msgid "The selected path is not a folder."
 msgstr "Der ausgewählte Pfad ist kein Ordner."
 
+#: src/composables/useTrackProgress.ts
+msgid "The server returned invalid review progress. Please reload the app."
+msgstr "Der Server hat einen ungültigen Bearbeitungsstatus zurückgegeben. Bitte lade die App neu."
+
 #: lib/Controller/TagController.php
 msgid "The stored rollback record contains no tag fields."
 msgstr "Der gespeicherte Rückgängig-Datensatz enthält keine Tag-Felder."
@@ -1282,9 +1386,17 @@ msgstr "Es gibt keine Metadatenänderung zum Rückgängigmachen."
 msgid "These settings belong to the currently signed-in Nextcloud user."
 msgstr "Diese Einstellungen gehören zum aktuell angemeldeten Nextcloud-Nutzer."
 
+#: lib/Controller/ProgressController.php
+msgid "This file is not available in your index. Refresh the library index first."
+msgstr "Diese Datei ist in deinem Index nicht verfügbar. Aktualisiere zuerst den Bibliotheksindex."
+
 #: lib/Service/PlaylistService.php
 msgid "This folder contains no supported audio files."
 msgstr "Dieser Ordner enthält keine unterstützten Audiodateien."
+
+#: src/App.vue
+msgid "This scan reached the 5,000-track limit. Indexed tracks remain saved; continuing with the remaining files is not supported yet."
+msgstr "Dieser Scan hat die Grenze von 5.000 Titeln erreicht. Eingelesene Titel bleiben gespeichert; eine Fortsetzung mit den übrigen Dateien wird noch nicht unterstützt."
 
 #: src/components/AiAdvisorPanel.vue
 msgid "Time:"

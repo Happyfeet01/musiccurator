@@ -7,6 +7,12 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [1.6.0] - Unreleased
 
+### Development
+
+- Add per-track pending/done review status, filters and persistent review history for explicit review actions, tag writes, undo and file moves.
+- Add Nextcloud diagnostics for cache restoration, empty/invalid index rows, scan limits and index/history persistence failures.
+- Add isolated PHP/SQLite regression coverage and CI, including cache restoration above 5,000 indexed tracks. Scan resumption remains separate work.
+
 ### Added
 
 - Localize the interface, confirmations, provider status and application errors in German and English using each Nextcloud user's language; dates use the Nextcloud locale.

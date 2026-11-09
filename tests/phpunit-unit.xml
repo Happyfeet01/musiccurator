@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<phpunit bootstrap="bootstrap-unit.php" failOnWarning="true" failOnRisky="true" cacheDirectory=".phpunit.cache">
+	<testsuites>
+		<testsuite name="MusicCurator isolated tests">
+			<directory suffix="Test.php">unit</directory>
+			<!-- The original app-template smoke test needs a full Nextcloud checkout. -->
+			<exclude>unit/Controller/ApiTest.php</exclude>
+		</testsuite>
+	</testsuites>
+</phpunit>

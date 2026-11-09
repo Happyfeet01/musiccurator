@@ -113,6 +113,7 @@ async function appComponent(file = 'App.vue') {
     .replaceAll("from './l10n.ts'", `from '${new URL('../../src/l10n.ts', import.meta.url).href}'`)
     .replaceAll("from '../l10n.ts'", `from '${new URL('../../src/l10n.ts', import.meta.url).href}'`)
     .replaceAll("from '../composables/useBatchMetadata.ts'", `from '${new URL('../../src/composables/useBatchMetadata.ts', import.meta.url).href}'`)
+    .replaceAll("from './composables/useTrackProgress.ts'", `from '${new URL('../../src/composables/useTrackProgress.ts', import.meta.url).href}'`)
   const { outputText } = ts.transpileModule(script, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } })
   const shell = `import { h } from '${import.meta.resolve('vue')}'; const Shell = { props: ['name'], setup(props, { slots }) { return () => h('div', [props.name ?? '', ...Object.values(slots).flatMap(slot => slot?.() ?? [])]) } };\n`
   return (await import(`data:text/javascript;base64,${Buffer.from(shell + outputText).toString('base64')}`)).default
