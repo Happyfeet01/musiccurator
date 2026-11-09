@@ -9,6 +9,8 @@ return [
 		['name' => 'credential#delete', 'url' => '/api/settings/credentials/{credential}', 'verb' => 'DELETE'],
 		['name' => 'folder#folders', 'url' => '/api/folders', 'verb' => 'GET'],
 		['name' => 'scan#cached', 'url' => '/api/library/cache', 'verb' => 'GET'],
+		['name' => 'progress#history', 'url' => '/api/library/progress', 'verb' => 'GET'],
+		['name' => 'progress#setStatus', 'url' => '/api/library/progress', 'verb' => 'POST'],
 		['name' => 'scan#scan', 'url' => '/api/library/scan', 'verb' => 'POST'],
 		['name' => 'scan#scanSelected', 'url' => '/api/library/scan-selected', 'verb' => 'POST'],
 		['name' => 'playlist#publish', 'url' => '/api/playlists/publish', 'verb' => 'POST'],

@@ -27,6 +27,7 @@ type Track = {
 	albumArtist: string
 	genre?: string
 	status: string
+	reviewStatus?: 'pending' | 'done'
 }
 
 type TagWriteResponse = {
@@ -36,6 +37,7 @@ type TagWriteResponse = {
 	bytes: number
 	backupId: string
 	message?: string
+	historyRecorded?: boolean
 }
 
 type PlaylistCreateResponse = {
@@ -221,6 +223,9 @@ async function writeCandidate(track: Track, candidate: BatchSuggestion): Promise
 		if (!response.ok) {
 			throw new Error(data.message || t('musiccurator', 'Metadata write failed with HTTP {status}', { status: response.status }))
 		}
+		if (data.historyRecorded === false) {
+			writeError.value = t('musiccurator', 'The file was saved, but its index or history could not be updated. Check the Nextcloud log before retrying any write.')
+		}
 		emit('libraryChanged')
 		writtenPaths.value = { ...writtenPaths.value, [track.path]: true }
 	} finally {
@@ -404,7 +409,10 @@ function candidateSummary(candidate: BatchSuggestion): string {
 						<small>{{ track.artist || t('musiccurator', 'Unknown artist') }} · {{ track.album || track.path }}</small>
 					</span>
 				</button>
-				<span class="track-status" :data-status="track.status.toLowerCase().replaceAll(' ', '-')">{{ track.status === 'Needs tags' ? t('musiccurator', 'Needs tags') : t('musiccurator', 'Metadata') }}</span>
+				<span class="track-status" :data-status="track.status.toLowerCase().replaceAll(' ', '-')">
+					{{ track.status === 'Needs tags' ? t('musiccurator', 'Needs tags') : t('musiccurator', 'Metadata') }}
+					<br>{{ track.reviewStatus === 'done' ? t('musiccurator', 'Done') : t('musiccurator', 'Pending') }}
+				</span>
 			</div>
 
 			<div v-if="hasMore" class="load-more-row">

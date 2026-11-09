@@ -131,7 +131,7 @@ class TagController extends Controller {
 			$backupId = bin2hex(random_bytes(8));
 			$this->storeBackup($userId, $backupId, $path, $backup, $updates);
 			$this->appendChange($userId, $path, array_keys($updates), $backupId);
-			$this->refreshIndex($userId, $node, $path, $after);
+			$historyRecorded = $this->refreshIndex($userId, $node, $path, $after, 'metadata_saved');
 
 			$this->logger->info('MusicCurator MP3 metadata write completed', [
 				'app' => 'musiccurator',
@@ -148,6 +148,7 @@ class TagController extends Controller {
 				'bytes' => $result['bytes'],
 				'tags' => $after,
 				'backupId' => $backupId,
+				'historyRecorded' => $historyRecorded,
 			]);
 		} catch (Throwable $e) {
 			$this->logger->warning('MusicCurator MP3 metadata write failed', [
@@ -193,27 +194,36 @@ class TagController extends Controller {
 			array_shift($backups);
 			$this->config->setUserValue($userId, 'musiccurator', 'tag_backups', (string)json_encode($backups, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 			$this->appendChange($userId, $path, array_keys($restore), '', 'metadata_undo');
-			$this->refreshIndex($userId, $node, $path, $this->tagReader->read($node));
+			$historyRecorded = $this->refreshIndex($userId, $node, $path, $this->tagReader->read($node), 'metadata_undone');
 
 			return new DataResponse([
 				'undone' => true,
+				'historyRecorded' => $historyRecorded,
 				'path' => $path,
 				'tags' => $this->tagReader->read($node),
 			]);
 		} catch (Throwable $e) {
+			$this->logger->warning('MusicCurator metadata undo failed', ['app' => 'musiccurator', 'user' => $userId, 'exception' => $e]);
 			return new DataResponse(['message' => $this->l10n->t('Undo failed: %s', [$e->getMessage()])], Http::STATUS_BAD_GATEWAY);
 		}
 	}
 
 	/** @param array<string, mixed> $tags */
-	private function refreshIndex(string $userId, File $file, string $path, array $tags): void {
+	private function refreshIndex(string $userId, File $file, string $path, array $tags, string $action): bool {
 		try {
 			$this->scanIndex->refreshTags($userId, $file, $path, $tags);
+			// A real file change requires another review; a preview alone never completes a track.
+			$this->scanIndex->recordAction($userId, $file->getId(), $action, 'pending');
+			return true;
 		} catch (Throwable $e) {
 			$this->logger->warning('MusicCurator could not refresh tags in scan index', [
 				'app' => 'musiccurator',
+				'user' => $userId,
+				'file_id' => $file->getId(),
+				'action' => $action,
 				'exception' => $e,
 			]);
+			return false;
 		}
 	}
 
