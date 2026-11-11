@@ -738,6 +738,10 @@ msgstr ""
 msgid "missing title or artist"
 msgstr ""
 
+#: src/App.vue
+msgid "Missing title or artist"
+msgstr ""
+
 #: src/components/AiAdvisorPanel.vue
 msgid "Mistral"
 msgstr ""
@@ -976,10 +980,6 @@ msgstr ""
 
 #: lib/Service/AiAdvisorService.php
 msgid "Ollama returned no classification text."
-msgstr ""
-
-#: src/App.vue
-msgid "Only items needing attention"
 msgstr ""
 
 #: lib/Service/MusicPlaylistService.php

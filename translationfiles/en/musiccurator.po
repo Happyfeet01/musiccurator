@@ -738,6 +738,10 @@ msgstr "Metadata write undone"
 msgid "missing title or artist"
 msgstr "missing title or artist"
 
+#: src/App.vue
+msgid "Missing title or artist"
+msgstr "Missing title or artist"
+
 #: src/components/AiAdvisorPanel.vue
 msgid "Mistral"
 msgstr "Mistral"
@@ -977,10 +981,6 @@ msgstr "Ollama returned an invalid classification."
 #: lib/Service/AiAdvisorService.php
 msgid "Ollama returned no classification text."
 msgstr "Ollama returned no classification text."
-
-#: src/App.vue
-msgid "Only items needing attention"
-msgstr "Only items needing attention"
 
 #: lib/Service/MusicPlaylistService.php
 msgid "Only MusicCurator-managed M3U8 playlists can be published."

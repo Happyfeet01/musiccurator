@@ -835,7 +835,7 @@ onMounted(async () => {
 									type="switch"
 									:disabled="!hasScanned"
 									@update:modelValue="trackLimit = TRACK_PAGE_SIZE">
-									{{ t('musiccurator', 'Only items needing attention') }}
+									{{ t('musiccurator', 'Missing title or artist') }}
 								</NcCheckboxRadioSwitch>
 							</div>
 						</div>
