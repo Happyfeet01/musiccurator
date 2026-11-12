@@ -9,7 +9,6 @@ use OCA\MusicCurator\Service\MusicBrainzService;
 use OCA\MusicCurator\Service\ScanIndexService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
-use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\OpenAPI;
 use OCP\AppFramework\Http\DataResponse;
@@ -46,7 +45,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'GET', url: '/api/settings')]
 	public function settings(): DataResponse {
 		$userId = $this->userId();
 		return new DataResponse([
@@ -61,7 +59,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'POST', url: '/api/settings')]
 	public function saveSettings(
 		string $libraryPath = '/Music',
 		string $musicBrainzEnabled = '1',
@@ -93,7 +90,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'GET', url: '/api/folders')]
 	public function folders(string $path = '/'): DataResponse {
 		$userId = $this->userId();
 		try {
@@ -126,7 +122,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'POST', url: '/api/library/scan')]
 	public function scan(): DataResponse {
 		$userId = $this->userId();
 		$libraryPath = $this->libraryPath($userId);
@@ -170,7 +165,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'GET', url: '/api/musicbrainz')]
 	public function musicBrainz(string $path): DataResponse {
 		$userId = $this->userId();
 		if ($this->config->getUserValue($userId, 'musiccurator', 'musicbrainz_enabled', '1') !== '1') {
@@ -195,7 +189,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'POST', url: '/api/library/preview-move')]
 	public function previewMove(
 		string $source,
 		string $title = '',
@@ -220,7 +213,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'POST', url: '/api/library/move')]
 	public function move(string $source, string $target): DataResponse {
 		$userId = $this->userId();
 		try {
@@ -267,7 +259,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'GET', url: '/api/changes')]
 	public function changes(): DataResponse {
 		$userId = $this->userId();
 		$raw = $this->config->getUserValue($userId, 'musiccurator', 'changes', '[]');
