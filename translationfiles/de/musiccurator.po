@@ -738,6 +738,10 @@ msgstr "Metadatenänderung rückgängig gemacht"
 msgid "missing title or artist"
 msgstr "Titel oder Interpret fehlt"
 
+#: src/App.vue
+msgid "Missing title or artist"
+msgstr "Titel oder Interpret fehlt"
+
 #: src/components/AiAdvisorPanel.vue
 msgid "Mistral"
 msgstr "Mistral"
@@ -977,10 +981,6 @@ msgstr "Ollama hat eine ungültige Einordnung geliefert."
 #: lib/Service/AiAdvisorService.php
 msgid "Ollama returned no classification text."
 msgstr "Ollama hat keinen Einordnungstext geliefert."
-
-#: src/App.vue
-msgid "Only items needing attention"
-msgstr "Nur Einträge mit Handlungsbedarf"
 
 #: lib/Service/MusicPlaylistService.php
 msgid "Only MusicCurator-managed M3U8 playlists can be published."
