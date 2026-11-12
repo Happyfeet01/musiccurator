@@ -5,6 +5,13 @@ All notable changes to MusicCurator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - Unreleased
+
+### Fixed
+
+- Remove legacy controller route attributes that shadow the persistent scan and current settings, folder, metadata and change-history endpoints. Scans now reach the index-writing controller, so a page reload can restore the same tracks instead of an older partial index.
+- Add route-registration checks across both attributes and routes.php, plus scan-to-cache regression tests for initially empty and partially populated indexes.
+
 ## [1.6.1] - Unreleased
 
 ### Added

@@ -26,6 +26,7 @@ use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use PDO;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
@@ -167,6 +168,62 @@ final class ScanProgressTest extends TestCase {
 		$done = array_values(array_filter($response->getData()['tracks'], static fn ($track) => $track['reviewStatus'] === 'done'));
 		self::assertSame(10001, $done[0]['fileId']);
 		self::assertSame(10001, $this->logs[1][2]['restored_tracks']);
+	}
+
+	public static function previousIndexSizes(): array {
+		return ['empty index' => [0], 'partial index like the reported refresh' => [43]];
+	}
+
+	#[DataProvider('previousIndexSizes')]
+	public function testFullScanAndANewRequestReturnTheSameTracks(int $previouslyIndexed): void {
+		for ($id = 1; $id <= $previouslyIndexed; $id++) {
+			$this->store('alice', $id, '/Music/' . $id . '.mp3');
+		}
+		[$config, $session, $root, $l10n] = $this->dependencies();
+		$files = [];
+		for ($id = 1; $id <= 60; $id++) {
+			$file = $this->createMock(File::class);
+			foreach (['getId' => $id, 'getName' => $id . '.mp3', 'getMimeType' => 'audio/mpeg', 'getSize' => 123, 'getMtime' => 100, 'getEtag' => 'etag'] as $method => $value) {
+				$file->method($method)->willReturn($value);
+			}
+			$files[] = $file;
+		}
+		$library = $this->createMock(Folder::class);
+		$library->method('getDirectoryListing')->willReturn($files);
+		$userFolder = $this->createMock(Folder::class);
+		$userFolder->method('get')->with('Music')->willReturn($library);
+		$root->method('getUserFolder')->with('alice')->willReturn($userFolder);
+		$reader = $this->createMock(AudioTagReader::class);
+		$reader->method('read')->willReturn(['title' => 'Track', 'artist' => 'Artist', 'album' => 'Album',
+			'albumArtist' => '', 'track' => '', 'year' => '', 'genre' => '', 'tagged' => true]);
+
+		// RouteRegistrationTest separately checks the actual attributes and PHP
+		// routes together, so this cannot silently test an unreachable controller.
+		$routes = (require __DIR__ . '/../../appinfo/routes.php')['routes'];
+		$route = array_values(array_filter($routes, static fn ($route) => $route['verb'] === 'POST' && $route['url'] === '/api/library/scan'))[0];
+		self::assertSame('scan#scan', $route['name']);
+		$controller = new ScanController('musiccurator', $this->createMock(IRequest::class), $root, $session, $config,
+			$reader, $this->index, $this->logger, $l10n);
+		$response = $controller->scan('/Music');
+		self::assertSame(200, $response->getStatus());
+		$scanned = $response->getData();
+		self::assertCount(60, $scanned['tracks']);
+		self::assertSame($previouslyIndexed, $scanned['cache']['hits']);
+		self::assertGreaterThan(0, $scanned['lastScanAt']);
+
+		// A fresh controller/index instance stands for F5: no scan arrays survive.
+		$fresh = new ScanController('musiccurator', $this->createMock(IRequest::class), $root, $session, $config,
+			$reader, new ScanIndexService($this->db, $this->logger), $this->logger, $l10n);
+		$cachedResponse = $fresh->cached();
+		self::assertSame(200, $cachedResponse->getStatus());
+		$cached = $cachedResponse->getData();
+		self::assertCount(60, $cached['tracks']);
+		self::assertSame('/Music', $cached['libraryPath']);
+		self::assertSame($scanned['lastScanAt'], $cached['lastScanAt']);
+		$ids = array_column($cached['tracks'], 'fileId');
+		sort($ids);
+		self::assertSame(range(1, 60), $ids);
+		self::assertContains('MusicCurator library scan completed', array_column($this->logs, 1));
 	}
 
 	public function testCacheFailureReturnsUsefulErrorAndLogsTheActualException(): void {
