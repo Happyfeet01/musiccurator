@@ -9,6 +9,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Fixed
 
+- Update the runtime dependency `fast-xml-parser` to 5.12.0 and its required dependencies to resolve GHSA-474x-hrwr-fgx4 and restore the release security audit.
 - Remove legacy controller route attributes that shadow the persistent scan and current settings, folder, metadata and change-history endpoints. Scans now reach the index-writing controller, so a page reload can restore the same tracks instead of an older partial index.
 - Add route-registration checks across both attributes and routes.php, plus scan-to-cache regression tests for initially empty and partially populated indexes.
 
