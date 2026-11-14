@@ -28,7 +28,7 @@
     "@vitejs/plugin-vue": "^6.0.10",
     "@vue/tsconfig": "^0.9.1",
     "browserslist-to-esbuild": "^2.1.1",
-    "rollup-plugin-license": "^3.7.1",
+    "rollup-plugin-license": "^3.7.2",
     "sass": "^1.106.1",
     "typescript": "^5.9.3",
     "vite": "^8.3.5"
