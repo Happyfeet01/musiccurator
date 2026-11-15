@@ -36,7 +36,13 @@ jobs:
           composer require --dev 'nextcloud/ocp:dev-stable34' --with-dependencies
 
       - name: Regenerate baseline stable34
-        run: composer run psalm -- --set-baseline=psalm-baseline-dev-stable34.xml
+        run: |
+          set +e
+          composer run psalm -- --set-baseline=psalm-baseline-dev-stable34.xml
+          code=$?
+          set -e
+          # exit code 2 = issues found & baselined, that's expected here
+          if [ "$code" -ne 0 ] && [ "$code" -ne 2 ]; then exit "$code"; fi
 
       - name: Switch to stable35
         run: |
@@ -44,7 +50,12 @@ jobs:
           composer require --dev 'nextcloud/ocp:dev-stable35' --with-dependencies
 
       - name: Regenerate baseline stable35
-        run: composer run psalm -- --set-baseline=psalm-baseline-dev-stable35.xml
+        run: |
+          set +e
+          composer run psalm -- --set-baseline=psalm-baseline-dev-stable35.xml
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ] && [ "$code" -ne 2 ]; then exit "$code"; fi
 
       - name: Commit baselines
         run: |
