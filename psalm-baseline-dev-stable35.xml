@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files psalm-version="6.20.3@23d217da099cc4a9a3bd03b644c1adf520022375">
+<files psalm-version="7.3.0@6480ee65f252d9829b0c5a49d44c1fa263babfa2">
   <file src="lib/AppInfo/Application.php">
     <ClassMustBeFinal>
       <code><![CDATA[Application]]></code>
@@ -101,7 +101,7 @@
     <MixedAssignment>
       <code><![CDATA[$changes]]></code>
       <code><![CDATA[$changes]]></code>
-      </MixedAssignment>
+    </MixedAssignment>
     <MixedOperand>
       <code><![CDATA[$track['album']]]></code>
       <code><![CDATA[$track['artist']]]></code>
@@ -139,7 +139,7 @@
     </DeprecatedMethod>
     <MixedAssignment>
       <code><![CDATA[$changes]]></code>
-      </MixedAssignment>
+    </MixedAssignment>
     <UnusedClass>
       <code><![CDATA[ReadController]]></code>
     </UnusedClass>
@@ -175,19 +175,13 @@
       <code><![CDATA[$decoded]]></code>
       <code><![CDATA[$entries]]></code>
       <code><![CDATA[$entry]]></code>
-      </MixedAssignment>
-    <PossiblyInvalidArrayOffset>
-      <code><![CDATA[$releaseByPath[(string)$entry]]]></code>
-    </PossiblyInvalidArrayOffset>
+    </MixedAssignment>
     <PossiblyNullArgument>
       <code><![CDATA[$existingRow]]></code>
     </PossiblyNullArgument>
     <RedundantCastGivenDocblockType>
       <code><![CDATA[(string)$line]]></code>
     </RedundantCastGivenDocblockType>
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[!($track['tagged'] ?? false)]]></code>
-    </RiskyTruthyFalsyComparison>
     <UnusedClass>
       <code><![CDATA[ScanController]]></code>
     </UnusedClass>
@@ -241,7 +235,7 @@
       <code><![CDATA[$backups]]></code>
       <code><![CDATA[$before]]></code>
       <code><![CDATA[$changes]]></code>
-      </MixedAssignment>
+    </MixedAssignment>
     <MixedReturnTypeCoercion>
       <code><![CDATA[is_array($backups) ? array_values(array_filter($backups, 'is_array')) : []]]></code>
       <code><![CDATA[list<array<string, mixed>>]]></code>
@@ -281,15 +275,8 @@
       <code><![CDATA[$rows]]></code>
     </MixedArgument>
     <MixedArrayAccess>
-      <code><![CDATA[$releaseGroup['id']]]></code>
-      <code><![CDATA[$releaseGroups[0]]]></code>
       <code><![CDATA[$releaseGroups[0]]]></code>
       <code><![CDATA[$release['artists']]]></code>
-      <code><![CDATA[$release['artists']]]></code>
-      <code><![CDATA[$release['date']]]></code>
-      <code><![CDATA[$release['id']]]></code>
-      <code><![CDATA[$release['title']]]></code>
-      <code><![CDATA[$releases[0]]]></code>
       <code><![CDATA[$releases[0]]]></code>
     </MixedArrayAccess>
     <MixedAssignment>
@@ -311,6 +298,12 @@
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
     </PossiblyUnusedMethod>
+    <UnusedMethod>
+      <code><![CDATA[artistsToString]]></code>
+      <code><![CDATA[fingerprint]]></code>
+      <code><![CDATA[fpcalcPath]]></code>
+      <code><![CDATA[requestJson]]></code>
+    </UnusedMethod>
   </file>
   <file src="lib/Service/AiAdvisorService.php">
     <ClassMustBeFinal>
@@ -353,11 +346,30 @@
     </MixedReturnTypeCoercion>
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
+      <code><![CDATA[classifyFolder]]></code>
     </PossiblyUnusedMethod>
     <RedundantCast>
       <code><![CDATA[(string)($parts['host'] ?? '')]]></code>
       <code><![CDATA[(string)($parts['scheme'] ?? '')]]></code>
     </RedundantCast>
+    <UnusedMethod>
+      <code><![CDATA[assertSafeOllamaUrl]]></code>
+      <code><![CDATA[classificationPrompt]]></code>
+      <code><![CDATA[classifyWithMistral]]></code>
+      <code><![CDATA[classifyWithOllama]]></code>
+      <code><![CDATA[classifyWithOpenAi]]></code>
+      <code><![CDATA[folderSummary]]></code>
+      <code><![CDATA[normalizeResult]]></code>
+      <code><![CDATA[postJson]]></code>
+      <code><![CDATA[schema]]></code>
+      <code><![CDATA[systemPrompt]]></code>
+    </UnusedMethod>
+    <UnusedProperty>
+      <code><![CDATA[$clientService]]></code>
+      <code><![CDATA[$config]]></code>
+      <code><![CDATA[$credentials]]></code>
+      <code><![CDATA[$l10n]]></code>
+    </UnusedProperty>
   </file>
   <file src="lib/Service/AudioTagReader.php">
     <ClassMustBeFinal>
@@ -367,14 +379,41 @@
       <code><![CDATA[$value]]></code>
       <code><![CDATA[mb_convert_encoding($value, 'UTF-8', 'ISO-8859-1')]]></code>
     </PossiblyFalseArgument>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[read]]></code>
+    </PossiblyUnusedMethod>
+    <UnusedMethod>
+      <code><![CDATA[decodeLegacy]]></code>
+      <code><![CDATA[decodeTextFrame]]></code>
+      <code><![CDATA[emptyTags]]></code>
+      <code><![CDATA[parseId3Frames]]></code>
+      <code><![CDATA[parseId3v1]]></code>
+      <code><![CDATA[parseVorbisComment]]></code>
+      <code><![CDATA[readFlac]]></code>
+      <code><![CDATA[readLittleEndianInt]]></code>
+      <code><![CDATA[readMp3]]></code>
+      <code><![CDATA[synchsafeToInt]]></code>
+    </UnusedMethod>
   </file>
   <file src="lib/Service/AudioTagWriter.php">
     <ClassMustBeFinal>
       <code><![CDATA[AudioTagWriter]]></code>
     </ClassMustBeFinal>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[writeMp3]]></code>
+    </PossiblyUnusedMethod>
     <RedundantFunctionCallGivenDocblockType>
       <code><![CDATA[array_values]]></code>
     </RedundantFunctionCallGivenDocblockType>
+    <UnusedMethod>
+      <code><![CDATA[copyNextcloudFileToPath]]></code>
+      <code><![CDATA[replaceNextcloudFileFromPath]]></code>
+      <code><![CDATA[runFfmpeg]]></code>
+      <code><![CDATA[temporaryPath]]></code>
+    </UnusedMethod>
+    <UnusedProperty>
+      <code><![CDATA[$l10n]]></code>
+    </UnusedProperty>
   </file>
   <file src="lib/Service/DiscogsService.php">
     <ClassMustBeFinal>
@@ -412,16 +451,35 @@
     </MixedReturnTypeCoercion>
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
+      <code><![CDATA[search]]></code>
     </PossiblyUnusedMethod>
     <RedundantCastGivenDocblockType>
       <code><![CDATA[(string)$parts[0]]]></code>
       <code><![CDATA[(string)$parts[1]]]></code>
     </RedundantCastGivenDocblockType>
+    <UnusedMethod>
+      <code><![CDATA[artistsToString]]></code>
+      <code><![CDATA[bestTrack]]></code>
+      <code><![CDATA[detailArtwork]]></code>
+      <code><![CDATA[discogsUrl]]></code>
+      <code><![CDATA[httpsImage]]></code>
+      <code><![CDATA[normalize]]></code>
+      <code><![CDATA[requestJson]]></code>
+      <code><![CDATA[similarityBonus]]></code>
+      <code><![CDATA[splitReleaseTitle]]></code>
+    </UnusedMethod>
+    <UnusedProperty>
+      <code><![CDATA[$clientService]]></code>
+      <code><![CDATA[$l10n]]></code>
+    </UnusedProperty>
   </file>
   <file src="lib/Service/GenreNormalizer.php">
     <MixedAssignment>
       <code><![CDATA[$value]]></code>
     </MixedAssignment>
+    <UnusedClass>
+      <code><![CDATA[GenreNormalizer]]></code>
+    </UnusedClass>
   </file>
   <file src="lib/Service/LastFmService.php">
     <ClassMustBeFinal>
@@ -431,14 +489,10 @@
       <code><![CDATA[$index]]></code>
     </MixedArgumentTypeCoercion>
     <MixedArrayAccess>
-      <code><![CDATA[$albumInfo['image']]]></code>
-      <code><![CDATA[$albumInfo['title']]]></code>
       <code><![CDATA[$data['results']['trackmatches']['track']]]></code>
-      <code><![CDATA[$track['album']]]></code>
       <code><![CDATA[$track['album']]]></code>
       <code><![CDATA[$track['toptags']]]></code>
       <code><![CDATA[$track['toptags']['tag']]]></code>
-      <code><![CDATA[$track['url']]]></code>
     </MixedArrayAccess>
     <MixedAssignment>
       <code><![CDATA[$albumInfo]]></code>
@@ -452,7 +506,21 @@
     </MixedReturnTypeCoercion>
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
+      <code><![CDATA[search]]></code>
     </PossiblyUnusedMethod>
+    <UnusedMethod>
+      <code><![CDATA[artistGenre]]></code>
+      <code><![CDATA[imageUrl]]></code>
+      <code><![CDATA[normalize]]></code>
+      <code><![CDATA[requestJson]]></code>
+      <code><![CDATA[score]]></code>
+      <code><![CDATA[tagNames]]></code>
+      <code><![CDATA[trackInfo]]></code>
+    </UnusedMethod>
+    <UnusedProperty>
+      <code><![CDATA[$clientService]]></code>
+      <code><![CDATA[$l10n]]></code>
+    </UnusedProperty>
   </file>
   <file src="lib/Service/MetadataSearchService.php">
     <ClassMustBeFinal>
@@ -469,6 +537,7 @@
     </MixedAssignment>
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
+      <code><![CDATA[search]]></code>
     </PossiblyUnusedMethod>
     <RedundantCastGivenDocblockType>
       <code><![CDATA[(string)$row['id']]]></code>
@@ -476,6 +545,33 @@
     <ReferenceConstraintViolation>
       <code><![CDATA[$results]]></code>
     </ReferenceConstraintViolation>
+    <UnusedMethod>
+      <code><![CDATA[applyFingerprintEvidence]]></code>
+      <code><![CDATA[cleanFilenameStem]]></code>
+      <code><![CDATA[deduplicate]]></code>
+      <code><![CDATA[enrichGenres]]></code>
+      <code><![CDATA[genreMatchScore]]></code>
+      <code><![CDATA[genreSourcePriority]]></code>
+      <code><![CDATA[inferArtistAndTitle]]></code>
+      <code><![CDATA[metadataConflict]]></code>
+      <code><![CDATA[normalizeArtistForGenre]]></code>
+      <code><![CDATA[normalizeForKey]]></code>
+      <code><![CDATA[normalizeTitleForGenre]]></code>
+      <code><![CDATA[recordingsMatch]]></code>
+      <code><![CDATA[runProvider]]></code>
+      <code><![CDATA[sourcePriority]]></code>
+      <code><![CDATA[status]]></code>
+    </UnusedMethod>
+    <UnusedProperty>
+      <code><![CDATA[$acoustId]]></code>
+      <code><![CDATA[$config]]></code>
+      <code><![CDATA[$credentials]]></code>
+      <code><![CDATA[$discogs]]></code>
+      <code><![CDATA[$l10n]]></code>
+      <code><![CDATA[$lastFm]]></code>
+      <code><![CDATA[$logger]]></code>
+      <code><![CDATA[$musicBrainz]]></code>
+    </UnusedProperty>
   </file>
   <file src="lib/Service/MusicBrainzService.php">
     <ClassMustBeFinal>
@@ -490,11 +586,7 @@
       <code><![CDATA[is_array($recording['releases'] ?? null) ? $recording['releases'] : []]]></code>
     </MixedArgument>
     <MixedArrayAccess>
-      <code><![CDATA[$releaseGroup['id']]]></code>
-      <code><![CDATA[$releaseGroup['primary-type']]]></code>
       <code><![CDATA[$releaseGroup['secondary-types']]]></code>
-      <code><![CDATA[$releaseGroup['secondary-types']]]></code>
-      <code><![CDATA[$releaseGroup['title']]]></code>
     </MixedArrayAccess>
     <MixedAssignment>
       <code><![CDATA[$artistCredit]]></code>
@@ -516,12 +608,29 @@
       <code><![CDATA[array<string, mixed>]]></code>
       <code><![CDATA[is_array($data) ? $data : []]]></code>
     </MixedReturnTypeCoercion>
+    <PossiblyNullIterator>
+      <code><![CDATA[$secondaryTypes]]></code>
+    </PossiblyNullIterator>
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
+      <code><![CDATA[releaseGroupGenre]]></code>
+      <code><![CDATA[search]]></code>
     </PossiblyUnusedMethod>
     <RedundantCast>
       <code><![CDATA[(string)($results[0]['releaseGroupId'] ?? '')]]></code>
     </RedundantCast>
+    <UnusedMethod>
+      <code><![CDATA[artistCreditToString]]></code>
+      <code><![CDATA[bestRelease]]></code>
+      <code><![CDATA[canonicalTitle]]></code>
+      <code><![CDATA[escapeQuery]]></code>
+      <code><![CDATA[requestJson]]></code>
+      <code><![CDATA[trackNumberFromRelease]]></code>
+    </UnusedMethod>
+    <UnusedProperty>
+      <code><![CDATA[$clientService]]></code>
+      <code><![CDATA[$l10n]]></code>
+    </UnusedProperty>
   </file>
   <file src="lib/Service/MusicPlaylistService.php">
     <ClassMustBeFinal>
@@ -532,6 +641,7 @@
     </DeprecatedMethod>
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
+      <code><![CDATA[publish]]></code>
     </PossiblyUnusedMethod>
     <RedundantCastGivenDocblockType>
       <code><![CDATA[(string)$file->getContent()]]></code>
@@ -540,7 +650,11 @@
       <code><![CDATA[\OC_App]]></code>
     </UndefinedClass>
     <UnusedProperty>
+      <code><![CDATA[$appManager]]></code>
+      <code><![CDATA[$config]]></code>
       <code><![CDATA[$db]]></code>
+      <code><![CDATA[$l10n]]></code>
+      <code><![CDATA[$rootFolder]]></code>
     </UnusedProperty>
   </file>
   <file src="lib/Service/PlaylistService.php">
@@ -559,21 +673,12 @@
       <code><![CDATA[AUDIO_EXTENSIONS = ['mp3', 'flac', 'm4a', 'm4b', 'aac', 'ogg', 'opus', 'wav']]]></code>
       <code><![CDATA[MANAGED_MARKER = '# MusicCurator managed playlist']]></code>
     </MissingClassConstType>
-    <MixedArgument>
-      <code><![CDATA[$a['file']->getName()]]></code>
-      <code><![CDATA[$b['file']->getName()]]></code>
-    </MixedArgument>
     <MixedAssignment>
-      <code><![CDATA[$aTrack]]></code>
-      <code><![CDATA[$bTrack]]></code>
       <code><![CDATA[$playlists]]></code>
-      </MixedAssignment>
-    <MixedMethodCall>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </MixedMethodCall>
+    </MixedAssignment>
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
+      <code><![CDATA[createForFolder]]></code>
       <code><![CDATA[refreshManagedForFolders]]></code>
     </PossiblyUnusedMethod>
     <RedundantCastGivenDocblockType>
@@ -582,6 +687,24 @@
       <code><![CDATA[(string)($tags['artist'] ?? '')]]></code>
       <code><![CDATA[(string)($tags['track'] ?? '')]]></code>
     </RedundantCastGivenDocblockType>
+    <UnusedMethod>
+      <code><![CDATA[assertInsideLibrary]]></code>
+      <code><![CDATA[audioEntries]]></code>
+      <code><![CDATA[joinUserPath]]></code>
+      <code><![CDATA[nodeForUserPath]]></code>
+      <code><![CDATA[normalizePath]]></code>
+      <code><![CDATA[numericTrack]]></code>
+      <code><![CDATA[playlistName]]></code>
+      <code><![CDATA[rememberPlaylist]]></code>
+      <code><![CDATA[render]]></code>
+      <code><![CDATA[safeContent]]></code>
+    </UnusedMethod>
+    <UnusedProperty>
+      <code><![CDATA[$config]]></code>
+      <code><![CDATA[$l10n]]></code>
+      <code><![CDATA[$rootFolder]]></code>
+      <code><![CDATA[$tagReader]]></code>
+    </UnusedProperty>
   </file>
   <file src="lib/Service/ProviderCredentialsService.php">
     <ClassMustBeFinal>
@@ -600,7 +723,13 @@
     </MixedAssignment>
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
+      <code><![CDATA[configured]]></code>
+      <code><![CDATA[get]]></code>
+      <code><![CDATA[storeIfProvided]]></code>
     </PossiblyUnusedMethod>
+    <UnusedProperty>
+      <code><![CDATA[$config]]></code>
+    </UnusedProperty>
   </file>
   <file src="lib/Service/ScanIndexService.php">
     <ClassMustBeFinal>
@@ -615,10 +744,27 @@
     </MixedReturnTypeCoercion>
     <PossiblyUnusedMethod>
       <code><![CDATA[__construct]]></code>
+      <code><![CDATA[cachedTrack]]></code>
+      <code><![CDATA[loadForUser]]></code>
+      <code><![CDATA[recordAction]]></code>
+      <code><![CDATA[refreshTags]]></code>
+      <code><![CDATA[reviewProgress]]></code>
+      <code><![CDATA[reviewState]]></code>
+      <code><![CDATA[snapshotTrack]]></code>
+      <code><![CDATA[storeMusicBrainzMatch]]></code>
+      <code><![CDATA[storeTrack]]></code>
+      <code><![CDATA[updateSeenPath]]></code>
     </PossiblyUnusedMethod>
     <RedundantCastGivenDocblockType>
       <code><![CDATA[(int)$file->getMtime()]]></code>
       <code><![CDATA[(int)$file->getMtime()]]></code>
     </RedundantCastGivenDocblockType>
+    <UnusedMethod>
+      <code><![CDATA[findRow]]></code>
+    </UnusedMethod>
+    <UnusedProperty>
+      <code><![CDATA[$db]]></code>
+      <code><![CDATA[$logger]]></code>
+    </UnusedProperty>
   </file>
 </files>
