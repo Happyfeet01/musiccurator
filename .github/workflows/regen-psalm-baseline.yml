@@ -1,25 +1,33 @@
 name: Regenerate Psalm baselines
 
-on: push
+on: pull_request
 
 permissions:
   contents: write
 
 concurrency:
-  group: psalm-baseline-regen-${{ github.ref }}
-  cancel-in-progress: true
+  group: psalm-baseline-regen-${{ github.head_ref }}
+  cancel-in-progress: false
 
 jobs:
   regen:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: true
 
-      - uses: shivammathur/setup-php@v2
+      - name: Set up PHP
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2.36.0
         with:
           php-version: 8.4
           extensions: bz2, ctype, curl, dom, fileinfo, gd, iconv, intl, json, libxml, mbstring, openssl, pcntl, posix, session, simplexml, xmlreader, xmlwriter, zip, zlib, sqlite, pdo_sqlite
           coverage: none
+          ini-file: development
+          ini-values: disable_functions=
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies (stable34)
         run: |
@@ -48,4 +56,4 @@ jobs:
             exit 0
           fi
           git commit -m "chore: regenerate psalm baselines for psalm 7"
-          git push
+          git push origin HEAD:${{ github.head_ref }}
