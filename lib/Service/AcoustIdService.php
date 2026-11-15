@@ -10,6 +10,12 @@ use OCP\IL10N;
 use OCP\ITempManager;
 use RuntimeException;
 
+/**
+ * AcoustID lookups via Chromaprint fingerprints. The service is instantiated
+ * through dependency injection; Psalm cannot trace every call path.
+ *
+ * @psalm-suppress UnusedProperty
+ */
 class AcoustIdService {
 	public function __construct(
 		private IClientService $clientService,
@@ -18,7 +24,10 @@ class AcoustIdService {
 	) {
 	}
 
-	/** @return list<array<string, mixed>> */
+	/**
+	 * @return list<array<string, mixed>>
+	 * @psalm-suppress PossiblyUnusedMethod
+	 */
 	public function identify(File $file, string $clientKey): array {
 		$clientKey = trim($clientKey);
 		if ($clientKey === '') {
@@ -189,10 +198,10 @@ class AcoustIdService {
 		return '';
 	}
 
-	/** @param array<int, mixed> $artists */
-	private function artistsToString(array $artists): string {
+	/** @param array<int, mixed>|null $artists */
+	private function artistsToString(?array $artists): string {
 		$names = [];
-		foreach ($artists as $artist) {
+		foreach ($artists ?? [] as $artist) {
 			if (is_array($artist) && isset($artist['name'])) {
 				$names[] = trim((string)$artist['name']);
 			}

@@ -9,6 +9,11 @@ use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
+/**
+ * Instantiated by Nextcloud during app bootstrap.
+ *
+ * @psalm-suppress UnusedClass
+ */
 class Application extends App implements IBootstrap {
 	public const APP_ID = 'musiccurator';
 

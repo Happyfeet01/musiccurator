@@ -111,7 +111,7 @@ class LibraryController extends Controller {
 				];
 			}
 		}
-		usort($folders, static fn (array $a, array $b): int => strcasecmp((string)$a['name'], (string)$b['name']));
+		usort($folders, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
 
 		return new DataResponse([
 			'path' => $path,
