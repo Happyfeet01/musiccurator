@@ -36,7 +36,7 @@ jobs:
           composer require --dev 'nextcloud/ocp:dev-stable34' --with-dependencies
 
       - name: Regenerate baseline stable34
-        run: vendor-bin/psalm/vendor/bin/psalm --set-baseline=psalm-baseline-dev-stable34.xml --threads=1
+        run: composer run psalm -- --set-baseline=psalm-baseline-dev-stable34.xml
 
       - name: Switch to stable35
         run: |
@@ -44,7 +44,7 @@ jobs:
           composer require --dev 'nextcloud/ocp:dev-stable35' --with-dependencies
 
       - name: Regenerate baseline stable35
-        run: vendor-bin/psalm/vendor/bin/psalm --set-baseline=psalm-baseline-dev-stable35.xml --threads=1
+        run: composer run psalm -- --set-baseline=psalm-baseline-dev-stable35.xml
 
       - name: Commit baselines
         run: |
