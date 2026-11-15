@@ -1,0 +1,51 @@
+name: Regenerate Psalm baselines
+
+on: push
+
+permissions:
+  contents: write
+
+concurrency:
+  group: psalm-baseline-regen-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v4
+        with:
+          php-version: 8.4
+          extensions: bz2, ctype, curl, dom, fileinfo, gd, iconv, intl, json, libxml, mbstring, openssl, pcntl, posix, session, simplexml, xmlreader, xmlwriter, zip, zlib, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Install dependencies (stable34)
+        run: |
+          composer remove nextcloud/ocp --dev --no-scripts
+          composer i
+          composer require --dev 'nextcloud/ocp:dev-stable34' --with-dependencies
+
+      - name: Regenerate baseline stable34
+        run: vendor-bin/psalm/vendor/bin/psalm --set-baseline=psalm-baseline-dev-stable34.xml --threads=1
+
+      - name: Switch to stable35
+        run: |
+          composer remove nextcloud/ocp --dev --no-scripts
+          composer require --dev 'nextcloud/ocp:dev-stable35' --with-dependencies
+
+      - name: Regenerate baseline stable35
+        run: vendor-bin/psalm/vendor/bin/psalm --set-baseline=psalm-baseline-dev-stable35.xml --threads=1
+
+      - name: Commit baselines
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add psalm-baseline-dev-stable34.xml psalm-baseline-dev-stable35.xml
+          if git diff --cached --quiet; then
+            echo "no baseline changes"
+            exit 0
+          fi
+          git commit -m "chore: regenerate psalm baselines for psalm 7"
+          git push
