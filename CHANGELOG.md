@@ -5,6 +5,31 @@ All notable changes to MusicCurator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - Unreleased
+
+### Fixed
+
+- Update the runtime dependency `fast-xml-parser` to 5.12.0 and its required dependencies to resolve GHSA-474x-hrwr-fgx4 and restore the release security audit.
+- Remove legacy controller route attributes that shadow the persistent scan and current settings, folder, metadata and change-history endpoints. Scans now reach the index-writing controller, so a page reload can restore the same tracks instead of an older partial index.
+- Add route-registration checks across both attributes and routes.php, plus scan-to-cache regression tests for initially empty and partially populated indexes.
+
+## [1.6.1] - Unreleased
+
+### Added
+
+- Add per-track pending/done review status, filters and persistent review history for explicit review actions, tag writes, undo and file moves.
+- Add Nextcloud diagnostics for cache restoration, empty/invalid index rows, scan limits and index/history persistence failures.
+- Add isolated PHP/SQLite regression coverage and CI, including cache restoration above 5,000 indexed tracks. Scan resumption remains separate work.
+
+### Changed
+
+- Prepare version 1.6.1 with a versioned app upgrade so Nextcloud applies the review-status and history migration.
+- Replace the misleading development-build scan-limit warning.
+
+### Fixed
+
+- Update Psalm's isolated `symfony/filesystem` dependency from 8.1.9 to 8.1.11 to fix GHSA-6prc-h956-hxjq (path traversal through malformed URI-style prefixes). Keep all Composer security audit checks enabled.
+
 ## [1.6.0] - Unreleased
 
 ### Added

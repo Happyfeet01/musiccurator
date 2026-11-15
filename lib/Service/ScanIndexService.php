@@ -7,12 +7,15 @@ namespace OCA\MusicCurator\Service;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\File;
 use OCP\IDBConnection;
+use Psr\Log\LoggerInterface;
+use Throwable;
 
 class ScanIndexService {
 	private const TABLE = 'musiccurator_tracks';
 
 	public function __construct(
 		private IDBConnection $db,
+		private LoggerInterface $logger,
 	) {
 	}
 
@@ -77,8 +80,84 @@ class ScanIndexService {
 		$metadata['musicBrainzReleaseId'] = (string)($row['mb_release_id'] ?? '');
 		$metadata['musicBrainzScore'] = (int)($row['mb_score'] ?? 0);
 		$metadata['musicBrainzMatchedAt'] = (int)($row['matched_at'] ?? 0);
+		$metadata = array_merge($metadata, $this->reviewState($row));
 
 		return $metadata;
+	}
+
+	/**
+	 * @param array<string, mixed> $row
+	 * @return array{reviewStatus: 'pending'|'done', reviewUpdatedAt: int}
+	 */
+	public function reviewState(array $row): array {
+		return [
+			'reviewStatus' => ($row['review_status'] ?? 'pending') === 'done' ? 'done' : 'pending',
+			'reviewUpdatedAt' => (int)($row['review_updated'] ?? 0),
+		];
+	}
+
+	/** @return array{reviewStatus: string, reviewUpdatedAt: int, history: list<array<string, mixed>>} */
+	public function reviewProgress(string $userId, int $fileId): array {
+		$row = $this->findRow($userId, $fileId);
+		if ($row === null) {
+			throw new \OutOfBoundsException('Track is not indexed for this user.');
+		}
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('id', 'action', 'created_at')->from('musiccurator_review')
+			->where($qb->expr()->andX(
+				$qb->expr()->eq('user_id', $qb->createNamedParameter($userId)),
+				$qb->expr()->eq('file_id', $qb->createNamedParameter($fileId, IQueryBuilder::PARAM_INT)),
+			))->orderBy('id', 'DESC')->setMaxResults(50);
+		$result = $qb->executeQuery();
+		$history = [];
+		while (($event = $result->fetchAssociative()) !== false) {
+			$history[] = ['id' => (int)$event['id'], 'action' => (string)$event['action'], 'timestamp' => (int)$event['created_at']];
+		}
+		$result->closeCursor();
+		return [...$this->reviewState($row), 'history' => $history];
+	}
+
+	/** Record only completed actions, atomically with the review status. Never store tag values or credentials. */
+	public function recordAction(string $userId, int $fileId, string $action, ?string $status = null): void {
+		if (!in_array($action, ['marked_done', 'reopened', 'metadata_saved', 'metadata_undone', 'file_moved'], true)
+			|| ($status !== null && !in_array($status, ['pending', 'done'], true))) {
+			throw new \InvalidArgumentException('Invalid review action or status.');
+		}
+		$this->db->beginTransaction();
+		try {
+			$row = $this->findRow($userId, $fileId);
+			if ($row === null) {
+				throw new \OutOfBoundsException('Track is not indexed for this user.');
+			}
+			$now = time();
+			$qb = $this->db->getQueryBuilder();
+			$qb->update(self::TABLE)->set('review_updated', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT))
+				->where($qb->expr()->andX(
+					$qb->expr()->eq('user_id', $qb->createNamedParameter($userId)),
+					$qb->expr()->eq('file_id', $qb->createNamedParameter($fileId, IQueryBuilder::PARAM_INT)),
+				));
+			if ($status !== null) {
+				$qb->set('review_status', $qb->createNamedParameter($status));
+			}
+			$qb->executeStatement();
+			$qb = $this->db->getQueryBuilder();
+			$qb->insert('musiccurator_review')->values([
+				'user_id' => $qb->createNamedParameter($userId),
+				'file_id' => $qb->createNamedParameter($fileId, IQueryBuilder::PARAM_INT),
+				'action' => $qb->createNamedParameter($action),
+				'created_at' => $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT),
+			])->executeStatement();
+			$this->db->commit();
+		} catch (Throwable $e) {
+			$this->db->rollBack();
+			$this->logger->error('MusicCurator review history could not be saved', [
+				'app' => 'musiccurator', 'user' => $userId, 'file_id' => $fileId, 'action' => $action, 'exception' => $e,
+			]);
+			throw $e;
+		}
+		$this->logger->info('MusicCurator review action saved', [
+			'app' => 'musiccurator', 'user' => $userId, 'file_id' => $fileId, 'action' => $action, 'review_status' => $status,
+		]);
 	}
 
 	/**

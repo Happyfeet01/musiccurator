@@ -1,0 +1,22 @@
+name: PHP unit tests
+
+on: pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2.36.0
+        with:
+          php-version: '8.4'
+          extensions: dom, mbstring, xml, xmlwriter, sqlite3, pdo_sqlite
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-scripts
+      - run: composer install --no-interaction --prefer-dist --working-dir=vendor-bin/phpunit
+      - run: vendor-bin/phpunit/vendor/bin/phpunit -c tests/phpunit-unit.xml

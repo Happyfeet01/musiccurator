@@ -6,9 +6,9 @@ namespace OCA\MusicCurator\Controller;
 
 use OCA\MusicCurator\Service\AudioTagReader;
 use OCA\MusicCurator\Service\MusicBrainzService;
+use OCA\MusicCurator\Service\ScanIndexService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
-use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\OpenAPI;
 use OCP\AppFramework\Http\DataResponse;
@@ -20,6 +20,7 @@ use OCP\IConfig;
 use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 class LibraryController extends Controller {
@@ -36,13 +37,14 @@ class LibraryController extends Controller {
 		private AudioTagReader $tagReader,
 		private MusicBrainzService $musicBrainz,
 		private IL10N $l10n,
+		private ScanIndexService $scanIndex,
+		private LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request);
 	}
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'GET', url: '/api/settings')]
 	public function settings(): DataResponse {
 		$userId = $this->userId();
 		return new DataResponse([
@@ -57,7 +59,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'POST', url: '/api/settings')]
 	public function saveSettings(
 		string $libraryPath = '/Music',
 		string $musicBrainzEnabled = '1',
@@ -89,7 +90,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'GET', url: '/api/folders')]
 	public function folders(string $path = '/'): DataResponse {
 		$userId = $this->userId();
 		try {
@@ -122,7 +122,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'POST', url: '/api/library/scan')]
 	public function scan(): DataResponse {
 		$userId = $this->userId();
 		$libraryPath = $this->libraryPath($userId);
@@ -166,7 +165,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'GET', url: '/api/musicbrainz')]
 	public function musicBrainz(string $path): DataResponse {
 		$userId = $this->userId();
 		if ($this->config->getUserValue($userId, 'musiccurator', 'musicbrainz_enabled', '1') !== '1') {
@@ -191,7 +189,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'POST', url: '/api/library/preview-move')]
 	public function previewMove(
 		string $source,
 		string $title = '',
@@ -216,7 +213,6 @@ class LibraryController extends Controller {
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'POST', url: '/api/library/move')]
 	public function move(string $source, string $target): DataResponse {
 		$userId = $this->userId();
 		try {
@@ -238,18 +234,31 @@ class LibraryController extends Controller {
 			$targetDirectoryPath = $this->parentPath($target);
 			$targetFolder = $this->ensureFolder($userFolder, $targetDirectoryPath);
 			$targetName = basename($target);
-			$sourceNode->move(rtrim($targetFolder->getPath(), '/') . '/' . $targetName);
+			$movedNode = $sourceNode->move(rtrim($targetFolder->getPath(), '/') . '/' . $targetName);
 			$this->appendChange($userId, $source, $target);
+			$historyRecorded = false;
+			try {
+				if ($movedNode instanceof File) {
+					$this->scanIndex->refreshTags($userId, $movedNode, $target, $this->tagReader->read($movedNode));
+					$this->scanIndex->recordAction($userId, $movedNode->getId(), 'file_moved', 'pending');
+					$historyRecorded = true;
+				}
+			} catch (Throwable $e) {
+				$this->logger->warning('MusicCurator file moved but index or history update failed', [
+					'app' => 'musiccurator', 'user' => $userId, 'exception' => $e,
+				]);
+			}
+			$this->logger->info('MusicCurator file move completed', ['app' => 'musiccurator', 'user' => $userId, 'history_recorded' => $historyRecorded]);
 
-			return new DataResponse(['source' => $source, 'target' => $target, 'moved' => true]);
+			return new DataResponse(['source' => $source, 'target' => $target, 'moved' => true, 'historyRecorded' => $historyRecorded]);
 		} catch (Throwable $e) {
+			$this->logger->warning('MusicCurator file move failed', ['app' => 'musiccurator', 'user' => $userId, 'exception' => $e]);
 			return new DataResponse(['message' => $this->l10n->t('Move failed: %s', [$e->getMessage()])], Http::STATUS_BAD_REQUEST);
 		}
 	}
 
 	#[NoAdminRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
-	#[FrontpageRoute(verb: 'GET', url: '/api/changes')]
 	public function changes(): DataResponse {
 		$userId = $this->userId();
 		$raw = $this->config->getUserValue($userId, 'musiccurator', 'changes', '[]');

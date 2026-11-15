@@ -46,9 +46,21 @@ class ScanController extends Controller {
 	#[NoCSRFRequired]
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
 	public function cached(): DataResponse {
+		try {
+			return $this->cachedLibrary();
+		} catch (Throwable $e) {
+			$this->logger->error('MusicCurator cached library could not be restored', [
+				'app' => 'musiccurator', 'user' => $this->userSession->getUser()?->getUID(), 'exception' => $e,
+			]);
+			return new DataResponse(['message' => $this->l10n->t('Could not restore the saved library. Check the Nextcloud log for details.')], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	private function cachedLibrary(): DataResponse {
 		$userId = $this->userId();
 		$storedPath = trim($this->config->getUserValue($userId, 'musiccurator', 'library_path', ''));
 		if ($storedPath === '') {
+			$this->logger->info('MusicCurator cached library skipped: no saved library path', ['app' => 'musiccurator', 'user' => $userId]);
 			return new DataResponse([
 				'libraryPath' => '',
 				'tracks' => [],
@@ -63,15 +75,29 @@ class ScanController extends Controller {
 
 		$libraryPath = $this->normalizePath($storedPath);
 		$tracks = [];
-		foreach ($this->scanIndex->loadForUser($userId) as $row) {
+		$index = $this->scanIndex->loadForUser($userId);
+		$outsideLibrary = 0;
+		$invalidMetadata = 0;
+		foreach ($index as $row) {
 			$path = (string)($row['path'] ?? '');
 			if (!$this->isInsideLibraryPath($path, $libraryPath)) {
+				++$outsideLibrary;
 				continue;
 			}
 			$track = $this->scanIndex->snapshotTrack($row);
 			if ($track !== null) {
 				$tracks[] = $track;
+			} else {
+				++$invalidMetadata;
 			}
+		}
+		$context = ['app' => 'musiccurator', 'user' => $userId, 'known_rows' => count($index),
+			'restored_tracks' => count($tracks), 'outside_library' => $outsideLibrary, 'invalid_metadata' => $invalidMetadata];
+		$lastScanAt = (int)$this->config->getUserValue($userId, 'musiccurator', 'last_scan_at', '0');
+		if ($invalidMetadata > 0 || ($tracks === [] && $lastScanAt > 0)) {
+			$this->logger->warning('MusicCurator cached library is incomplete or empty after a previous scan', $context);
+		} else {
+			$this->logger->info('MusicCurator cached library restored', $context);
 		}
 		usort($tracks, static fn (array $a, array $b): int => strcasecmp((string)($a['path'] ?? ''), (string)($b['path'] ?? '')));
 
@@ -87,7 +113,7 @@ class ScanController extends Controller {
 			'stats' => $this->libraryStats($tracks, $playlists),
 			'truncated' => $this->config->getUserValue($userId, 'musiccurator', 'last_scan_truncated', '0') === '1',
 			'durationMs' => 0,
-			'lastScanAt' => (int)$this->config->getUserValue($userId, 'musiccurator', 'last_scan_at', '0'),
+			'lastScanAt' => $lastScanAt,
 			'fromCache' => true,
 		]);
 	}
@@ -147,6 +173,12 @@ class ScanController extends Controller {
 
 			$durationMs = (int)round((microtime(true) - $startedAt) * 1000);
 			$truncated = count($tracks) >= self::MAX_TRACKS;
+			if ($truncated) {
+				$this->logger->warning('MusicCurator library scan reached the track limit', [
+					'app' => 'musiccurator', 'user' => $userId, 'limit' => self::MAX_TRACKS,
+					'cache_hits' => $cacheHits, 'fresh_tag_reads' => $freshReads,
+				]);
+			}
 			$scanTime = time();
 			$this->config->setUserValue($userId, 'musiccurator', 'last_scan_path', $libraryPath);
 			$this->config->setUserValue($userId, 'musiccurator', 'last_scan_at', (string)$scanTime);
@@ -195,9 +227,15 @@ class ScanController extends Controller {
 				'exception' => $e,
 			]);
 
+			if ($e instanceof \OCP\Files\NotFoundException || $e instanceof \OCP\Files\NotPermittedException) {
+				return new DataResponse([
+					'message' => $this->l10n->t('The configured music folder "%s" does not exist or cannot be accessed. Choose the folder again.', [$libraryPath]),
+				], Http::STATUS_NOT_FOUND);
+			}
+
 			return new DataResponse([
-				'message' => $this->l10n->t('The configured music folder "%s" does not exist or cannot be accessed. Choose the folder again.', [$libraryPath]),
-			], Http::STATUS_NOT_FOUND);
+				'message' => $this->l10n->t('Library scan failed. Check the Nextcloud log for details.'),
+			], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -292,9 +330,18 @@ class ScanController extends Controller {
 				'musicBrainzReleaseId' => (string)($existingRow['mb_release_id'] ?? ''),
 				'musicBrainzScore' => (int)($existingRow['mb_score'] ?? 0),
 				'musicBrainzMatchedAt' => (int)($existingRow['matched_at'] ?? 0),
+				...$this->scanIndex->reviewState($existingRow ?? []),
 			];
 
-			$this->scanIndex->storeTrack($userId, $fileId, $path, $etag, $size, $mtime, $track, $existingRow);
+			try {
+				$this->scanIndex->storeTrack($userId, $fileId, $path, $etag, $size, $mtime, $track, $existingRow);
+			} catch (Throwable $e) {
+				$this->logger->error('MusicCurator scanned track could not be saved', [
+					'app' => 'musiccurator', 'user' => $userId, 'file_id' => $fileId,
+					'processed_tracks' => count($tracks), 'exception' => $e,
+				]);
+				throw $e;
+			}
 			$tracks[] = $track;
 			++$freshReads;
 		}
