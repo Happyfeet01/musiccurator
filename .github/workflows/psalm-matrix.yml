@@ -59,6 +59,7 @@ jobs:
           ini-file: development
           ini-values: disable_functions=
         env:
+          update: 'true'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies
