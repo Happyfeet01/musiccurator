@@ -5,6 +5,10 @@ All notable changes to MusicCurator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.6.6
+
+- GitHub Actions baut das Nextcloud-Paket und kann es mit dem App-Zertifikat signiert veröffentlichen.
+
 ## 1.6.5
 
 - Der Unterstützungshinweis lässt sich auf schmalen Bildschirmen schließen und beansprucht keine eigene Spalte.
