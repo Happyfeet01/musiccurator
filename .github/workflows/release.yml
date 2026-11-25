@@ -63,8 +63,8 @@ jobs:
           npm run lint
           npm run stylelint
           npm run test:frontend
-          node scripts/audit-dependencies.mjs
           npm run build
+          node scripts/audit-dependencies.mjs
           test -s js/musiccurator-main.mjs
           test -s css/musiccurator-main.css
           stage="$RUNNER_TEMP/stage/musiccurator"
