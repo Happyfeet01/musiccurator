@@ -11,6 +11,7 @@ on:
       - '.github/workflows/release.yml'
       - '.github/scripts/musiccurator-occ.sh'
   pull_request:
+    branches: [main]
     paths: *release_paths
 
 permissions:
@@ -42,39 +43,39 @@ jobs:
           node-version: '24'
 
       - name: Read release metadata from this commit
-        working-directory: .
         id: metadata
         run: |
           set -euo pipefail
           version=$(php -r 'echo simplexml_load_file("appinfo/info.xml")->version;')
-          test "$(php -r 'echo simplexml_load_file("appinfo/info.xml")->id;')" = "musiccurator"
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           test "$version" = "$(node -p 'require("./package.json").version')"
-          test -s "docs/releases/$version.md"
+          test -s CHANGELOG.md
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Build and check release files
-        working-directory: .
         env:
           VERSION: ${{ steps.metadata.outputs.version }}
         run: |
           set -euo pipefail
-          npm ci --no-audit --no-fund
+          find appinfo lib templates -name '*.php' -type f -print0 | xargs -0 -n1 php -l >/dev/null
+          npm ci
           npm run l10n:check
-          npm run build
+          npm run lint
+          npm run stylelint
           npm run test:frontend
+          npm run build
+          node scripts/audit-dependencies.mjs
           test -s js/musiccurator-main.mjs
           test -s css/musiccurator-main.css
-          find lib templates appinfo -name '*.php' -type f -print0 | xargs -0 -n1 php -l >/dev/null
           stage="$RUNNER_TEMP/stage/musiccurator"
           mkdir -p "$stage" "$RUNNER_TEMP/unsigned"
-          cp -a appinfo lib templates img js css "$stage/"
-          for item in l10n LICENSE COPYING README.md CHANGELOG.md; do
-            if [[ -e "$item" ]]; then cp -a "$item" "$stage/"; fi
+          for directory in appinfo lib templates img js css l10n; do
+            cp -R "$directory" "$stage/"
           done
+          cp LICENSE README.md CHANGELOG.md "$stage/"
           rm -f "$stage/appinfo/signature.json"
           tar -czf "$RUNNER_TEMP/unsigned/package.tar.gz" -C "$RUNNER_TEMP/stage" musiccurator
-          cp "docs/releases/$VERSION.md" "$RUNNER_TEMP/unsigned/release.md"
+          printf "MusicCurator %s — rebuilt and signed release.\n" "$VERSION" > "$RUNNER_TEMP/unsigned/release.md"
 
       - name: Check isolated Nextcloud signing tools
         if: github.event_name == 'pull_request'
@@ -176,3 +177,18 @@ jobs:
           gh release upload "$tag" "musiccurator-$VERSION.tar.gz" "musiccurator-$VERSION.signature" \
             "musiccurator-$VERSION.tar.gz.sha256" --clobber
           gh release edit "$tag" --draft=false --latest
+
+      - name: Publish signed archive to Nextcloud App Store
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPSTORE_TOKEN: ${{ secrets.APPSTORE_TOKEN }}
+        run: |
+          set -euo pipefail
+          : "${APPSTORE_TOKEN:?Missing APPSTORE_TOKEN}"
+          mkdir -p "$RUNNER_TEMP/store"
+          cd "$RUNNER_TEMP/store"
+          gh release download "v$VERSION" --pattern "musiccurator-$VERSION.signature" --pattern "musiccurator-$VERSION.tar.gz" --pattern "musiccurator-$VERSION.tar.gz.sha256"
+          sha256sum -c "musiccurator-$VERSION.tar.gz.sha256"
+          url="https://github.com/$GH_REPO/releases/download/v$VERSION/musiccurator-$VERSION.tar.gz"
+          jq -n --arg download "$url" --arg signature "$(cat "musiccurator-$VERSION.signature")" '{download:$download,signature:$signature,nightly:false}' > payload.json
+          curl --fail-with-body --silent --show-error --header "Authorization: Token $APPSTORE_TOKEN" --header "Content-Type: application/json" --data-binary @payload.json https://apps.nextcloud.com/api/v1/apps/releases
