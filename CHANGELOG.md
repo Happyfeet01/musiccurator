@@ -5,6 +5,10 @@ All notable changes to MusicCurator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.5] - Unreleased
+
+- Automate building, signing and publishing release archives to GitHub and the Nextcloud App Store.
+
 ## [1.6.4] - Unreleased
 
 - Freiwilliger Unterstützungshinweis in der App und Spendenlinks im App Store.
