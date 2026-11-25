@@ -11,6 +11,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\OpenAPI;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\Util;
 
 /**
  * @psalm-suppress UnusedClass
@@ -21,6 +22,8 @@ class PageController extends Controller {
 	#[OpenAPI(OpenAPI::SCOPE_IGNORE)]
 	#[FrontpageRoute(verb: 'GET', url: '/')]
 	public function index(): TemplateResponse {
+		Util::addScript(Application::APP_ID, 'support-notice');
+		Util::addStyle(Application::APP_ID, 'support-notice');
 		return new TemplateResponse(
 			Application::APP_ID,
 			'index',
