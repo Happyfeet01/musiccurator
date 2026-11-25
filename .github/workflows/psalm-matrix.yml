@@ -59,10 +59,12 @@ jobs:
           ini-file: development
           ini-values: disable_functions=
         env:
+          update: 'true'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies
         run: |
+          composer config --unset platform.php
           composer remove nextcloud/ocp --dev --no-scripts
           composer i
 

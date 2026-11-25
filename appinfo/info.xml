@@ -19,7 +19,7 @@ Vergleiche vorhandene Tags mit Anbietervorschlägen, wähle Änderungen feldweis
 
 Die App ergänzt Nextcloud Music. MusicCurator verwaltet deine Bibliothek; die Wiedergabe übernimmt weiterhin Nextcloud Music.
 	]]></description>
-	<version>1.6.3</version>
+	<version>1.6.4</version>
 	<licence>AGPL-3.0-or-later</licence>
 	<author>Happyfeet01</author>
 	<namespace>MusicCurator</namespace>
@@ -28,6 +28,9 @@ Die App ergänzt Nextcloud Music. MusicCurator verwaltet deine Bibliothek; die W
 	<bugs>https://github.com/Happyfeet01/musiccurator/issues</bugs>
 	<repository type="git">https://github.com/Happyfeet01/musiccurator.git</repository>
 	<screenshot>https://raw.githubusercontent.com/Happyfeet01/musiccurator/067ff76c537b4163bd0cfa86488766743d19e4eb/docs/screenshots/musiccurator-library.png</screenshot>
+	<donation type="other" title="Buy Me a Coffee">https://buymeacoffee.com/sly5ir9ov</donation>
+	<donation type="other" title="Unterstützung des Entwicklers über Ko-fi">https://ko-fi.com/dermueller</donation>
+	<donation type="paypal" title="Unterstützung des Entwicklers über PayPal">https://paypal.me/LarsM1980</donation>
 	<dependencies>
 		<php min-version="8.4" max-version="8.5"/>
 		<nextcloud min-version="34" max-version="35"/>

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 return [
 	'routes' => [
+		['name' => 'supportNotice#status', 'url' => '/support-notice', 'verb' => 'GET'],
+		['name' => 'supportNotice#dismiss', 'url' => '/support-notice', 'verb' => 'POST'],
 		['name' => 'read#settings', 'url' => '/api/settings', 'verb' => 'GET'],
 		['name' => 'settings#saveSettings', 'url' => '/api/settings', 'verb' => 'POST'],
 		['name' => 'credential#delete', 'url' => '/api/settings/credentials/{credential}', 'verb' => 'DELETE'],
