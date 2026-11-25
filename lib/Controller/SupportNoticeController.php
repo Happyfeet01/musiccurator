@@ -7,16 +7,19 @@ namespace OCA\MusicCurator\Controller;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IConfig;
+use OCP\Config\IUserConfig;
 use OCP\IRequest;
 use OCP\ISession;
 use OCP\IUserSession;
 
+/**
+ * @psalm-suppress UnusedClass Instantiated by the Nextcloud router.
+ */
 final class SupportNoticeController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private IConfig $config,
+		private IUserConfig $config,
 		private ISession $session,
 		private IUserSession $users,
 	) {
@@ -28,7 +31,7 @@ final class SupportNoticeController extends Controller {
 		$uid = $this->users->getUser()?->getUID();
 		$visible = $uid !== null
 			&& !$this->session->get($this->appName . '.support.closed.' . $uid)
-			&& $this->config->getUserValue($uid, $this->appName, 'support_notice_hidden', '0') !== '1';
+			&& $this->config->getValueString($uid, $this->appName, 'support_notice_hidden', '0') !== '1';
 		return new JSONResponse(['visible' => $visible], 200, ['Cache-Control' => 'no-store']);
 	}
 
@@ -39,7 +42,7 @@ final class SupportNoticeController extends Controller {
 			return new JSONResponse([], 401);
 		}
 		if ($duration === 'permanent') {
-			$this->config->setUserValue($uid, $this->appName, 'support_notice_hidden', '1');
+			$this->config->setValueString($uid, $this->appName, 'support_notice_hidden', '1');
 		} elseif ($duration === 'session') {
 			$this->session->set($this->appName . '.support.closed.' . $uid, true);
 		} else {
