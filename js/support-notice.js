@@ -2,6 +2,8 @@
     async function init() {
         const template = document.getElementById('musiccurator-support-template');
         if (!template) return;
+        // Claim the template before the first asynchronous step.
+        template.remove();
         const url = template.dataset.url;
         const headers = { requesttoken: template.dataset.token };
         try {
@@ -25,7 +27,7 @@
                     body: new URLSearchParams({ duration: button.dataset.duration }),
                 });
                 if (!response.ok || response.redirected) throw new Error('Dismissal failed');
-                notice.hidden = true;
+                notice.remove();
             } catch {
                 error.hidden = false;
             } finally {
@@ -33,6 +35,11 @@
             }
         });
         document.body.appendChild(notice);
+        // Keep an unstyled notice out of the Nextcloud header if its stylesheet failed to load.
+        if (getComputedStyle(notice).position !== 'fixed') {
+            notice.remove();
+            return;
+        }
         notice.hidden = false;
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
