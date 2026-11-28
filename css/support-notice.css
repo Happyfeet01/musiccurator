@@ -1,4 +1,5 @@
-#musiccurator-support-notice:not([hidden]) {
+#musiccurator-support-notice[hidden] { display: none !important; }
+#musiccurator-support-notice {
     position: fixed;
     z-index: 1500;
     inset-inline-end: 1rem;
